@@ -7,7 +7,13 @@
  * primer error (firstAuxError), que se arma recién cuando se usa. Cada schema
  * se compila la primera vez que se usa, y una sola vez en cada instancia: la
  * caché es por identidad del objeto. Los errores salen como SchemaError con
- * keywordLocation absoluto dentro del schema que validó (toSchemaErrorsIn).
+ * keywordLocation absoluto dentro del schema que validó (toSchemaErrorsIn), a
+ * lo sumo MAX_SCHEMA_ERRORS.
+ *
+ * Con un valor que junta más de SCHEMA_ERROR_LIMIT errores en un lugar, Ajv se
+ * corta (src/schema/ajv.ts): los errores son los juntados hasta ahí, si el
+ * validador que se detiene en el primer error confirma que el valor no cumple.
+ * Si cumple, los errores eran de ramas que se descartan, y no hay ninguno.
  *
  * defaultValidators es el de los datos empaquetados (src/generated/data.ts),
  * uno solo por proceso: lo usan las funciones públicas que no reciben deps.
@@ -15,12 +21,12 @@
 import type { Ajv2020, ValidateFunction } from 'ajv/dist/2020.js';
 import { files } from '../generated/data.js';
 import type { AuxSchemaName, JsonValue, SchemaBundle, SchemaError, SchemaValidators } from '../types.js';
-import { createAjv, toSchemaErrorsIn } from './ajv.js';
+import { createAjv, cutErrors, toSchemaErrorsIn } from './ajv.js';
 import { schemaBundle } from './bundle.js';
 
 export function compileSchemas(bundle: SchemaBundle): SchemaValidators {
-  const all = compiler(createAjv);
   const first = compiler(() => createAjv({ allErrors: false }));
+  const all = compiler(createAjv, (schema, value) => first(schema, value).length > 0);
 
   function auxSchema(name: AuxSchemaName): object {
     const schema = Object.hasOwn(bundle.aux, name) ? bundle.aux[name] : undefined;
@@ -49,8 +55,14 @@ export function compileSchemas(bundle: SchemaBundle): SchemaValidators {
   };
 }
 
-/** Valida con los schemas compilados por un Ajv, que se arma la primera vez y compila cada schema una vez. */
-function compiler(create: () => Ajv2020): (schema: object, value: JsonValue) => SchemaError[] {
+type Check = (schema: object, value: JsonValue) => SchemaError[];
+
+/**
+ * Valida con los schemas compilados por un Ajv, que se arma la primera vez y
+ * compila cada schema una vez. `fails` dice, después de un corte, si el valor
+ * no cumple.
+ */
+function compiler(create: () => Ajv2020, fails?: (schema: object, value: JsonValue) => boolean): Check {
   let ajv: Ajv2020 | undefined;
   const compiled = new WeakMap<object, ValidateFunction>();
   return (schema, value) => {
@@ -60,7 +72,13 @@ function compiler(create: () => Ajv2020): (schema: object, value: JsonValue) => 
       validate = ajv.compile(schema);
       compiled.set(schema, validate);
     }
-    return validate(value) ? [] : toSchemaErrorsIn(schema, validate.errors);
+    try {
+      return validate(value) ? [] : toSchemaErrorsIn(schema, validate.errors);
+    } catch (thrown) {
+      const cut = cutErrors(thrown);
+      if (cut === undefined || fails === undefined) throw thrown;
+      return fails(schema, value) ? toSchemaErrorsIn(schema, cut) : [];
+    }
   };
 }
 

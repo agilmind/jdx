@@ -323,6 +323,11 @@
         "pt": "aninha mais de 64 níveis",
         "en": "it nests more than 64 levels"
       },
+      "size": {
+        "es": "pesa más de 2 MiB",
+        "pt": "tem mais de 2 MiB",
+        "en": "it is larger than 2 MiB"
+      },
       "absolute": {
         "es": "es absoluta",
         "pt": "é absoluto",

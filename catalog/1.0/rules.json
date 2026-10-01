@@ -2383,9 +2383,9 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "JSON ilegible: UTF-8 inválido, BOM, claves duplicadas, surrogates sueltos, enteros fuera de ±(2^53 − 1), números fuera de un double, más de 64 niveles de anidamiento o archivo vacío.",
-        "pt": "JSON ilegível: UTF-8 inválido, BOM, chaves duplicadas, surrogates soltos, inteiros fora de ±(2^53 − 1), números fora de um double, mais de 64 níveis de aninhamento ou arquivo vazio.",
-        "en": "Unreadable JSON: invalid UTF-8, BOM, duplicate keys, lone surrogates, integers beyond ±(2^53 − 1), numbers beyond a double, more than 64 levels of nesting or an empty file."
+        "es": "JSON ilegible: UTF-8 inválido, BOM, claves duplicadas, surrogates sueltos, enteros fuera de ±(2^53 − 1), números fuera de un double, más de 64 niveles de anidamiento, archivo vacío o de más de 2 MiB (2 097 152 bytes).",
+        "pt": "JSON ilegível: UTF-8 inválido, BOM, chaves duplicadas, surrogates soltos, inteiros fora de ±(2^53 − 1), números fora de um double, mais de 64 níveis de aninhamento, arquivo vazio ou com mais de 2 MiB (2 097 152 bytes).",
+        "en": "Unreadable JSON: invalid UTF-8, BOM, duplicate keys, lone surrogates, integers beyond ±(2^53 − 1), numbers beyond a double, more than 64 levels of nesting, an empty file or a file larger than 2 MiB (2,097,152 bytes)."
       },
       "message": {
         "es": "El archivo no se puede leer como JSON: {reason:reason}.",
@@ -2410,7 +2410,8 @@
               "integerRange",
               "numberRange",
               "empty",
-              "depth"
+              "depth",
+              "size"
             ]
           },
           "offset": {
@@ -3621,9 +3622,9 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "No cumple el schema estricto de su versión menor. Un resultado por error del validador de schema.",
-        "pt": "Não cumpre o schema estrito da sua versão menor. Um resultado por erro do validador de schema.",
-        "en": "Does not conform to the strict schema of its minor version. One result per schema validator error."
+        "es": "No cumple el schema estricto de su versión menor. Un resultado por error del validador de schema, a lo sumo 100, y menos si sus punteros y los textos de sus params suman más de 1 000 000 de caracteres.",
+        "pt": "Não cumpre o schema estrito da sua versão menor. Um resultado por erro do validador de schema, no máximo 100, e menos se seus ponteiros e os textos de seus params somarem mais de 1 000 000 de caracteres.",
+        "en": "Does not conform to the strict schema of its minor version. One result per schema validator error, at most 100, and fewer if their pointers and the texts of their params add up to more than 1,000,000 characters."
       },
       "message": {
         "es": "El dato no cumple el schema de JDX ({keyword}).",

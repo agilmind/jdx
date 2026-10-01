@@ -16,7 +16,8 @@ entrega/
 ```
 
 - **La declaración** se llama `<declaration.id>.r<revision>.jdx.json`. Es
-  UTF-8 sin BOM, sin claves repetidas y sin `null`: lo que no se sabe se omite.
+  UTF-8 sin BOM, sin claves repetidas y sin `null` (lo que no se sabe se
+  omite), y pesa a lo sumo 2 MiB.
 - **La firma** va al lado, en `.jws` (sección 7).
 - **Los archivos** (contratos, audios, ejemplar) están en `media`, cada uno con
   su `path` relativo a la raíz de la entrega, su `size` y su `sha256`.

@@ -21,14 +21,58 @@
  *   Los schemas de JDX solo usan referencias internas (#/$defs/…), y así otro
  *   objeto con el mismo $id (una copia de un schema del bundle, dos params del
  *   catálogo) compila aparte en lugar de lanzar.
+ * - Topes, para un valor con muchos errores. Ajv junta los errores de cada
+ *   función que llama copiando la lista entera, así que el costo crece con el
+ *   cuadrado de los errores: 40 000 elementos con error tardaban segundos, y
+ *   100 000, un minuto. El código que arma Ajv se corta cuando una función junta
+ *   más de SCHEMA_ERROR_LIMIT errores (cutErrors los recupera; compileSchemas
+ *   confirma que el valor no cumple). Y una validación da a lo sumo
+ *   MAX_SCHEMA_ERRORS errores, y menos si sus lugares y los textos de sus
+ *   params pasan de MAX_SCHEMA_ERROR_CHARS caracteres: una clave puede ser tan
+ *   larga como el documento.
  */
 import { Ajv2020, type ErrorObject } from 'ajv/dist/2020.js';
 import type { JsonPointer, JsonValue, RootList, SchemaError } from '../types.js';
 
 const ROOT_LISTS: readonly RootList[] = ['parties', 'works', 'recordings', 'agreements', 'media'];
 
+/** Errores que junta una función de Ajv antes de cortar la validación. */
+export const SCHEMA_ERROR_LIMIT = 1000;
+
+/** Errores que da una validación, como máximo. */
+export const MAX_SCHEMA_ERRORS = 100;
+
+/**
+ * Caracteres de los lugares (instanceLocation) y de los textos de los params
+ * de los errores de una validación: con el error que llega a este total, la
+ * lista se corta.
+ */
+export const MAX_SCHEMA_ERROR_CHARS = 1_000_000;
+
+/** La marca del corte: el código de Ajv lanza un objeto con los errores juntados en esta propiedad. */
+const CUT = 'jdxSchemaErrorLimit';
+
+/**
+ * Cada vez que una función de Ajv suma errores (uno propio, o los de una
+ * función que llamó) mira si pasó el tope. El código que arma Ajv 8 suma
+ * siempre con esas dos sentencias.
+ */
+function cutAtLimit(code: string): string {
+  return code.replace(/\berrors\+\+;|\berrors = vErrors\.length;/g, (sum) => `${sum}if (errors > ${SCHEMA_ERROR_LIMIT}) throw { ${CUT}: vErrors };`);
+}
+
+/** Los errores juntados hasta el corte, si `thrown` es el corte de una validación; si no, undefined. */
+export function cutErrors(thrown: unknown): readonly ErrorObject[] | undefined {
+  if (typeof thrown !== 'object' || thrown === null || !Object.hasOwn(thrown, CUT)) return undefined;
+  const errors = (thrown as Record<string, unknown>)[CUT];
+  return Array.isArray(errors) ? (errors as ErrorObject[]) : undefined;
+}
+
 export function createAjv(opts: { allErrors?: boolean } = {}): Ajv2020 {
-  const ajv = new Ajv2020({ strict: true, allErrors: opts.allErrors ?? true, verbose: true, allowUnionTypes: true, addUsedSchema: false });
+  const ajv = new Ajv2020({
+    strict: true, allErrors: opts.allErrors ?? true, verbose: true, allowUnionTypes: true, addUsedSchema: false,
+    code: { process: cutAtLimit },
+  });
   ajv.addKeyword({
     keyword: 'x-jdx-ref',
     schemaType: 'string',
@@ -81,7 +125,8 @@ export function createAjv(opts: { allErrors?: boolean } = {}): Ajv2020 {
  * - los errores `if` ("must match then schema") se descartan: queda el del then
  *   o el del else;
  * - de oneOf y anyOf queda el error del combinador; los de sus ramas se descartan.
- * keywordLocation es el schemaPath de Ajv sin `#`, como JSON Pointer.
+ * keywordLocation es el schemaPath de Ajv sin `#`, como JSON Pointer. La lista
+ * se corta en MAX_SCHEMA_ERRORS y en MAX_SCHEMA_ERROR_CHARS, en el orden de Ajv.
  */
 export function toSchemaErrors(errors: readonly ErrorObject[] | null | undefined): SchemaError[] {
   return convert(errors, undefined);
@@ -99,18 +144,17 @@ function convert(errors: readonly ErrorObject[] | null | undefined, locations: L
   if (!errors || errors.length === 0) return [];
   const combinators = combinatorsByInstance(errors);
   const out: SchemaError[] = [];
+  let chars = 0;
   for (const e of errors) {
+    if (out.length >= MAX_SCHEMA_ERRORS || chars >= MAX_SCHEMA_ERROR_CHARS) break;
     if (e.keyword === 'if') continue;
     if (combinators.size > 0 && isBranchError(e, combinators)) continue;
     let instanceLocation = e.instancePath;
     if (e.keyword === 'unevaluatedProperties') instanceLocation += `/${escape(String(e.params.unevaluatedProperty))}`;
     if (e.keyword === 'additionalProperties') instanceLocation += `/${escape(String(e.params.additionalProperty))}`;
-    out.push({
-      instanceLocation,
-      keywordLocation: keywordLocation(e, locations),
-      keyword: e.keyword,
-      params: { ...(e.params as Record<string, JsonValue>) },
-    });
+    const params = { ...(e.params as Record<string, JsonValue>) };
+    out.push({ instanceLocation, keywordLocation: keywordLocation(e, locations), keyword: e.keyword, params });
+    chars += instanceLocation.length + Object.values(params).reduce<number>((n, v) => n + (typeof v === 'string' ? v.length : 0), 0);
   }
   return out;
 }

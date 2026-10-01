@@ -1,13 +1,16 @@
 /**
  * Ajv del repositorio (src/schema/ajv.ts) y validadores de schema
  * (src/schema/validators.ts), con schemas sintéticos: modo estricto, las tres
- * anotaciones de JDX, la de licencia y el mapeo de los errores de Ajv a SchemaError.
+ * anotaciones de JDX, la de licencia, el mapeo de los errores de Ajv a
+ * SchemaError y los topes de una validación con muchos errores.
  */
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createAjv, toSchemaErrors } from '../../../src/schema/ajv.js';
+import { files } from '../../../src/generated/data.js';
+import { createAjv, MAX_SCHEMA_ERROR_CHARS, MAX_SCHEMA_ERRORS, SCHEMA_ERROR_LIMIT, toSchemaErrors } from '../../../src/schema/ajv.js';
+import { schemaBundle } from '../../../src/schema/bundle.js';
 import { compileSchemas } from '../../../src/schema/validators.js';
-import type { JsonValue, SchemaBundle } from '../../../src/types.js';
+import type { Catalog, JsonValue, SchemaBundle } from '../../../src/types.js';
 
 /** Valida con un Ajv nuevo y devuelve los errores ya mapeados. */
 function errorsOf(schema: object, value: JsonValue) {
@@ -231,7 +234,7 @@ describe('compileSchemas', () => {
     const withItems: SchemaBundle = { ...bundle, aux: { ...bundle.aux, accounts: items } };
     const itemsValidators = compileSchemas(withItems);
     const value = { items: Array.from({ length: 1000 }, (_, i) => `x${i}`) };
-    expect(itemsValidators.validateAux('accounts', value)).toHaveLength(1000);
+    expect(itemsValidators.validateAux('accounts', value)).toHaveLength(MAX_SCHEMA_ERRORS);
     expect(itemsValidators.firstAuxError('accounts', value)).toEqual({
       instanceLocation: '/items/0', keywordLocation: '/properties/items/items/type', keyword: 'type', params: { type: 'integer' },
     });
@@ -259,5 +262,82 @@ describe('compileSchemas', () => {
     validators.validateAux('accounts', { accounts: [] });
     expect([calls(bundle.open['1.0']), calls(bundle.strict['1.0']), calls(bundle.aux.accounts)]).toEqual([1, 1, 1]);
     expect(() => validators.validateDocument('1.1', false, {})).toThrow('el bundle no trae el schema abierto de la menor 1.1');
+  });
+});
+
+describe('limits', () => {
+  /** Un schema cuyos elementos se validan con su propia función: Ajv junta los errores de cada llamada copiando la lista. */
+  const items = {
+    $id: 'https://example.com/items.json', type: 'object',
+    properties: { items: { type: 'array', items: { $ref: '#/$defs/Item' } } },
+    $defs: { Item: { type: 'object', properties: { a: { $ref: '#/$defs/Leaf' } } }, Leaf: { type: 'integer' } },
+  };
+
+  it('a value with more errors than SCHEMA_ERROR_LIMIT in one place stops early and gives the first MAX_SCHEMA_ERRORS', () => {
+    expect([SCHEMA_ERROR_LIMIT, MAX_SCHEMA_ERRORS, MAX_SCHEMA_ERROR_CHARS]).toEqual([1000, 100, 1_000_000]);
+    const validators = compileSchemas({ minors: [], open: {}, strict: {}, index: {}, aux: { accounts: items } });
+    // Sin el corte, 200 000 elementos con error tardaban minutos: cada llamada copia todos los errores anteriores.
+    const value = { items: Array<number>(200_000).fill(0) };
+    const started = performance.now();
+    const errors = validators.validateAux('accounts', value);
+    expect(performance.now() - started).toBeLessThan(1_000);
+    expect(errors).toHaveLength(MAX_SCHEMA_ERRORS);
+    expect(errors[0]).toEqual({ instanceLocation: '/items/0', keywordLocation: '/$defs/Item/type', keyword: 'type', params: { type: 'object' } });
+    expect(errors.map((e) => e.instanceLocation)).toEqual(Array.from({ length: MAX_SCHEMA_ERRORS }, (_, i) => `/items/${i}`));
+    // Debajo del corte, la lista es la de Ajv, cortada en MAX_SCHEMA_ERRORS.
+    expect(validators.validateAux('accounts', { items: [0, { a: 'x' }, 1] })).toEqual([
+      { instanceLocation: '/items/0', keywordLocation: '/$defs/Item/type', keyword: 'type', params: { type: 'object' } },
+      { instanceLocation: '/items/1/a', keywordLocation: '/$defs/Leaf/type', keyword: 'type', params: { type: 'integer' } },
+      { instanceLocation: '/items/2', keywordLocation: '/$defs/Item/type', keyword: 'type', params: { type: 'object' } },
+    ]);
+    expect(validators.firstAuxError('accounts', value)?.instanceLocation).toBe('/items/0');
+  });
+
+  it('errors that a combinator discards do not cut a valid value', () => {
+    // La primera rama del anyOf da un error por elemento, más que el corte, y se descarta: el valor cumple.
+    const validators = compileSchemas({ minors: [], open: {}, strict: {}, index: {}, aux: {} });
+    const schema = { type: 'array', anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'array', items: { type: 'integer' } }] };
+    expect(validators.validateWith(schema, Array<number>(5000).fill(1))).toEqual([]);
+    expect(validators.validateWith(schema, Array<boolean>(5000).fill(true)).length).toBeGreaterThan(0);
+  });
+
+  it('every bundled schema keeps data iteration out of anyOf, oneOf, not, if and contains', () => {
+    // Así, cuando una validación se corta, los errores que da no son de una rama que se iba a descartar.
+    const bundle = schemaBundle(files);
+    const catalog = JSON.parse(files['catalog/1.0/rules.json'] as string) as Catalog;
+    const schemas: [string, unknown][] = [
+      ...Object.entries(bundle.open).map(([minor, s]): [string, unknown] => [`open ${minor}`, s]),
+      ...Object.entries(bundle.strict).map(([minor, s]): [string, unknown] => [`strict ${minor}`, s]),
+      ...Object.entries(bundle.aux).map(([name, s]): [string, unknown] => [name, s]),
+      ...catalog.rules.flatMap((r): [string, unknown][] => [
+        [`${r.id} profileParamsSchema`, r.profileParamsSchema], [`${r.id} resultParamsSchema`, r.resultParamsSchema], [`${r.id} contextSchema`, r.contextSchema],
+      ]),
+    ];
+    const DISCARDED = new Set(['anyOf', 'oneOf', 'not', 'if', 'contains']);
+    const ITERATES = new Set(['items', 'prefixItems', 'additionalProperties', 'patternProperties', 'unevaluatedProperties', 'unevaluatedItems', 'propertyNames', 'contains', 'dependentSchemas', '$ref', '$dynamicRef']);
+    const found: string[] = [];
+    const walk = (node: unknown, where: string, inside: boolean): void => {
+      if (Array.isArray(node)) node.forEach((child, i) => walk(child, `${where}/${i}`, inside));
+      else if (typeof node === 'object' && node !== null) {
+        for (const [key, child] of Object.entries(node)) {
+          if (inside && ITERATES.has(key)) found.push(`${where}/${key}`);
+          walk(child, `${where}/${key}`, inside || DISCARDED.has(key));
+        }
+      }
+    };
+    for (const [name, schema] of schemas) walk(schema, name, false);
+    expect(schemas.length).toBeGreaterThan(200);
+    expect(found).toEqual([]);
+  });
+
+  it('the error list stops at MAX_SCHEMA_ERROR_CHARS of instance locations and texts', () => {
+    // Cada error lleva la clave dos veces: en su lugar y en params.additionalProperty.
+    const key = (i: number) => `${'k'.repeat(300_000)}${i}`;
+    const value = Object.fromEntries([0, 1, 2, 3, 4, 5].map((i) => [key(i), 1]));
+    const errors = errorsOf({ type: 'object', additionalProperties: false }, value);
+    expect(errors.map((e) => [e.instanceLocation.slice(-2), e.instanceLocation.length, String(e.params.additionalProperty).length])).toEqual([
+      ['k0', 300_002, 300_001],
+      ['k1', 300_002, 300_001],
+    ]);
   });
 });

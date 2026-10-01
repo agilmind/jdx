@@ -86,7 +86,8 @@ jdx validate entrega/3f2c9a1e-….r1.jdx.json --env production --profile sadaic/
 
 Las reglas tienen códigos `JDX-<ÁREA>-<NNN>` que nunca se reutilizan (por
 ejemplo, `JDX-AGR-003`: un contrato da a la editora más que el tope). El
-catálogo con todas las reglas va en `catalog/1.0/rules.json`.
+catálogo, con cada regla y su mensaje en español, portugués e inglés, está en
+[`catalog/1.0/rules.json`](../catalog/1.0/rules.json).
 
 ## 4. Cómo se lee el resultado
 

@@ -436,6 +436,464 @@
       }
     },
     {
+      "id": "JDX-CLS-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Código de clasificación, condición o contrato tipo que no está en la lista empaquetada de su esquema; en un esquema de géneros, el par code y name. Un esquema sin lista empaquetada no se evalúa.",
+        "pt": "Código de classificação, condição ou contrato tipo que não está na lista empacotada do seu esquema; em um esquema de gêneros, o par code e name. Um esquema sem lista empacotada não é avaliado.",
+        "en": "Classification, condition or standard contract code that is not in the bundled list of its scheme; for a genre scheme, the code and name pair. A scheme without a bundled list is not evaluated."
+      },
+      "message": {
+        "es": "El código {code} no está en la lista de {scheme}.",
+        "pt": "O código {code} não está na lista de {scheme}.",
+        "en": "Code {code} is not in the {scheme} list."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scheme",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "scheme": "SADAIC_GENRE",
+          "code": "311",
+          "name": "ZAMBA"
+        },
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-CMP-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Obra sin duration.",
+        "pt": "Obra sem duration.",
+        "en": "Work without duration."
+      },
+      "message": {
+        "es": "La obra {work} no declara su duración.",
+        "pt": "A obra {work} não declara sua duração.",
+        "en": "Work {work} declares no duration."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-CMP-002",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Obra sin clasificación del esquema indicado (scheme).",
+        "pt": "Obra sem classificação do esquema indicado (scheme).",
+        "en": "Work without a classification of the given scheme (scheme)."
+      },
+      "message": {
+        "es": "La obra {work} no tiene clasificación {scheme}.",
+        "pt": "A obra {work} não tem classificação {scheme}.",
+        "en": "Work {work} has no {scheme} classification."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+          }
+        },
+        "required": [
+          "scheme"
+        ],
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+          }
+        },
+        "required": [
+          "scheme"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "scheme": "SADAIC_GENRE"
+        },
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-CMP-003",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Obra sin registro del registro indicado (registry) para una parte que le corresponde: las de textMusicRelationship (musicAndText y musicAndTextSeparate, las dos); si falta, las presentes en authorship; si no hay, music. Un registro both cubre las dos. Un resultado por obra y parte.",
+        "pt": "Obra sem registro do registro indicado (registry) para uma parte que lhe corresponde: as de textMusicRelationship (musicAndText e musicAndTextSeparate, as duas); se faltar, as presentes em authorship; se não houver, music. Um registro both cobre as duas. Um resultado por obra e parte.",
+        "en": "Work without a registration in the given registry (registry) for a part it has: those of textMusicRelationship (musicAndText and musicAndTextSeparate, both); if missing, those present in authorship; if none, music. A both registration covers the two. One result per work and part."
+      },
+      "message": {
+        "es": "Falta el registro {registry} de la {part:part} de la obra {work}.",
+        "pt": "Falta o registro {registry} da {part:part} da obra {work}.",
+        "en": "The {part:part} of work {work} has no {registry} registration."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "properties": {
+          "registry": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+          }
+        },
+        "required": [
+          "registry"
+        ],
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "registry": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+          },
+          "part": {
+            "type": "string",
+            "enum": [
+              "music",
+              "lyrics"
+            ]
+          }
+        },
+        "required": [
+          "registry",
+          "part"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "registry": "DNDA_AR",
+          "part": "music"
+        },
+        "context": {
+          "work": "w2"
+        }
+      }
+    },
+    {
+      "id": "JDX-CMP-004",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Obra sin publicationStatus.",
+        "pt": "Obra sem publicationStatus.",
+        "en": "Work without publicationStatus."
+      },
+      "message": {
+        "es": "La obra {work} no declara si está publicada.",
+        "pt": "A obra {work} não declara se está publicada.",
+        "en": "Work {work} does not say whether it is published."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-CMP-005",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Obra sin authorship.",
+        "pt": "Obra sem authorship.",
+        "en": "Work without authorship."
+      },
+      "message": {
+        "es": "La obra {work} no declara su autoría.",
+        "pt": "A obra {work} não declara sua autoria.",
+        "en": "Work {work} declares no authorship."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-CMP-006",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Party de contributors o grantee de un contrato sin TAX_ID del país indicado (country). Un resultado por party.",
+        "pt": "Party de contributors ou grantee de um contrato sem TAX_ID do país indicado (country). Um resultado por party.",
+        "en": "A contributors party or an agreement grantee without a TAX_ID of the given country (country). One result per party."
+      },
+      "message": {
+        "es": "No hay identificación fiscal (TAX_ID) de {country} para {party}.",
+        "pt": "Não há identificação fiscal (TAX_ID) de {country} para {party}.",
+        "en": "There is no {country} tax id (TAX_ID) for {party}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          }
+        },
+        "required": [
+          "country"
+        ],
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          }
+        },
+        "required": [
+          "country"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "party"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "country": "AR"
+        },
+        "context": {
+          "party": "p2"
+        }
+      }
+    },
+    {
+      "id": "JDX-CMP-007",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Party de contributors o grantee de un contrato sin afiliación con la sociedad del perfil. Un resultado por party.",
+        "pt": "Party de contributors ou grantee de um contrato sem filiação à sociedade do perfil. Um resultado por party.",
+        "en": "A contributors party or an agreement grantee without an affiliation with the profile's society. One result per party."
+      },
+      "message": {
+        "es": "No hay afiliación a la sociedad {society} para {party}.",
+        "pt": "Não há filiação à sociedade {society} para {party}.",
+        "en": "There is no affiliation with society {society} for {party}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "society": {
+            "type": "string",
+            "pattern": "^(\\d{3}|X_JDX_[A-Z0-9_]+)$"
+          }
+        },
+        "required": [
+          "society"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "party"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "society": "061"
+        },
+        "context": {
+          "party": "p2"
+        }
+      }
+    },
+    {
       "id": "JDX-DEC-001",
       "layer": "profile",
       "check": "profile",
@@ -678,6 +1136,54 @@
         "params": {
           "revision": 2,
           "lastIngestedRevision": 2
+        }
+      }
+    },
+    {
+      "id": "JDX-EDN-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Con edition: falta publicationDate, un legalDepositCopy en edition.media o un registro DNDA_AR de kind publishedWork en edition.registrations. Un resultado por dato que falta.",
+        "pt": "Com edition: falta publicationDate, um legalDepositCopy em edition.media ou um registro DNDA_AR de kind publishedWork em edition.registrations. Um resultado por dado que falta.",
+        "en": "With edition: publicationDate, a legalDepositCopy in edition.media or a DNDA_AR registration of kind publishedWork in edition.registrations is missing. One result per missing datum."
+      },
+      "message": {
+        "es": "A la edición le falta {missing:field}.",
+        "pt": "Falta {missing:field} na edição.",
+        "en": "The edition has no {missing:field}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "missing": {
+            "type": "string",
+            "enum": [
+              "publicationDate",
+              "legalDepositCopy",
+              "registration"
+            ]
+          }
+        },
+        "required": [
+          "missing"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "missing": "registration"
         }
       }
     },
@@ -1348,6 +1854,366 @@
       }
     },
     {
+      "id": "JDX-IDN-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "ISWC con formato o dígito verificador inválido: T, 9 dígitos y el verificador, sin separadores.",
+        "pt": "ISWC com formato ou dígito verificador inválido: T, 9 dígitos e o verificador, sem separadores.",
+        "en": "ISWC with an invalid format or check digit: T, 9 digits and the check digit, without separators."
+      },
+      "message": {
+        "es": "El ISWC {value} no es válido.",
+        "pt": "O ISWC {value} não é válido.",
+        "en": "ISWC {value} is not valid."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "value": "T0345246802"
+        },
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-IDN-002",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "IPI Name Number que no son 11 dígitos.",
+        "pt": "IPI Name Number que não são 11 dígitos.",
+        "en": "IPI Name Number that is not 11 digits."
+      },
+      "message": {
+        "es": "El IPI Name Number {value} no tiene 11 dígitos.",
+        "pt": "O IPI Name Number {value} não tem 11 dígitos.",
+        "en": "IPI Name Number {value} does not have 11 digits."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "value": "0012345678"
+        },
+        "context": {
+          "party": "p1"
+        }
+      }
+    },
+    {
+      "id": "JDX-IDN-003",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "ISRC con formato inválido: país, registrante, año y número, sin guiones.",
+        "pt": "ISRC com formato inválido: país, registrante, ano e número, sem hífens.",
+        "en": "ISRC with an invalid format: country, registrant, year and number, without hyphens."
+      },
+      "message": {
+        "es": "El ISRC {value} no es válido.",
+        "pt": "O ISRC {value} não é válido.",
+        "en": "ISRC {value} is not valid."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "value": "AR-XY1-26-00001"
+        },
+        "context": {
+          "recording": "r1"
+        }
+      }
+    },
+    {
+      "id": "JDX-IDN-004",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": false,
+      "predicate": {
+        "es": "IPI Name Number con los dígitos de control (módulo 101) inválidos.",
+        "pt": "IPI Name Number com os dígitos de controle (módulo 101) inválidos.",
+        "en": "IPI Name Number with invalid check digits (modulo 101)."
+      },
+      "message": {
+        "es": "Los dígitos de control del IPI Name Number {value} no son válidos.",
+        "pt": "Os dígitos de controle do IPI Name Number {value} não são válidos.",
+        "en": "The check digits of IPI Name Number {value} are not valid."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "value": "00123456789"
+        },
+        "context": {
+          "party": "p1"
+        }
+      }
+    },
+    {
+      "id": "JDX-IDN-005",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "ISNI con formato o dígito de control (ISO 7064 MOD 11-2) inválido.",
+        "pt": "ISNI com formato ou dígito de controle (ISO 7064 MOD 11-2) inválido.",
+        "en": "ISNI with an invalid format or check digit (ISO 7064 MOD 11-2)."
+      },
+      "message": {
+        "es": "El ISNI {value} no es válido.",
+        "pt": "O ISNI {value} não é válido.",
+        "en": "ISNI {value} is not valid."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "value": "0000000121032683"
+        },
+        "context": {
+          "party": "p1"
+        }
+      }
+    },
+    {
+      "id": "JDX-IDN-006",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "IPI Base Number con formato inválido: I-, 9 dígitos, un guion y un dígito.",
+        "pt": "IPI Base Number com formato inválido: I-, 9 dígitos, um hífen e um dígito.",
+        "en": "IPI Base Number with an invalid format: I-, 9 digits, a hyphen and a digit."
+      },
+      "message": {
+        "es": "El IPI Base Number {value} no es válido.",
+        "pt": "O IPI Base Number {value} não é válido.",
+        "en": "IPI Base Number {value} is not valid."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "value": "I-00000022-97"
+        },
+        "context": {
+          "party": "p1"
+        }
+      }
+    },
+    {
       "id": "JDX-INT-001",
       "layer": "core",
       "check": "core",
@@ -1578,6 +2444,49 @@
         },
         "context": {
           "media": "m1"
+        }
+      }
+    },
+    {
+      "id": "JDX-MED-003",
+      "layer": "profile",
+      "check": "media",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Con la carpeta de la entrega: un archivo que no está declarado en media. No cuentan los artefactos de JDX ni los patrones que el receptor manda ignorar.",
+        "pt": "Com a pasta da entrega: um arquivo que não está declarado em media. Não contam os artefatos do JDX nem os padrões que o receptor manda ignorar.",
+        "en": "With the delivery folder: a file that is not declared in media. JDX artifacts and the patterns the receiver ignores do not count."
+      },
+      "message": {
+        "es": "El archivo {path} está en la entrega y no está declarado.",
+        "pt": "O arquivo {path} está na entrega e não está declarado.",
+        "en": "File {path} is in the delivery but not declared."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "path": "notas.txt"
         }
       }
     },
@@ -1907,6 +2816,67 @@
       "example": {
         "context": {
           "media": "m3"
+        }
+      }
+    },
+    {
+      "id": "JDX-MED-010",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Media con delivered distinto de false sin size, sha256, path o delivery. Un resultado por dato que falta.",
+        "pt": "Media com delivered diferente de false sem size, sha256, path ou delivery. Um resultado por dado que falta.",
+        "en": "Media with delivered other than false without size, sha256, path or delivery. One result per missing datum."
+      },
+      "message": {
+        "es": "Al archivo {media} le falta {missing:field}.",
+        "pt": "Falta {missing:field} no arquivo {media}.",
+        "en": "Media {media} has no {missing:field}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "missing": {
+            "type": "string",
+            "enum": [
+              "size",
+              "sha256",
+              "path",
+              "delivery"
+            ]
+          }
+        },
+        "required": [
+          "missing"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "media": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "media"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "missing": "size"
+        },
+        "context": {
+          "media": "m4"
         }
       }
     },
@@ -2255,6 +3225,154 @@
         "params": {
           "value": "p9",
           "list": "parties"
+        }
+      }
+    },
+    {
+      "id": "JDX-REF-003",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Referencia a un contrato o media de otro type o kind que los de su anotación x-jdx-ref-type.",
+        "pt": "Referência a um contrato ou media de outro type ou kind que os da sua anotação x-jdx-ref-type.",
+        "en": "Reference to an agreement or media of a type or kind other than those of its x-jdx-ref-type annotation."
+      },
+      "message": {
+        "es": "La referencia {value} apunta a un {found}; acá va {expected}.",
+        "pt": "A referência {value} aponta para um {found}; aqui vai {expected}.",
+        "en": "Reference {value} points to a {found}; expected {expected}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "found": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "value",
+          "found",
+          "expected"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "media": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "value": "m2",
+          "found": "audio",
+          "expected": [
+            "registrationFiling"
+          ]
+        }
+      }
+    },
+    {
+      "id": "JDX-REF-004",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Referencias recíprocas que no coinciden: works[].recordings con recordings[].works, y shares[].agreement cuyo contrato tiene works y no incluye la obra. Un contrato sin works no se controla.",
+        "pt": "Referências recíprocas que não conferem: works[].recordings com recordings[].works, e shares[].agreement cujo contrato tem works e não inclui a obra. Um contrato sem works não é controlado.",
+        "en": "Reciprocal references that do not match: works[].recordings with recordings[].works, and shares[].agreement whose agreement has works and does not include the work. An agreement without works is not checked."
+      },
+      "message": {
+        "es": "La referencia a {value} {reason:reason}.",
+        "pt": "A referência a {value} {reason:reason}.",
+        "en": "The reference to {value} {reason:reason}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "reciprocal",
+              "agreementWorks"
+            ]
+          }
+        },
+        "required": [
+          "value",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "value": "a2",
+          "reason": "agreementWorks"
+        },
+        "context": {
+          "work": "w1"
         }
       }
     },
@@ -3052,6 +4170,128 @@
         "params": {
           "issuedAt": "2026-09-12T19:00:00-03:00",
           "reason": "createdAt"
+        }
+      }
+    },
+    {
+      "id": "JDX-SOC-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Código de sociedad que no está en la lista de sociedades de JDX.",
+        "pt": "Código de sociedade que não está na lista de sociedades do JDX.",
+        "en": "Society code that is not in the JDX list of societies."
+      },
+      "message": {
+        "es": "La sociedad {code} no está en la lista de sociedades de JDX.",
+        "pt": "A sociedade {code} não está na lista de sociedades do JDX.",
+        "en": "Society {code} is not in the JDX list of societies."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^(\\d{3}|X_JDX_[A-Z0-9_]+)$"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "code": "X_JDX_FOO"
+        },
+        "context": {
+          "party": "p1"
+        }
+      }
+    },
+    {
+      "id": "JDX-TER-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Código TIS desconocido o que no se puede expandir a países. La fila que lo usa queda fuera de las sumas.",
+        "pt": "Código TIS desconhecido ou que não pode ser expandido em países. A linha que o usa fica fora das somas.",
+        "en": "TIS code that is unknown or cannot be expanded into countries. The row that uses it is left out of the sums."
+      },
+      "message": {
+        "es": "El territorio {code} no se conoce o no se puede expandir a países.",
+        "pt": "O território {code} não é conhecido ou não pode ser expandido em países.",
+        "en": "Territory {code} is unknown or cannot be expanded into countries."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{4}$"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "code": "2100"
+        },
+        "context": {
+          "agreement": "a1"
         }
       }
     },

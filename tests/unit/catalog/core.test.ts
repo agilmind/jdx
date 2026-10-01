@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { main as mergeMain, mergeCatalog } from '../../../scripts/merge-catalog.mjs';
 import { loadCatalog } from '../../../src/catalog/load.js';
 import { files } from '../../../src/generated/data.js';
@@ -145,6 +145,44 @@ describe('catálogo: entorno, núcleo y política', () => {
     writeFileSync(fragment, JSON.stringify({ catalog: '2.0', rules: [{ id: 'JDX-ENV-001' }] }));
     expect(mergeMain([fragment, '--root', root])).toBe(0);
     expect(existsSync(join(root, 'catalog/2.0/rules.json'))).toBe(true);
+  });
+
+  it('merge-catalog exits 2 without a readable fragment and 1 with a fragment or catalog that is not JSON or not a catalog', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const root = trees.plant({
+        'roto.json': '{ "catalog": "1.0", ',
+        'lista.json': '[]',
+        'sin-ids.json': JSON.stringify({ catalog: '1.0', rules: [{ code: 'JDX-ENV-001' }] }),
+        'sin-version.json': JSON.stringify({ catalog: 'uno', rules: [] }),
+        'bueno.json': JSON.stringify({ catalog: '1.0', rules: [{ id: 'JDX-ENV-001' }] }),
+      });
+      const at = (name: string) => join(root, name);
+      // Sin fragmento, o con uno que no se puede leer: uso.
+      expect(mergeMain(['--root', root])).toBe(2);
+      expect(mergeMain([at('no-existe.json'), '--root', root])).toBe(2);
+      expect(mergeMain([root, '--root', root])).toBe(2);
+      // Un fragmento que no es JSON o no tiene la forma del catálogo: rechazado, sin escribir nada.
+      for (const name of ['roto.json', 'lista.json', 'sin-ids.json', 'sin-version.json']) expect(mergeMain([at(name), '--root', root]), name).toBe(1);
+      expect(existsSync(join(root, 'catalog'))).toBe(false);
+      // Un catálogo que ya está y no es JSON: rechazado, sin pisarlo.
+      expect(mergeMain([at('bueno.json'), '--root', root])).toBe(0);
+      writeFileSync(join(root, CATALOG_FILE), '{ roto');
+      expect(mergeMain([at('bueno.json'), '--root', root])).toBe(1);
+      expect(readFileSync(join(root, CATALOG_FILE), 'utf8')).toBe('{ roto');
+      expect(errors.mock.calls.map(([text]) => String(text).replace(root, '<raíz>'))).toEqual([
+        'uso: node scripts/merge-catalog.mjs <fragmento.json> [--root <dir>]',
+        'merge-catalog: no se puede leer <raíz>/no-existe.json (ENOENT)',
+        'merge-catalog: no se puede leer <raíz> (EISDIR)',
+        'merge-catalog: <raíz>/roto.json no es JSON',
+        'merge-catalog: <raíz>/lista.json no tiene la forma { catalog: "M.m", rules: [{ id }…] }',
+        'merge-catalog: <raíz>/sin-ids.json no tiene la forma { catalog: "M.m", rules: [{ id }…] }',
+        'merge-catalog: <raíz>/sin-version.json no tiene la forma { catalog: "M.m", rules: [{ id }…] }',
+        'merge-catalog: <raíz>/catalog/1.0/rules.json no es JSON',
+      ]);
+    } finally {
+      errors.mockRestore();
+    }
   });
 
   it('loadCatalog refuses a catalog off its schema, repeated or unsorted ids, schemas that do not compile and examples that do not match', () => {

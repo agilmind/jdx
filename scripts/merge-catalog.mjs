@@ -6,6 +6,8 @@
  *   `catalog/<catalog>/rules.json` (bajo `--root`, o el repositorio).
  * - Las reglas quedan en orden de id. Un id que ya está en el catálogo, o que
  *   el fragmento repite, no se fusiona: el script sale con 1 sin escribir nada.
+ *   También sale con 1 si el fragmento o el catálogo no son JSON o no tienen
+ *   esa forma, y con 2 si falta el argumento o el fragmento no se puede leer.
  * - El archivo sale como todo JSON del repositorio: dos espacios y salto final.
  *
  * El catálogo lo valida loadCatalog (src/catalog/load.ts) en los tests; este
@@ -46,6 +48,44 @@ export function catalogText(catalog) {
   return `${JSON.stringify(catalog, null, 2)}\n`;
 }
 
+/**
+ * Un archivo con la forma del catálogo: `{ catalog: "M.m", rules: [{ id }…] }`.
+ * @param {unknown} value
+ * @returns {value is CatalogFile}
+ */
+function isCatalogFile(value) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const { catalog, rules } = /** @type {{ catalog?: unknown, rules?: unknown }} */ (value);
+  return (
+    typeof catalog === 'string' &&
+    /^\d+\.\d+$/u.test(catalog) &&
+    Array.isArray(rules) &&
+    rules.every((rule) => typeof rule === 'object' && rule !== null && typeof rule.id === 'string')
+  );
+}
+
+/**
+ * Lee un fragmento o un catálogo: el archivo, o por qué no se puede usar (`unreadable`: no se
+ * puede leer; `invalid`: no es JSON o no tiene la forma del catálogo).
+ * @param {string} path
+ * @returns {{ file: CatalogFile } | { unreadable: string } | { invalid: string }}
+ */
+function readCatalogFile(path) {
+  let text;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (error) {
+    return { unreadable: `no se puede leer ${path} (${/** @type {NodeJS.ErrnoException} */ (error).code ?? 'error'})` };
+  }
+  let value;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return { invalid: `${path} no es JSON` };
+  }
+  return isCatalogFile(value) ? { file: value } : { invalid: `${path} no tiene la forma { catalog: "M.m", rules: [{ id }…] }` };
+}
+
 /** @param {readonly string[]} argv @returns {number} */
 export function main(argv) {
   const at = argv.indexOf('--root');
@@ -55,20 +95,36 @@ export function main(argv) {
     console.error('uso: node scripts/merge-catalog.mjs <fragmento.json> [--root <dir>]');
     return 2;
   }
-  /** @type {CatalogFile} */
-  const fragment = JSON.parse(readFileSync(resolve(source), 'utf8'));
+  const read = readCatalogFile(resolve(source));
+  if ('unreadable' in read) {
+    console.error(`merge-catalog: ${read.unreadable}`);
+    return 2;
+  }
+  if ('invalid' in read) {
+    console.error(`merge-catalog: ${read.invalid}`);
+    return 1;
+  }
+  const fragment = read.file;
   const target = join(root, 'catalog', fragment.catalog, 'rules.json');
   /** @type {CatalogFile | null} */
-  const base = existsSync(target) ? JSON.parse(readFileSync(target, 'utf8')) : null;
+  let base = null;
+  if (existsSync(target)) {
+    const current = readCatalogFile(target);
+    if (!('file' in current)) {
+      console.error(`merge-catalog: ${'invalid' in current ? current.invalid : current.unreadable}`);
+      return 1;
+    }
+    base = current.file;
+  }
   let merged;
   try {
     merged = mergeCatalog(base, fragment);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, catalogText(merged));
   } catch (error) {
     console.error(`merge-catalog: ${/** @type {Error} */ (error).message}`);
     return 1;
   }
-  mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, catalogText(merged));
   console.log(`merge-catalog: ${fragment.rules.length} reglas nuevas, ${merged.rules.length} en catalog/${fragment.catalog}/rules.json`);
   return 0;
 }

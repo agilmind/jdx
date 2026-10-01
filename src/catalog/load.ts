@@ -3,15 +3,20 @@
  *
  * loadCatalog controla lo que el schema del catálogo no puede decir: que cada
  * id aparezca una vez y en orden, que los schemas de cada regla (los params
- * del perfil, los params y el context de sus resultados) compilen, y que el
- * ejemplo de cada regla los cumpla. Devuelve una copia congelada.
+ * del perfil, los params y el context de sus resultados) compilen, que el
+ * ejemplo de cada regla los cumpla, y que sus mensajes solo usen datos que la
+ * regla declara (src/messages/format.ts): los mismos placeholders en los tres
+ * idiomas, formateadores que existen y un término para cada valor posible de
+ * lo que se traduce. Devuelve una copia congelada.
  *
  * Lanza ante un catálogo que no cumple: es un error de empaquetado, que los
  * tests encuentran antes. El catálogo empaquetado siempre carga.
  */
-import type { Catalog, CatalogRule, JsonValue, SchemaValidators } from '../types.js';
+import { FORMATTERS, messagePlaceholders, termOf, type TermFormatter } from '../messages/format.js';
+import type { Catalog, CatalogRule, JsonValue, Lang, SchemaValidators } from '../types.js';
 
 type RuleSchema = 'profileParamsSchema' | 'resultParamsSchema' | 'contextSchema';
+const LANGS: readonly Lang[] = ['es', 'pt', 'en'];
 
 export function loadCatalog(json: JsonValue, validators: SchemaValidators): Catalog {
   const errors = validators.validateAux('catalog', json);
@@ -28,6 +33,7 @@ export function loadCatalog(json: JsonValue, validators: SchemaValidators): Cata
     check(validators, rule, 'profileParamsSchema', undefined);
     check(validators, rule, 'resultParamsSchema', rule.example.params ?? {});
     check(validators, rule, 'contextSchema', (rule.example.context ?? {}) as JsonValue);
+    checkMessages(rule);
   }
   return deepFreeze(catalog);
 }
@@ -44,6 +50,45 @@ function check(validators: SchemaValidators, rule: CatalogRule, name: RuleSchema
     const where = errors.map((e) => `${e.instanceLocation || '/'} ${e.keyword}`).join('; ');
     throw new Error(`${rule.id}: el ejemplo no cumple ${name}: ${where}`);
   }
+}
+
+/** Los mensajes de la regla: placeholders declarados, formateadores que existen y un término para cada valor. */
+function checkMessages(rule: CatalogRule): void {
+  const declared = new Set([...propertiesOf(rule.resultParamsSchema), ...propertiesOf(rule.contextSchema)]);
+  const undeclared = (name: string) => !declared.has(name);
+  for (const lang of LANGS) {
+    for (const { name, formatter } of messagePlaceholders(rule.message[lang])) {
+      if (undeclared(name)) throw new Error(`${rule.id}: el mensaje ${lang} usa {${name}}, que no está en params ni en context`);
+      if (formatter === undefined) continue;
+      if (!(FORMATTERS as readonly string[]).includes(formatter)) {
+        throw new Error(`${rule.id}: el mensaje ${lang} usa el formateador ${formatter}, que no existe`);
+      }
+      if (formatter === 'others' || formatter === 'paren') continue;
+      for (const value of enumOf(rule.resultParamsSchema, name)) {
+        const term = termOf(formatter as TermFormatter, value, lang);
+        if (term === undefined) throw new Error(`${rule.id}: {${name}:${formatter}} no tiene término para ${value}`);
+        const inner = messagePlaceholders(term).find((p) => undeclared(p.name));
+        if (inner !== undefined) {
+          throw new Error(`${rule.id}: el término ${value} de ${formatter} usa {${inner.name}}, que no está en params ni en context`);
+        }
+      }
+    }
+  }
+  const used = (lang: Lang): string =>
+    [...new Set(messagePlaceholders(rule.message[lang]).map((p) => `${p.name}:${p.formatter ?? ''}`))].sort().join(' ');
+  if (new Set(LANGS.map(used)).size !== 1) throw new Error(`${rule.id}: los mensajes en es, pt y en no usan los mismos placeholders`);
+}
+
+/** Las propiedades que declara un schema de objeto. */
+function propertiesOf(schema: object): string[] {
+  const properties = (schema as { properties?: object }).properties;
+  return typeof properties === 'object' && properties !== null ? Object.keys(properties) : [];
+}
+
+/** Los valores de una propiedad con `enum` (un texto cerrado), o ninguno. */
+function enumOf(schema: object, name: string): string[] {
+  const property = (schema as { properties?: Record<string, { enum?: unknown }> }).properties?.[name];
+  return Array.isArray(property?.enum) ? property.enum.filter((v): v is string => typeof v === 'string') : [];
 }
 
 function deepFreeze<T>(value: T): T {

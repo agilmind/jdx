@@ -448,9 +448,9 @@
         "en": "Classification, condition or standard contract code that is not in the bundled list of its scheme; for a genre scheme, the code and name pair. A scheme without a bundled list is not evaluated."
       },
       "message": {
-        "es": "El código {code} no está en la lista de {scheme}.",
-        "pt": "O código {code} não está na lista de {scheme}.",
-        "en": "Code {code} is not in the {scheme} list."
+        "es": "El código {code}{name:paren} no está en la lista de {scheme}.",
+        "pt": "O código {code}{name:paren} não está na lista de {scheme}.",
+        "en": "Code {code}{name:paren} is not in the {scheme} list."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -3241,9 +3241,9 @@
         "en": "Reference to an agreement or media of a type or kind other than those of its x-jdx-ref-type annotation."
       },
       "message": {
-        "es": "La referencia {value} apunta a un {found}; acá va {expected}.",
-        "pt": "A referência {value} aponta para um {found}; aqui vai {expected}.",
-        "en": "Reference {value} points to a {found}; expected {expected}."
+        "es": "La referencia {value} es de tipo {found}; acá va {expected}.",
+        "pt": "A referência {value} é do tipo {found}; aqui vai {expected}.",
+        "en": "Reference {value} is of type {found}; expected {expected}."
       },
       "profileParamsSchema": {
         "type": "object",

@@ -18,7 +18,8 @@
  *   primera escritura.
  * - Solo si hay .jws, la lista de confianza: sin lista, JDX-ENV-001 `missing`;
  *   con lista, verifyTrustList con el reloj del validador y el maxSeq del
- *   estado. Sin .jws, la lista no se mira.
+ *   estado, si el estado es del mismo entorno (el de otro entorno ya dio
+ *   JDX-ENV-005 y su maxSeq es de otra serie). Sin .jws, la lista no se mira.
  *
  * Las opciones del reporte salen siempre: el entorno o null, el id corto del
  * perfil resuelto (o el pedido, si no resolvió), la firma efectiva, `failOn` y
@@ -115,9 +116,9 @@ export async function evaluateEnvironment(input: ValidateInput, opts: ValidateOp
     if (opts.trustList === undefined) {
       findings.push(finding('JDX-ENV-001', { reason: 'missing' }));
     } else if (env !== null) {
+      const maxSeq = state !== null && (state.env === undefined || state.env === env) ? state.trust.maxSeq : null;
       const outcome = await verifyTrustList(opts.trustList, {
-        env, roots: deps.roots, now: deps.clock(), validatorVersion: deps.validatorVersion,
-        maxSeq: state === null ? null : state.trust.maxSeq, validators: deps.validators,
+        env, roots: deps.roots, now: deps.clock(), validatorVersion: deps.validatorVersion, maxSeq, validators: deps.validators,
       });
       if (outcome.ok) trust = outcome.trust;
       else findings.push(...outcome.findings);

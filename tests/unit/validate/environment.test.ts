@@ -189,6 +189,17 @@ describe('entorno', () => {
     expect((await passed(sandbox({ state: SANDBOX_STATE }))).state).toEqual(emptyState('sandbox'));
   });
 
+  it('the seq of the list is compared only with a state of the same env', async () => {
+    // Un estado de sandbox que vio el seq 5: en producción da ENV-005 env, y su maxSeq no se compara con la lista.
+    const sandboxAhead = memoryState({ ...emptyState('sandbox'), trust: { maxSeq: 5 } });
+    expect(await failed(production({ state: sandboxAhead, trustList: LIST }), SIGNED)).toEqual([['JDX-ENV-005', { reason: 'env' }]]);
+    // El mismo maxSeq en un estado de producción sí da ENV-004, y en uno nunca escrito (sin env) también se compara.
+    const productionAhead = memoryState({ ...emptyState('production'), trust: { maxSeq: 5 } });
+    expect(await failed(production({ state: productionAhead, trustList: LIST }), SIGNED)).toEqual([['JDX-ENV-004', { seq: 1, maxSeq: 5 }]]);
+    const { env: _env, ...unwritten } = { ...emptyState('production'), trust: { maxSeq: 5 } };
+    expect(await failed(production({ state: memoryState(unwritten as State), trustList: LIST }), SIGNED)).toEqual([['JDX-ENV-004', { seq: 1, maxSeq: 5 }]]);
+  });
+
   it('a new state without env passes', async () => {
     // Una carpeta vacía: el estado nunca escrito no tiene entorno, y lo fija la primera escritura.
     const ok = await passed(production({ state: fileStateStore(stateDir()) }));

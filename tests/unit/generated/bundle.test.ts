@@ -137,9 +137,10 @@ describe('tipos TS y bundle', () => {
 
   it('roots.ts is separate from data.ts', () => {
     expect(roots).toEqual({ production: [], sandbox: [] });
-    const data = read('src/generated/data.ts');
-    expect(data).not.toContain('roots');
+    // data.ts no trae el archivo de raíces ni las exporta: la imagen de producción las filtra en roots.ts sin tocarlo.
+    expect(Object.hasOwn(files, 'trust/roots.json')).toBe(false);
     expect(Object.keys(files).some((path) => path.startsWith('trust/'))).toBe(false);
+    expect(read('src/generated/data.ts')).not.toMatch(/\bexport\s+const\s+roots\b/u);
     expect(read('src/generated/roots.ts')).toContain('export const roots: PinnedRoots = ');
   });
 

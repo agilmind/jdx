@@ -10,7 +10,7 @@
  * procesos sobre la misma carpeta, largados a la vez, no pierden escrituras.
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, lutimesSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -325,6 +325,18 @@ describe('fileStateStore', () => {
     // Nadie lo borra solo, y el estado queda como estaba.
     expect(existsSync(join(dir, 'state.lock'))).toBe(true);
     expect(JSON.parse(stateBytes(dir))).toEqual(seeded());
+    // Un state.lock que es un enlace que no lleva a nada, o a sí mismo, también es un bloqueo, como lo ve la apertura
+    // exclusiva: leer y escribir dan locked, con la hora del enlace, y no se quedan esperando.
+    for (const target of ['no-existe', 'state.lock']) {
+      unlinkSync(join(dir, 'state.lock'));
+      symlinkSync(target, join(dir, 'state.lock'));
+      lutimesSync(join(dir, 'state.lock'), new Date('2026-09-30T12:05:00Z'), new Date('2026-09-30T12:05:00Z'));
+      for (const attempt of [() => store.read(async (state) => state), () => store.update(async (state) => state)]) {
+        const locked = await stateError(attempt());
+        expect([locked.reason, locked.details], target).toEqual(['locked', { lockedSince: '2026-09-30T12:05:00.000Z' }]);
+      }
+    }
+    unlinkSync(join(dir, 'state.lock'));
   });
 
   it('a writer killed with SIGKILL while its update function is pending leaves state.json intact and the lock reported as locked', async () => {

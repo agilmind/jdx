@@ -32,7 +32,7 @@
  * - Los temporales que dejó una escritura interrumpida no se leen nunca.
  */
 import { randomUUID } from 'node:crypto';
-import { open, readFile, rename, stat, unlink } from 'node:fs/promises';
+import { lstat, open, readFile, rename, stat, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseInstant } from '../conventions/time.js';
 import { parseJson } from '../json/parse.js';
@@ -204,12 +204,12 @@ async function release(lockPath: string, token: string): Promise<void> {
   }
 }
 
-/** Espera mientras exista state.lock. */
+/** Espera mientras exista state.lock: cualquier entrada con ese nombre, como la ve la apertura exclusiva (lstat, sin seguir un enlace). */
 async function waitWhileLocked(lockPath: string, timeout: number): Promise<void> {
   const started = Date.now();
   for (;;) {
     try {
-      await stat(lockPath);
+      await lstat(lockPath);
     } catch (error) {
       if (codeOf(error) === 'ENOENT') return;
       throw await diskError(dirname(lockPath), error, 'lock');
@@ -231,7 +231,7 @@ async function waitOrGiveUp(lockPath: string, started: number, timeout: number):
   await new Promise((resolve) => setTimeout(resolve, Math.min(left, POLL_MS + Math.floor(Math.random() * POLL_MS))));
 }
 
-/** Desde cuándo está el bloqueo: lo que anotó quien lo tomó o la hora del archivo; null si ya no está. */
+/** Desde cuándo está el bloqueo: lo que anotó quien lo tomó o la hora de la entrada (también la de un enlace que no lleva a nada); null si ya no está. */
 async function lockedSince(lockPath: string): Promise<string | null> {
   try {
     const parsed = JSON.parse(await readFile(lockPath, 'utf8')) as { since?: unknown };
@@ -240,7 +240,7 @@ async function lockedSince(lockPath: string): Promise<string | null> {
     // Vacío, a medio escribir o ilegible: vale la hora del archivo.
   }
   try {
-    return new Date((await stat(lockPath)).mtimeMs).toISOString();
+    return new Date((await lstat(lockPath)).mtimeMs).toISOString();
   } catch {
     return null;
   }

@@ -21,8 +21,8 @@ describe('docs', () => {
     expect(outcome).toEqual({ exitCode: 0, lines: ['ok: JSON y schema estricto 1.0, sin errores'] });
   });
 
-  it('relative links of README, the guide and the field reference resolve', () => {
-    for (const rel of ['README.md', 'docs/guia.md', 'docs/campos.md', 'SECURITY.md', 'CONTRIBUTING.md']) {
+  it('relative links of README, the guide and the field references resolve', () => {
+    for (const rel of ['README.md', 'docs/guia.md', 'docs/campos.md', 'docs/en/campos.md', 'SECURITY.md', 'CONTRIBUTING.md']) {
       // Sin el código en línea: un patrón como `[0-9](\.[0-9])` no es un enlace.
       for (const [, target] of read(rel).replace(/`[^`\n]*`/gu, '').matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/gu)) {
         if (/^[a-z]+:/u.test(target as string)) continue;

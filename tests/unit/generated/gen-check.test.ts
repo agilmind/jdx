@@ -38,7 +38,7 @@ describe('gen y gen:check', () => {
     const second = generateAll(ROOT);
     expect([...second]).toEqual([...first]);
     expect([...first.keys()]).toEqual(
-      expect.arrayContaining(['docs/campos.md', 'schema/1.0/jdx.schema.json', 'schema/1.0/jdx.strict.schema.json', 'src/generated/jdx-types.ts']),
+      expect.arrayContaining(['docs/campos.md', 'docs/en/campos.md', 'schema/1.0/jdx.schema.json', 'schema/1.0/jdx.strict.schema.json', 'src/generated/jdx-types.ts']),
     );
     // Lo que está en el repositorio es la salida del generador.
     expect(checkGenerated(ROOT, first)).toEqual([]);
@@ -63,11 +63,13 @@ describe('gen y gen:check', () => {
     expect(gen.stdout).toContain('2 escritos');
     expect(runGen(['--check', '--root', root]).status).toBe(0);
 
-    // Un cambio del modelo sin regenerar también deja viejos los dos schemas, el bundle que los lleva y la referencia de campos.
+    // Un cambio del modelo sin regenerar también deja viejos los dos schemas, el bundle que los lleva y las referencias de campos.
     const overlayPath = join(root, 'schema/src/types.overlay.json');
     const overlay = JSON.parse(readFileSync(overlayPath, 'utf8')) as { constraints: unknown[] };
     writeFileSync(overlayPath, `${JSON.stringify({ ...overlay, constraints: overlay.constraints.slice(1) }, null, 2)}\n`);
-    expect(checkGenerated(root)).toEqual(['docs/campos.md', 'schema/1.0/jdx.schema.json', 'schema/1.0/jdx.strict.schema.json', 'src/generated/data.ts']);
+    expect(checkGenerated(root)).toEqual([
+      'docs/campos.md', 'docs/en/campos.md', 'schema/1.0/jdx.schema.json', 'schema/1.0/jdx.strict.schema.json', 'src/generated/data.ts',
+    ]);
   });
 
   it('gen:check fails when a description changes and campos.md is not regenerated', () => {
@@ -78,5 +80,15 @@ describe('gen y gen:check', () => {
     writeFileSync(typesPath, `${JSON.stringify(types, null, 2)}\n`);
     // Una descripción no cambia los schemas: solo la referencia de campos y los comentarios de los tipos TS.
     expect(checkGenerated(root)).toEqual(['docs/campos.md', 'src/generated/jdx-types.ts']);
+  });
+
+  it('gen:check fails when an English description changes and docs/en/campos.md is not regenerated', () => {
+    const root = copyRepo();
+    const overlayPath = join(root, 'schema/src/types.overlay.json');
+    const overlay = JSON.parse(readFileSync(overlayPath, 'utf8')) as { translations: Record<string, { en?: string }> };
+    overlay.translations['Work.duration'] = { en: 'Duration of the work.' };
+    writeFileSync(overlayPath, `${JSON.stringify(overlay, null, 2)}\n`);
+    // Una traducción no cambia los schemas, el bundle ni la referencia en español.
+    expect(checkGenerated(root)).toEqual(['docs/en/campos.md']);
   });
 });

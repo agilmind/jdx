@@ -3,7 +3,8 @@
  * - Desde schema/src/types.json y su overlay: los dos meta-schemas (texto de
  *   las constantes de src/schema/model.ts), por cada menor los schemas abierto
  *   y estricto del documento y su índice de punteros, los tipos TS
- *   (src/generated/jdx-types.ts) y la referencia de campos (docs/campos.md).
+ *   (src/generated/jdx-types.ts) y la referencia de campos en español
+ *   (docs/campos.md) y en inglés (docs/en/campos.md).
  * - Las listas de valores que salen de las fuentes de schema/src
  *   (scripts/gen-values.mjs): values/countries.json, values/tis.json y
  *   values/sadaic-genres.json.
@@ -25,7 +26,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inBundle } from '../src/schema/bundle.js';
-import { generateFieldReference } from '../src/schema/fieldReference.js';
+import { FIELD_REFERENCE_PATHS, generateFieldReference } from '../src/schema/fieldReference.js';
 import { generateIndex, generateSchema, generateTypesTs } from '../src/schema/generate.js';
 import { loadModel, TYPES_OVERLAY_SCHEMA, TYPES_SOURCE_SCHEMA } from '../src/schema/model.js';
 import type { JsonValue, PinnedRoots } from '../src/types.js';
@@ -96,7 +97,8 @@ export function generateAll(root: string): Map<string, string> {
     [`schema/${minor}/jdx.strict.schema.json`, json(generateSchema(model, minor, { strict: true }))],
     [`schema/${minor}/index.json`, json(generateIndex(model, minor))],
     ['src/generated/jdx-types.ts', generateTypesTs(model)],
-    ['docs/campos.md', generateFieldReference(model)],
+    [FIELD_REFERENCE_PATHS.es, generateFieldReference(model, 'es')],
+    [FIELD_REFERENCE_PATHS.en, generateFieldReference(model, 'en')],
     ...generateValues(root, VALUES_VERSION),
   ];
   const bundle = bundledOnDisk(root);

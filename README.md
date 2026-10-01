@@ -48,7 +48,7 @@ npm test
 ## Documentación
 
 - [Guía para sociedades de gestión](docs/guia.md): qué llega, cómo se valida y cómo se carga.
-- [Referencia de campos](docs/campos.md): cada objeto y cada campo.
+- [Referencia de campos](docs/campos.md): cada objeto y cada campo. En inglés: [field reference](docs/en/campos.md).
 - [Ejemplo completo](docs/ejemplo/3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json), los JSON Schemas en [`schema/`](schema/) y las listas de valores en [`values/`](values/).
 
 ## Estado

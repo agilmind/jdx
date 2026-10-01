@@ -112,6 +112,7 @@ export interface SchemaError {
 export interface SchemaValidators {
   validateDocument(minor: string, strict: boolean, value: JsonValue): SchemaError[];
   validateAux(name: AuxSchemaName, value: JsonValue): SchemaError[];   // lanza si ese schema no está en el bundle
+  firstAuxError(name: AuxSchemaName, value: JsonValue): SchemaError | null;   // se detiene en el primer error; null si cumple
   validateWith(schema: object, value: JsonValue): SchemaError[];       // params/context del catálogo; caché por identidad
 }
 

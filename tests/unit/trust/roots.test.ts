@@ -12,10 +12,10 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { generateAll } from '../../../scripts/gen.js';
 import { roots as generated } from '../../../src/generated/roots.js';
-import { ecThumbprint, filterRoots, parseRootsFile } from '../../../src/trust/keys.js';
+import { ecThumbprint, filterRoots, isP256PublicKey, parseRootsFile } from '../../../src/trust/keys.js';
 import { pinnedRoots } from '../../../src/trust/roots.js';
-import type { JsonValue } from '../../../src/types.js';
-import { TEST_ROOT_KEYS, TEST_ROOTS } from '../../helpers/trustFixtures.js';
+import type { JsonValue, RootKey } from '../../../src/types.js';
+import { nonCanonical, TEST_ROOT_KEYS, TEST_ROOTS } from '../../helpers/trustFixtures.js';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const read = (rel: string): string => readFileSync(join(ROOT, rel), 'utf8');
@@ -74,6 +74,26 @@ describe('raíces fijadas', () => {
     expect(() => parseRootsFile(asJson({ production: [] }))).toThrow('raíces fijadas: tienen que ser { production: [], sandbox: [] }');
     expect(() => parseRootsFile(asJson({ production: [], sandbox: [], test: [] }))).toThrow('raíces fijadas: tienen que ser { production: [], sandbox: [] }');
     expect(() => parseRootsFile(asJson([]))).toThrow('raíces fijadas: tienen que ser { production: [], sandbox: [] }');
+  });
+
+  it('parseRootsFile rejects a coordinate that is not canonical base64url, so no root is pinned twice', () => {
+    const first = TEST_ROOTS.production[0] as RootKey;
+    expect(isP256PublicKey(first)).toBe(true);
+    for (const coordinate of ['x', 'y'] as const) {
+      // Los mismos 32 bytes con otro texto: otra huella, la misma clave.
+      const odd = { ...first, [coordinate]: nonCanonical(first[coordinate]) };
+      const again = { ...odd, kid: ecThumbprint(odd) };
+      expect(Buffer.from(odd[coordinate], 'base64url')).toEqual(Buffer.from(first[coordinate], 'base64url'));
+      expect(again.kid).not.toBe(first.kid);
+      expect(isP256PublicKey(again)).toBe(false);
+      expect(() => parseRootsFile(asJson({ production: [first, again], sandbox: [] }))).toThrow(
+        'raíces fijadas: production/1: no es una clave pública P-256 en base64url canónico',
+      );
+      expect(() => parseRootsFile(asJson({ production: [first], sandbox: [again] }))).toThrow('raíces fijadas: sandbox/0: no es una clave pública P-256');
+    }
+    // Tampoco con relleno ni en base64 común, aunque sean los mismos 32 bytes.
+    expect(isP256PublicKey({ ...first, x: `${first.x}=` })).toBe(false);
+    expect(isP256PublicKey({ ...first, x: Buffer.from(first.x, 'base64url').toString('base64') })).toBe(false);
   });
 
   it('gen does not import the files it generates', () => {

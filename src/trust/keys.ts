@@ -3,8 +3,11 @@
  * generados: `npm run gen` usa este módulo para escribir src/generated/roots.ts,
  * así que no puede depender de lo que genera.
  *
- * - Una clave es `{ kty: "EC", crv: "P-256", x, y }`, con coordenadas de 32
- *   bytes en base64url que forman un punto de la curva.
+ * - Una clave es `{ kty: "EC", crv: "P-256", x, y }`: un punto de la curva,
+ *   con cada coordenada en base64url canónico, 43 caracteres que son
+ *   exactamente 32 bytes y que, codificados de nuevo, dan el mismo texto. Otra
+ *   forma de escribir la misma coordenada daría otra huella, y la misma clave
+ *   podría estar dos veces con dos kids.
  * - El kid de una raíz o de una clave de emisor es su huella RFC 7638.
  * - trust/roots.json trae las raíces de cada entorno, tres por entorno. Una
  *   raíz no puede estar dos veces ni en los dos entornos. La imagen de un
@@ -21,15 +24,22 @@ export function ecThumbprint(jwk: EcPublicJwk): string {
   return createHash('sha256').update(JSON.stringify({ crv: jwk.crv, kty: jwk.kty, x: jwk.x, y: jwk.y })).digest('base64url');
 }
 
-/** Si x e y son un punto de P-256 (coordenadas de 32 bytes en base64url). */
+/** Si x e y son un punto de P-256, cada una en base64url canónico de 32 bytes. */
 export function isP256PublicKey(jwk: EcPublicJwk): boolean {
-  if (jwk.kty !== 'EC' || jwk.crv !== 'P-256' || !COORDINATE.test(jwk.x) || !COORDINATE.test(jwk.y)) return false;
+  if (jwk.kty !== 'EC' || jwk.crv !== 'P-256' || !isCoordinate(jwk.x) || !isCoordinate(jwk.y)) return false;
   try {
     createPublicKey({ key: { kty: 'EC', crv: 'P-256', x: jwk.x, y: jwk.y }, format: 'jwk' });
     return true;
   } catch {
     return false;
   }
+}
+
+/** Una coordenada: 32 bytes que codificados de nuevo dan el mismo texto (los bits que sobran del último carácter, en cero). */
+function isCoordinate(text: string): boolean {
+  if (typeof text !== 'string' || !COORDINATE.test(text)) return false;
+  const bytes = Buffer.from(text, 'base64url');
+  return bytes.length === 32 && bytes.toString('base64url') === text;
 }
 
 /** Las raíces de un archivo de raíces (trust/roots.json), controladas y congeladas; lanza si alguna no cumple. */
@@ -51,7 +61,7 @@ export function parseRootsFile(json: JsonValue): PinnedRoots {
           return fail(`${at}: una raíz es { kty, crv, x, y, kid }, con kty EC y crv P-256`);
         }
         const root: RootKey = Object.freeze({ kty: 'EC', crv: 'P-256', x: item.x, y: item.y, kid: item.kid });
-        if (!isP256PublicKey(root)) return fail(`${at}: no es una clave pública P-256`);
+        if (!isP256PublicKey(root)) return fail(`${at}: no es una clave pública P-256 en base64url canónico`);
         const thumbprint = ecThumbprint(root);
         if (root.kid !== thumbprint) return fail(`${at}: el kid no es la huella RFC 7638 de la clave (${thumbprint})`);
         if (seen.has(root.kid)) return fail(`${at}: raíz repetida (${root.kid})`);

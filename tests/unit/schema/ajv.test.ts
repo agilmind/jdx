@@ -223,6 +223,26 @@ describe('compileSchemas', () => {
     expect(auxFirst.validateWith(sameId('right'), {})).toEqual(missing('right'));
   });
 
+  it('firstAuxError stops at the first error, with its own compilation', () => {
+    const compile = vi.spyOn(Ajv2020.prototype, 'compile');
+    const bundle = bundleOf();
+    const validators = compileSchemas(bundle);
+    const items = { $id: 'https://example.com/items.json', type: 'object', properties: { items: { type: 'array', items: { type: 'integer' } } } };
+    const withItems: SchemaBundle = { ...bundle, aux: { ...bundle.aux, accounts: items } };
+    const itemsValidators = compileSchemas(withItems);
+    const value = { items: Array.from({ length: 1000 }, (_, i) => `x${i}`) };
+    expect(itemsValidators.validateAux('accounts', value)).toHaveLength(1000);
+    expect(itemsValidators.firstAuxError('accounts', value)).toEqual({
+      instanceLocation: '/items/0', keywordLocation: '/properties/items/items/type', keyword: 'type', params: { type: 'integer' },
+    });
+    expect(itemsValidators.firstAuxError('accounts', { items: [1, 2] })).toBeNull();
+    // Cada instancia compila el schema una vez, y la que se detiene en el primer error se arma recién al usarse.
+    expect(compile.mock.calls.filter(([schema]) => schema === items)).toHaveLength(2);
+    itemsValidators.firstAuxError('accounts', value);
+    expect(compile.mock.calls.filter(([schema]) => schema === items)).toHaveLength(2);
+    expect(() => validators.firstAuxError('report', {})).toThrow('el bundle no trae el schema auxiliar report');
+  });
+
   it('compileSchemas compiles each schema once and lazily', () => {
     const compile = vi.spyOn(Ajv2020.prototype, 'compile');
     const bundle = bundleOf();

@@ -13,7 +13,7 @@
     "expiresAt": { "$ref": "#/$defs/Instant" },
     "validator": {
       "type": "object",
-      "properties": { "minVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" } },
+      "properties": { "minVersion": { "type": "string", "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$" } },
       "required": ["minVersion"],
       "additionalProperties": false
     },

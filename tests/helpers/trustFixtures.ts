@@ -13,6 +13,8 @@
  *   devuelve los bytes del JWS JSON general, como el archivo de la lista. Cada
  *   firma puede llevar otro encabezado o salir alterada, para los casos que no
  *   tienen que contar.
+ * - nonCanonical escribe una coordenada de otra forma: los mismos 32 bytes con
+ *   otro texto, y así otra huella.
  */
 import { sign } from 'node:crypto';
 import type { EcPrivateJwk, Env, PinnedRoots, RootKey, TrustList } from '../../src/types.js';
@@ -91,4 +93,11 @@ export function signTestTrustList(payload: TrustList | Uint8Array, signers: read
     return { protected: protectedHeader, signature: b64(raw) };
   });
   return new TextEncoder().encode(JSON.stringify({ payload: body, signatures }));
+}
+
+const BASE64URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+/** La misma coordenada (43 caracteres en base64url) con uno de los dos bits que sobran del último carácter en 1. */
+export function nonCanonical(coordinate: string): string {
+  return `${coordinate.slice(0, -1)}${BASE64URL_ALPHABET[BASE64URL_ALPHABET.indexOf(coordinate.slice(-1)) ^ 1] ?? ''}`;
 }

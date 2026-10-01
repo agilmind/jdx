@@ -2,17 +2,25 @@
  * La lista de confianza: las claves de los emisores, en un JWS con
  * serialización JSON general firmado por al menos dos de las raíces fijadas.
  *
- * - Se lee primero. El JWS tiene que ser `{ payload, signatures }` y cada firma
+ * - Se lee primero, sin confiar en ella: llega sin autenticar, así que cada
+ *   control tiene un costo acotado. El JWS tiene que ser `{ payload,
+ *   signatures }`, con a lo sumo MAX_TRUST_LIST_SIGNATURES firmas, cada una
  *   `{ protected, signature }`, sin encabezado sin proteger ni otros miembros;
  *   el payload, base64url sin relleno de un texto I-JSON que cumple
- *   trust-list.schema.json, con instantes que existen en el calendario, cada
- *   kid una vez, cada clave un punto de P-256 con el kid de su huella RFC 7638
- *   y su `expiresAt` a lo sumo 2 años después de su `activeAt` (sumados como
- *   java.time, comparados en nanosegundos). Si no: JDX-ENV-001, y nada más.
+ *   trust-list.schema.json (validado hasta el primer error), con un
+ *   `validator.minVersion` que semver lee, instantes que existen en el
+ *   calendario, `issuedAt` ≤ `expiresAt` ≤ `issuedAt` + 90 días, y cada clave
+ *   con `activeAt` ≤ `expiresAt` ≤ `activeAt` + 2 años (sumados como java.time,
+ *   comparados en nanosegundos), su kid una vez, un punto de P-256 en
+ *   base64url canónico y el kid de su huella RFC 7638. Si no: JDX-ENV-001, y
+ *   nada más.
  * - Después, las firmas: cuenta cada raíz fijada del entorno de la lista, no
  *   revocada en `revokedRoots`, cuya firma verifica con el encabezado
- *   protegido exacto `{ alg: "ES256", kid, typ: "vnd.jupiter.jdx-trust+jws" }`;
- *   una raíz cuenta una vez. Con menos de dos: JDX-ENV-003, y nada más.
+ *   protegido exacto `{ alg: "ES256", kid, typ: "vnd.jupiter.jdx-trust+jws" }`.
+ *   Cada raíz se prueba una sola vez, con su primera firma, y cuenta una vez.
+ *   Con menos de dos: JDX-ENV-003, y nada más. Una lista de otro entorno se
+ *   verifica con las raíces de ese entorno: si el validador no las fija (la
+ *   imagen de producción no trae las de sandbox), da JDX-ENV-003.
  * - Con la lista leída y firmada, un resultado por cada otra falla: entorno
  *   distinto del de la validación (JDX-ENV-009), vencida por el reloj del
  *   validador (JDX-ENV-002, comparado en nanosegundos), `validator.minVersion`
@@ -25,12 +33,13 @@
  */
 import { flattenedVerify } from 'jose';
 import semver from 'semver';
-import { addYears, parseInstant } from '../conventions/time.js';
+import { addDays, addYears, parseInstant } from '../conventions/time.js';
 import { parseJson } from '../json/parse.js';
 import type {
   Env,
   Finding,
   GeneralJws,
+  Instant,
   JsonValue,
   PinnedRoots,
   RootKey,
@@ -42,13 +51,22 @@ import { ecThumbprint, isP256PublicKey } from './keys.js';
 
 /** El `typ` de cada firma de la lista. */
 export const TRUST_LIST_TYP = 'vnd.jupiter.jdx-trust+jws';
+/** Las firmas que puede traer una lista: la firman dos o tres raíces; con más, no se lee. */
+export const MAX_TRUST_LIST_SIGNATURES = 8;
+/** La vigencia máxima de una lista, en días de 24 horas desde `issuedAt`. */
+export const TRUST_LIST_MAX_DAYS = 90;
+/** La vigencia máxima de una clave de emisor, en años desde `activeAt`. */
+export const TRUST_KEY_MAX_YEARS = 2;
+
+/** Por qué una lista no se puede leer. */
+export type UnreadableListCause = 'jws' | 'signatures' | 'json' | 'schema' | 'instant' | 'listValidity' | 'keyValidity' | 'key';
 
 export interface VerifyTrustListOptions {
   env: Env;
   roots: PinnedRoots;
   now: Date;
   validatorVersion: string;
-  maxSeq: number | null;                                   // el del estado; null sin estado
+  maxSeq: number | null;                                   // el del estado del mismo entorno; null sin estado
   validators: SchemaValidators;
 }
 
@@ -57,15 +75,14 @@ const NANOS_PER_MILLI = 1_000_000n;
 
 export async function verifyTrustList(jws: Uint8Array, opts: VerifyTrustListOptions): Promise<TrustListOutcome> {
   const read = readTrustList(jws, opts.validators);
-  if (read === null) return { ok: false, findings: [finding('JDX-ENV-001', { reason: 'invalid' })] };
+  if (!read.ok) return { ok: false, findings: [finding('JDX-ENV-001', { reason: 'invalid' })] };
   const { general, list } = read;
   const rootKids = await countedRoots(general, list, opts.roots[list.env]);
   if (rootKids.length < 2) return { ok: false, findings: [{ ruleId: 'JDX-ENV-003', instanceLocation: '' }] };
 
   const findings: Finding[] = [];
   if (list.env !== opts.env) findings.push(finding('JDX-ENV-009', { env: opts.env, listEnv: list.env }));
-  const expiresAt = parseInstant(list.expiresAt) as NonNullable<ReturnType<typeof parseInstant>>;
-  if (expiresAt.epochNanos < BigInt(opts.now.getTime()) * NANOS_PER_MILLI) {
+  if (instant(list.expiresAt).epochNanos < BigInt(opts.now.getTime()) * NANOS_PER_MILLI) {
     findings.push(finding('JDX-ENV-002', { expiresAt: list.expiresAt }));
   }
   if (semver.gt(list.validator.minVersion, opts.validatorVersion)) {
@@ -78,45 +95,66 @@ export async function verifyTrustList(jws: Uint8Array, opts: VerifyTrustListOpti
   return { ok: true, trust: deepFreeze({ list, rootKids }) };
 }
 
-/** El JWS y la lista de su payload, si se pueden leer; null si no. */
-function readTrustList(jws: Uint8Array, validators: SchemaValidators): { general: GeneralJws; list: TrustList } | null {
+type ReadList = { ok: true; general: GeneralJws; list: TrustList } | { ok: false; cause: UnreadableListCause };
+
+/** El JWS y la lista de su payload, si se pueden leer; si no, por qué. */
+function readTrustList(jws: Uint8Array, validators: SchemaValidators): ReadList {
+  const unreadable = (cause: UnreadableListCause): ReadList => ({ ok: false, cause });
   const parsed = parseJson(jws);
-  if (!parsed.ok || !isGeneralJws(parsed.json.value)) return null;
-  const general = parsed.json.value;
-  const payload = fromBase64url(general.payload);
-  const content = payload === null ? null : parseJson(payload);
-  if (content === null || !content.ok) return null;
-  const value = content.json.value;
-  if (validators.validateAux('trustList', value).length > 0) return null;
-  const list = value as unknown as TrustList;
-  return keysAreReadable(list) ? { general, list } : null;
+  if (!parsed.ok) return unreadable('jws');
+  const value = parsed.json.value;
+  if (!isRecord(value) || !Array.isArray(value.signatures)) return unreadable('jws');
+  // Antes de mirar cada firma: una lista con miles de firmas no se recorre.
+  if (value.signatures.length > MAX_TRUST_LIST_SIGNATURES) return unreadable('signatures');
+  if (!isGeneralJws(value)) return unreadable('jws');
+  const payload = fromBase64url(value.payload);
+  if (payload === null) return unreadable('jws');
+  const content = parseJson(payload);
+  if (!content.ok) return unreadable('json');
+  if (validators.firstAuxError('trustList', content.json.value) !== null) return unreadable('schema');
+  const list = content.json.value as unknown as TrustList;
+  // El patrón del schema deja pasar una versión que semver no lee, como una con más de 16 dígitos.
+  if (semver.valid(list.validator.minVersion) === null) return unreadable('schema');
+  const cause = unreadableContent(list);
+  return cause === null ? { ok: true, general: value, list } : unreadable(cause);
 }
 
-/** Lo que el schema de la lista no puede decir: instantes del calendario, kids únicos y de su clave, y 2 años como máximo. */
-function keysAreReadable(list: TrustList): boolean {
-  if (parseInstant(list.issuedAt) === null || parseInstant(list.expiresAt) === null) return false;
+/** Lo que el schema de la lista no puede decir: instantes del calendario, vigencias, y cada clave una vez, de P-256 y con el kid de su huella. */
+function unreadableContent(list: TrustList): UnreadableListCause | null {
+  const texts = [list.issuedAt, list.expiresAt, ...list.keys.flatMap(({ jdx }) => [jdx.activeAt, jdx.expiresAt, jdx.retiredAt, jdx.compromisedAt])];
+  if (texts.some((text) => text !== undefined && parseInstant(text) === null)) return 'instant';
+  const issuedAt = instant(list.issuedAt);
+  const expiresAt = instant(list.expiresAt);
+  if (expiresAt.epochNanos < issuedAt.epochNanos || expiresAt.epochNanos > addDays(issuedAt, TRUST_LIST_MAX_DAYS).epochNanos) return 'listValidity';
   const kids = new Set<string>();
   for (const key of list.keys) {
-    const { activeAt, expiresAt, retiredAt, compromisedAt } = key.jdx;
-    const active = parseInstant(activeAt);
-    const expires = parseInstant(expiresAt);
-    if (active === null || expires === null) return false;
-    if ([retiredAt, compromisedAt].some((at) => at !== undefined && parseInstant(at) === null)) return false;
-    if (expires.epochNanos > addYears(active, 2).epochNanos) return false;
-    if (kids.has(key.kid) || !isP256PublicKey(key) || ecThumbprint(key) !== key.kid) return false;
+    const activeAt = instant(key.jdx.activeAt);
+    const keyExpiresAt = instant(key.jdx.expiresAt);
+    if (keyExpiresAt.epochNanos < activeAt.epochNanos || keyExpiresAt.epochNanos > addYears(activeAt, TRUST_KEY_MAX_YEARS).epochNanos) {
+      return 'keyValidity';
+    }
+    if (kids.has(key.kid) || !isP256PublicKey(key) || ecThumbprint(key) !== key.kid) return 'key';
     kids.add(key.kid);
   }
-  return true;
+  return null;
 }
 
-/** Las raíces que firmaron la lista y cuentan, en el orden de sus firmas. */
+/** Un instante de una lista ya leída: existe en el calendario. */
+function instant(text: string): Instant {
+  return parseInstant(text) as Instant;
+}
+
+/** Las raíces que firmaron la lista y cuentan, en el orden de sus firmas; cada raíz se prueba una vez. */
 async function countedRoots(general: GeneralJws, list: TrustList, pinned: readonly RootKey[]): Promise<string[]> {
   const revoked = new Set(list.revokedRoots);
+  const tried = new Set<string>();
   const counted: string[] = [];
   for (const signature of general.signatures) {
     const kid = signerKid(signature.protected);
-    const root = kid === null || counted.includes(kid) || revoked.has(kid) ? undefined : pinned.find((r) => r.kid === kid);
+    const root = kid === null || tried.has(kid) || revoked.has(kid) ? undefined : pinned.find((r) => r.kid === kid);
     if (root === undefined) continue;
+    // Con su primera firma: otra firma de la misma raíz no se verifica, aunque la primera no verifique.
+    tried.add(root.kid);
     try {
       await flattenedVerify(
         { payload: general.payload, protected: signature.protected, signature: signature.signature },
@@ -141,10 +179,9 @@ function signerKid(encoded: string): string | null {
   return header.alg === 'ES256' && header.typ === TRUST_LIST_TYP && typeof header.kid === 'string' ? header.kid : null;
 }
 
-function isGeneralJws(value: JsonValue): value is GeneralJws & { [k: string]: JsonValue } {
+function isGeneralJws(value: { [k: string]: JsonValue }): value is GeneralJws & { [k: string]: JsonValue } {
   return (
-    isRecord(value) && Object.keys(value).length === 2 && typeof value.payload === 'string' &&
-    Array.isArray(value.signatures) && value.signatures.length > 0 &&
+    Object.keys(value).length === 2 && typeof value.payload === 'string' && Array.isArray(value.signatures) && value.signatures.length > 0 &&
     value.signatures.every((s) => isRecord(s) && Object.keys(s).length === 2 && typeof s.protected === 'string' && typeof s.signature === 'string')
   );
 }

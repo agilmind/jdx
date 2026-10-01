@@ -171,6 +171,19 @@ describe('schemas auxiliares', () => {
     expect(at(errors('trustList', { ...TRUST, trustAnchors: { rootSha256: root } }))).toEqual([['/trustAnchors/rootSha256', 'additionalProperties']]);
   });
 
+  it('validator.minVersion is a version M.m.p without leading zeros', () => {
+    const withVersion = (minVersion: string) => at(errors('trustList', { ...TRUST, validator: { minVersion } }));
+    for (const minVersion of ['0.0.0', '1.0.0', '1.10.0', '10.20.30']) expect(withVersion(minVersion), minVersion).toEqual([]);
+    for (const minVersion of ['01.0.0', '1.00.0', '1.0.00', '1.0', '1.0.0-rc.1', '1.0.0+b', 'v1.0.0', ' 1.0.0']) {
+      expect(withVersion(minVersion), minVersion).toEqual([['/validator/minVersion', 'pattern']]);
+    }
+    // Hasta el primer error: uno solo, aunque haya más.
+    const twice = { ...TRUST, iss: 'https://example.com', validator: { minVersion: '01.0.0' } };
+    expect(errors('trustList', twice)).toHaveLength(2);
+    expect(defaultValidators().firstAuxError('trustList', twice)).toMatchObject({ keyword: expect.stringMatching(/^(const|pattern)$/u) });
+    expect(defaultValidators().firstAuxError('trustList', TRUST)).toBeNull();
+  });
+
   it('iss is const', () => {
     expect(at(errors('trustList', { ...TRUST, iss: 'https://example.com' }))).toEqual([['/iss', 'const']]);
   });

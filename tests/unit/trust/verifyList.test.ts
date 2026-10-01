@@ -1,20 +1,27 @@
 /**
  * La lista de confianza: un JWS JSON general cuyo payload es la lista, firmado
  * por al menos dos raíces fijadas del entorno de la lista y no revocadas. Una
- * lista que no se puede leer (otra forma, payload que no es I-JSON o no cumple
- * su schema, kid repetido, clave de más de 2 años) da JDX-ENV-001; sin dos
- * firmas que cuenten, JDX-ENV-003; con las firmas, cada otra falla da su
- * resultado: otro entorno (JDX-ENV-009), vencida por el reloj (JDX-ENV-002),
- * un validador más viejo que el pedido (JDX-ENV-007) y un seq menor que el
- * del estado (JDX-ENV-004). JDX-TRU-001 no sale de acá.
+ * lista que no se puede leer (otra forma, más de 8 firmas, payload que no es
+ * I-JSON o no cumple su schema, una versión que semver no lee, kid repetido,
+ * una coordenada que no está en base64url canónico, una vigencia fuera de sus
+ * topes) da JDX-ENV-001; sin dos firmas que cuenten, JDX-ENV-003; con las
+ * firmas, cada otra falla da su resultado: otro entorno (JDX-ENV-009), vencida
+ * por el reloj (JDX-ENV-002), un validador más viejo que el pedido
+ * (JDX-ENV-007) y un seq menor que el del estado (JDX-ENV-004). Leerla cuesta
+ * poco aunque sea grande: cada raíz se prueba una vez. JDX-TRU-001 no sale de
+ * acá.
  */
-import { describe, expect, it } from 'vitest';
+import { generateKeyPairSync } from 'node:crypto';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadCatalog } from '../../../src/catalog/load.js';
 import { files } from '../../../src/generated/data.js';
 import { defaultValidators } from '../../../src/schema/validators.js';
-import { verifyTrustList } from '../../../src/trust/verifyList.js';
+import { ecThumbprint, filterRoots } from '../../../src/trust/keys.js';
+import { MAX_TRUST_LIST_SIGNATURES, verifyTrustList } from '../../../src/trust/verifyList.js';
 import type { Env, Finding, JsonValue, PinnedRoots, TrustList, TrustListOutcome } from '../../../src/types.js';
-import { signTestTrustList, TEST_NOW, TEST_ROOT_KEYS, TEST_ROOTS, trustHeader, trustListExample, type TestRootKey, type TestSigner } from '../../helpers/trustFixtures.js';
+import {
+  nonCanonical, signTestTrustList, TEST_NOW, TEST_ROOT_KEYS, TEST_ROOTS, trustHeader, trustListExample, type TestRootKey, type TestSigner,
+} from '../../helpers/trustFixtures.js';
 
 const validators = defaultValidators();
 const catalog = loadCatalog(JSON.parse(files['catalog/1.0/rules.json'] as string) as JsonValue, validators);
@@ -22,6 +29,10 @@ const [A, B, C] = TEST_ROOT_KEYS.production as [TestRootKey, TestRootKey, TestRo
 const [SA, SB] = TEST_ROOT_KEYS.sandbox as [TestRootKey, TestRootKey];
 const OUTSIDER = TEST_ROOT_KEYS.unpinned[0] as TestRootKey;
 const kidOf = (signer: TestSigner): string => ('key' in signer ? signer.key : signer).kid;
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 interface Opts { env?: Env; roots?: PinnedRoots; now?: Date; validatorVersion?: string; maxSeq?: number | null }
 const verify = (jws: Uint8Array, opts: Opts = {}): Promise<TrustListOutcome> =>
@@ -60,6 +71,12 @@ function listWith(change: (list: TrustList) => void): TrustList {
   return list;
 }
 const firstKey = (list: TrustList) => list.keys[0] as TrustList['keys'][number];
+/** Una clave de emisor nueva, con la vigencia y el alcance de la del ejemplo. */
+function freshKey(): TrustList['keys'][number] {
+  const { x, y } = generateKeyPairSync('ec', { namedCurve: 'P-256' }).publicKey.export({ format: 'jwk' }) as { x: string; y: string };
+  const key = { ...structuredClone(firstKey(trustListExample())), x, y };
+  return { ...key, kid: ecThumbprint(key) };
+}
 
 describe('lista de confianza', () => {
   it('2 of 3 roots valid', async () => {
@@ -94,6 +111,55 @@ describe('lista de confianza', () => {
     expect(await refused(signed([A, A]))).toEqual(NOT_SIGNED);
     expect(await accepted(signed([A, A, B]))).toEqual([kidOf(A), kidOf(B)]);
   });
+
+  it('each pinned root is tried once, with its first signature', async () => {
+    const verifications = vi.spyOn(crypto.subtle, 'verify');
+    // Una primera firma alterada de A no se vuelve a probar con la buena que sigue.
+    expect(await refused(signed([{ key: A, tamper: true }, A, B]))).toEqual(NOT_SIGNED);
+    expect(verifications).toHaveBeenCalledTimes(2);
+    // Ocho firmas alteradas de las tres raíces: tres verificaciones.
+    verifications.mockClear();
+    expect(await refused(signed([A, A, A, B, B, B, C, C].map((key) => ({ key, tamper: true }))))).toEqual(NOT_SIGNED);
+    expect(verifications).toHaveBeenCalledTimes(3);
+    // Las que no son raíces fijadas no se verifican.
+    verifications.mockClear();
+    expect(await refused(signed([OUTSIDER, OUTSIDER, SA, SB, A]))).toEqual(NOT_SIGNED);
+    expect(verifications).toHaveBeenCalledTimes(1);
+    expect(await accepted(signed([A, { key: A, tamper: true }, B]))).toEqual([kidOf(A), kidOf(B)]);
+  });
+
+  it('more than 8 signatures → ENV-001', async () => {
+    const nine = [A, B, C, ...Array.from({ length: 6 }, () => OUTSIDER)];
+    expect(nine).toHaveLength(MAX_TRUST_LIST_SIGNATURES + 1);
+    expect(await refused(signed(nine))).toEqual(UNREADABLE);
+    expect(await accepted(signed(nine.slice(0, MAX_TRUST_LIST_SIGNATURES)))).toEqual([kidOf(A), kidOf(B), kidOf(C)]);
+  });
+
+  it('a large tampered list is refused quickly', async () => {
+    const verifications = vi.spyOn(crypto.subtle, 'verify');
+    const validateAux = vi.spyOn(validators, 'validateAux');
+    const firstAuxError = vi.spyOn(validators, 'firstAuxError');
+    const started = performance.now();
+    // 2000 claves que cumplen todo y ocho firmas alteradas: se leen las claves y se prueba cada raíz una vez.
+    const big = listWith((l) => {
+      l.keys = Array.from({ length: 2000 }, freshKey);
+    });
+    expect(await refused(signed([A, A, A, B, B, B, C, C].map((key) => ({ key, tamper: true })), big))).toEqual(NOT_SIGNED);
+    expect(verifications).toHaveBeenCalledTimes(3);
+    // 20 000 claves que no cumplen el schema: se valida hasta el primer error.
+    const offSchema = listWith((l) => {
+      l.keys = Array.from({ length: 20_000 }, () => ({ ...structuredClone(firstKey(l)), alg: 'ES384' as 'ES256' }));
+    });
+    expect(await refused(signed([A, B], offSchema))).toEqual(UNREADABLE);
+    expect(firstAuxError).toHaveBeenCalledTimes(2);
+    expect(validateAux.mock.calls.filter(([name]) => name === 'trustList')).toEqual([]);
+    // 20 000 firmas que dicen ser de A: no se recorren.
+    const good = JSON.parse(new TextDecoder().decode(signed([A, B]))) as { payload: string; signatures: unknown[] };
+    const many = { payload: good.payload, signatures: Array.from({ length: 20_000 }, () => good.signatures[0]) };
+    expect(await refused(new TextEncoder().encode(JSON.stringify(many)))).toEqual(UNREADABLE);
+    expect(verifications).toHaveBeenCalledTimes(3);
+    expect(performance.now() - started).toBeLessThan(10_000);
+  }, 30_000);
 
   it('revoked root does not count', async () => {
     const revokingA = listWith((list) => {
@@ -143,6 +209,24 @@ describe('lista de confianza', () => {
     expect(await refused(signed([A, B], listWith((l) => {
       firstKey(l).kid = l.keys[1]?.kid ?? '';
       l.keys.pop();
+    })))).toEqual(UNREADABLE);
+  });
+
+  it('a coordinate that is not canonical base64url → ENV-001', async () => {
+    // Los mismos 32 bytes escritos de otra forma darían otra huella: la misma clave, dos veces, con dos kids.
+    const key = firstKey(trustListExample());
+    expect(Buffer.from(nonCanonical(key.x), 'base64url')).toEqual(Buffer.from(key.x, 'base64url'));
+    for (const coordinate of ['x', 'y'] as const) {
+      const twice = listWith((l) => {
+        const copy = { ...structuredClone(firstKey(l)), [coordinate]: nonCanonical(firstKey(l)[coordinate]) };
+        l.keys.push({ ...copy, kid: ecThumbprint(copy) });
+      });
+      expect(validators.validateAux('trustList', twice as unknown as JsonValue)).toEqual([]);
+      expect(await refused(signed([A, B], twice)), coordinate).toEqual(UNREADABLE);
+    }
+    // Una coordenada de otro largo tampoco: el schema pide 43 caracteres.
+    expect(await refused(signed([A, B], listWith((l) => {
+      firstKey(l).x = `${firstKey(l).x}A`;
     })))).toEqual(UNREADABLE);
   });
 
@@ -236,6 +320,27 @@ describe('lista de confianza', () => {
     expect(await refused(leap('2030-02-28T10:00:00.5Z'))).toEqual(UNREADABLE);
   });
 
+  it('a list issued after it expires, or valid for more than 90 days → ENV-001', async () => {
+    const lasting = (issuedAt: string, expiresAt: string) => signed([A, B], listWith((l) => {
+      Object.assign(l, { issuedAt, expiresAt });
+    }));
+    // El ejemplo dura exactamente 90 días, escritos en otro offset vale lo mismo.
+    expect(await accepted(lasting('2026-09-30T00:00:00-03:00', '2026-12-29T00:00:00-03:00'))).toHaveLength(2);
+    expect(await accepted(lasting('2026-09-30T03:00:00Z', '2026-12-29T00:00:00-03:00'))).toHaveLength(2);
+    expect(await accepted(lasting('2026-12-29T00:00:00-03:00', '2026-12-29T03:00:00Z'))).toHaveLength(2);
+    // Un nanosegundo de más, o al revés.
+    expect(await refused(lasting('2026-09-30T00:00:00-03:00', '2026-12-29T00:00:00.000000001-03:00'))).toEqual(UNREADABLE);
+    expect(await refused(lasting('2026-12-29T00:00:00-03:00', '2026-12-29T02:59:59.999999999Z'))).toEqual(UNREADABLE);
+  });
+
+  it('a key that expires before it becomes active → ENV-001', async () => {
+    const key = (activeAt: string, expiresAt: string) => signed([A, B], listWith((l) => {
+      Object.assign(firstKey(l).jdx, { activeAt, expiresAt });
+    }));
+    expect(await refused(key('2026-09-30T00:00:00-03:00', '2026-09-30T02:59:59Z'))).toEqual(UNREADABLE);
+    expect(await accepted(key('2026-09-30T00:00:00-03:00', '2026-09-30T03:00:00Z'))).toHaveLength(2);
+  });
+
   it('env mismatch → ENV-009', async () => {
     // Una lista de sandbox, firmada por las raíces de sandbox, en una validación de producción.
     const sandbox = listWith((l) => {
@@ -246,6 +351,9 @@ describe('lista de confianza', () => {
     // Las raíces de producción no firman una lista de sandbox, ni las de sandbox una de producción.
     expect(await refused(signed([A, B], sandbox), { env: 'sandbox' })).toEqual(NOT_SIGNED);
     expect(await refused(signed([SA, SB]), { env: 'sandbox' })).toEqual(NOT_SIGNED);
+    // ENV-009 solo si el validador fija las raíces del entorno de la lista: la imagen de producción no trae las de
+    // sandbox, y ahí la misma lista da ENV-003.
+    expect(await refused(signed([SA, SB], sandbox), { roots: filterRoots(TEST_ROOTS, ['production']) })).toEqual(NOT_SIGNED);
   });
 
   it('expired by clock → ENV-002', async () => {
@@ -253,12 +361,25 @@ describe('lista de confianza', () => {
     const jws = signed([A, B]);
     expect(await accepted(jws, { now: new Date('2026-12-29T03:00:00.000Z') })).toHaveLength(2);
     expect(await refused(jws, { now: new Date('2026-12-29T03:00:00.001Z') })).toEqual([['JDX-ENV-002', { expiresAt: '2026-12-29T00:00:00-03:00' }]]);
-    // Comparado en nanosegundos: un vencimiento un nanosegundo después del reloj todavía vale.
+    // Comparado en nanosegundos: un vencimiento un nanosegundo después del reloj todavía vale (emitida un nanosegundo
+    // después, para no pasar de 90 días).
     const nanos = signed([A, B], listWith((l) => {
-      l.expiresAt = '2026-12-29T00:00:00.000000001-03:00';
+      Object.assign(l, { issuedAt: '2026-09-30T00:00:00.000000001-03:00', expiresAt: '2026-12-29T00:00:00.000000001-03:00' });
     }));
     expect(await accepted(nanos, { now: new Date('2026-12-29T03:00:00.000Z') })).toHaveLength(2);
     expect(await refused(nanos, { now: new Date('2026-12-29T03:00:00.001Z') })).toEqual([['JDX-ENV-002', { expiresAt: '2026-12-29T00:00:00.000000001-03:00' }]]);
+  });
+
+  it('a minVersion that semver does not read → ENV-001, never an exception', async () => {
+    const needs = (minVersion: string) => signed([A, B], listWith((l) => {
+      l.validator.minVersion = minVersion;
+    }));
+    // Ceros a la izquierda, una versión previa o de build, o un número que no entra en un entero seguro.
+    for (const minVersion of ['01.0.0', '1.00.0', '1.0.0-rc.1', '1.0.0+b', 'v1.0.0', '1.0', '99999999999999999.0.0']) {
+      expect(await refused(needs(minVersion)), minVersion).toEqual(UNREADABLE);
+    }
+    expect(await accepted(needs('0.0.0'))).toHaveLength(2);
+    expect(await accepted(needs('1.0.0'))).toHaveLength(2);
   });
 
   it('minVersion above validator → ENV-007', async () => {

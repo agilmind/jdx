@@ -4,7 +4,9 @@
  * - Una sola configuración para todo: JSON Schema 2020-12 (Ajv2020), modo
  *   estricto y todos los errores. La usan los schemas de JDX, los auxiliares
  *   (perfil, catálogo, lista de confianza, estado, reporte, cuentas) y los
- *   params y context del catálogo.
+ *   params y context del catálogo. Con `allErrors: false` se detiene en el
+ *   primer error: para un dato que llega sin autenticar, como la lista de
+ *   confianza antes de mirar sus firmas.
  * - Las anotaciones de JDX (x-jdx-ref, x-jdx-ref-type, x-jdx-personal-data) y
  *   la de licencia que lleva en la raíz todo schema publicado (x-jdx-license)
  *   son palabras registradas, cada una con el meta-schema de su valor. En
@@ -25,8 +27,8 @@ import type { JsonPointer, JsonValue, RootList, SchemaError } from '../types.js'
 
 const ROOT_LISTS: readonly RootList[] = ['parties', 'works', 'recordings', 'agreements', 'media'];
 
-export function createAjv(): Ajv2020 {
-  const ajv = new Ajv2020({ strict: true, allErrors: true, verbose: true, allowUnionTypes: true, addUsedSchema: false });
+export function createAjv(opts: { allErrors?: boolean } = {}): Ajv2020 {
+  const ajv = new Ajv2020({ strict: true, allErrors: opts.allErrors ?? true, verbose: true, allowUnionTypes: true, addUsedSchema: false });
   ajv.addKeyword({
     keyword: 'x-jdx-ref',
     schemaType: 'string',

@@ -12,6 +12,7 @@ import { loadCatalog } from '../../../src/catalog/load.js';
 import { files } from '../../../src/generated/data.js';
 import { defaultValidators } from '../../../src/schema/validators.js';
 import type { CatalogRule, JsonValue } from '../../../src/types.js';
+import { sadaicParams } from '../../helpers/sadaicProfile.js';
 
 const catalog = loadCatalog(JSON.parse(files['catalog/1.0/rules.json'] as string) as JsonValue, defaultValidators());
 const rule = (id: string): CatalogRule => {
@@ -26,13 +27,6 @@ const RIGHTS = [
   'JDX-DEC-001', 'JDX-MIN-001', 'JDX-ROL-001',
   'JDX-SHR-002', 'JDX-SHR-004', 'JDX-SHR-006', 'JDX-SHR-007', 'JDX-SHR-008', 'JDX-WRK-001',
 ];
-/** Los params de estas reglas en sadaic/0.1; las demás no llevan. */
-const SADAIC_PARAMS: Record<string, { [k: string]: JsonValue }> = {
-  'JDX-AGR-003': { cap: 25, capWithCondition: { value: 33.3333, conditionScheme: 'SADAIC_ART8' } },
-  'JDX-AGR-004': { types: ['publishing'] },
-  'JDX-AGR-006': { retailMin: 20, arrangementRetailMin: 10 },
-  'JDX-MIN-001': { ageOfMajority: 18 },
-};
 
 describe('catálogo: perfil I (derechos)', () => {
   it('adds exactly DEC-001, SHR-002, SHR-004, SHR-006..008, AGR-001..006, WRK-001, ROL-001 and MIN-001', () => {
@@ -62,10 +56,10 @@ describe('catálogo: perfil I (derechos)', () => {
   });
 
   it('profile params schemas accept sadaic/0.1 and reject cap as string or unknown keys', () => {
-    for (const id of RIGHTS) expect(errorsOf(rule(id).profileParamsSchema, SADAIC_PARAMS[id] ?? {}), id).toEqual([]);
+    for (const id of RIGHTS) expect(errorsOf(rule(id).profileParamsSchema, sadaicParams(id)), id).toEqual([]);
     const agr003 = rule('JDX-AGR-003').profileParamsSchema;
     expect(errorsOf(agr003, { cap: '25', capWithCondition: { value: 33.3333, conditionScheme: 'SADAIC_ART8' } })).toEqual([['/cap', 'type']]);
-    expect(errorsOf(agr003, { ...SADAIC_PARAMS['JDX-AGR-003'], tope: 25 })).toEqual([['/tope', 'additionalProperties']]);
+    expect(errorsOf(agr003, { ...sadaicParams('JDX-AGR-003'), tope: 25 })).toEqual([['/tope', 'additionalProperties']]);
     expect(errorsOf(agr003, { cap: 25 })).toEqual([['', 'required']]);
     expect(errorsOf(agr003, { cap: 125, capWithCondition: { value: 33.3333, conditionScheme: 'art8' } })).toEqual([
       ['/cap', 'maximum'],

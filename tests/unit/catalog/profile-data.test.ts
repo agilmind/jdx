@@ -10,6 +10,7 @@ import { loadCatalog } from '../../../src/catalog/load.js';
 import { files } from '../../../src/generated/data.js';
 import { defaultValidators } from '../../../src/schema/validators.js';
 import type { CatalogRule, JsonValue } from '../../../src/types.js';
+import { sadaicParams } from '../../helpers/sadaicProfile.js';
 
 const catalog = loadCatalog(JSON.parse(files['catalog/1.0/rules.json'] as string) as JsonValue, defaultValidators());
 const rule = (id: string): CatalogRule => {
@@ -81,12 +82,13 @@ describe('catálogo: perfil II (datos)', () => {
   });
 
   it('CMP-002, CMP-003 and CMP-006 params schemas accept sadaic/0.1', () => {
-    const sadaic: Record<string, { [k: string]: JsonValue }> = {
-      'JDX-CMP-002': { scheme: 'SADAIC_GENRE' },
-      'JDX-CMP-003': { registry: 'DNDA_AR' },
-      'JDX-CMP-006': { country: 'AR' },
-    };
-    for (const id of DATA) expect(errorsOf(rule(id).profileParamsSchema, sadaic[id] ?? {}), id).toEqual([]);
+    expect([sadaicParams('JDX-CMP-002'), sadaicParams('JDX-CMP-003'), sadaicParams('JDX-CMP-006')]).toEqual([
+      { scheme: 'SADAIC_GENRE' },
+      { registry: 'DNDA_AR' },
+      { country: 'AR' },
+    ]);
+    // IDN-004 no está en sadaic/0.1: sin params, como las demás.
+    for (const id of DATA) expect(errorsOf(rule(id).profileParamsSchema, sadaicParams(id)), id).toEqual([]);
     expect(errorsOf(rule('JDX-CMP-002').profileParamsSchema, {})).toEqual([['', 'required']]);
     expect(errorsOf(rule('JDX-CMP-002').profileParamsSchema, { scheme: 'sadaic-genres' })).toEqual([['/scheme', 'pattern']]);
     expect(errorsOf(rule('JDX-CMP-003').profileParamsSchema, { registry: 'DNDA_AR', part: 'music' })).toEqual([['/part', 'additionalProperties']]);

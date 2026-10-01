@@ -223,6 +223,8 @@ parámetros. El primero es el de SADAIC:
   afiliación de autores y editoras, y representante legal de autores menores.
 - Expande el territorio `2136` y los códigos TIS de país.
 - `sadaic/1.0` tendrá las mismas reglas como errores, con firma obligatoria.
+- El perfil completo, con sus 35 reglas y sus parámetros, está en
+  [`profiles/sadaic/0.1.0.json`](../profiles/sadaic/0.1.0.json).
 
 ## 9. Versiones
 

@@ -29,7 +29,7 @@ import { inBundle } from '../src/schema/bundle.js';
 import { FIELD_REFERENCE_PATHS, generateFieldReference } from '../src/schema/fieldReference.js';
 import { generateIndex, generateSchema, generateTypesTs } from '../src/schema/generate.js';
 import { loadModel, TYPES_OVERLAY_SCHEMA, TYPES_SOURCE_SCHEMA } from '../src/schema/model.js';
-import { parseRootsFile } from '../src/trust/roots.js';
+import { parseRootsFile } from '../src/trust/keys.js';
 import type { JsonValue, PinnedRoots } from '../src/types.js';
 import { generateValues } from './gen-values.mjs';
 

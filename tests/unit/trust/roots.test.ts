@@ -2,16 +2,18 @@
  * Las raíces fijadas: trust/roots.json trae las de cada entorno (vacías hasta
  * que se publiquen), gen las escribe en src/generated/roots.ts a través de
  * parseRootsFile, y la imagen de un entorno se queda solo con las suyas
- * (filterRoots). Cada raíz es una clave P-256 con su kid RFC 7638.
+ * (filterRoots). Cada raíz es una clave P-256 con su kid RFC 7638. gen no
+ * depende de lo que genera: src/trust/keys.ts no importa datos generados.
  */
 import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { basename, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { generateAll } from '../../../scripts/gen.js';
 import { roots as generated } from '../../../src/generated/roots.js';
-import { ecThumbprint, filterRoots, parseRootsFile, pinnedRoots } from '../../../src/trust/roots.js';
+import { ecThumbprint, filterRoots, parseRootsFile } from '../../../src/trust/keys.js';
+import { pinnedRoots } from '../../../src/trust/roots.js';
 import type { JsonValue } from '../../../src/types.js';
 import { TEST_ROOT_KEYS, TEST_ROOTS } from '../../helpers/trustFixtures.js';
 
@@ -24,6 +26,17 @@ afterEach(() => {
 });
 
 const asJson = (value: unknown): JsonValue => JSON.parse(JSON.stringify(value)) as JsonValue;
+
+/** Los archivos del repositorio que `rel` importa al correr, y los que importan ellos; un `import type` no cuenta. */
+function runtimeImports(rel: string, seen = new Set<string>()): Set<string> {
+  if (seen.has(rel)) return seen;
+  seen.add(rel);
+  for (const [, spec = ''] of read(rel).matchAll(/^(?:import|export)\s+(?!type\s)[^;()=]*?\sfrom\s+'(\.{1,2}\/[^']+)'/gmu)) {
+    const target = posix.join(posix.dirname(rel), spec);
+    runtimeImports(target.endsWith('.js') ? target.replace(/\.js$/u, '.ts') : target, seen);
+  }
+  return seen;
+}
 
 describe('raíces fijadas', () => {
   it('pinnedRoots() is the generated roots of trust/roots.json, empty until they are published', () => {
@@ -61,6 +74,15 @@ describe('raíces fijadas', () => {
     expect(() => parseRootsFile(asJson({ production: [] }))).toThrow('raíces fijadas: tienen que ser { production: [], sandbox: [] }');
     expect(() => parseRootsFile(asJson({ production: [], sandbox: [], test: [] }))).toThrow('raíces fijadas: tienen que ser { production: [], sandbox: [] }');
     expect(() => parseRootsFile(asJson([]))).toThrow('raíces fijadas: tienen que ser { production: [], sandbox: [] }');
+  });
+
+  it('gen does not import the files it generates', () => {
+    const imported = runtimeImports('scripts/gen.ts');
+    expect(imported).toContain('src/trust/keys.ts');
+    expect(imported).toContain('scripts/gen-values.mjs');
+    expect([...imported].filter((rel) => rel.startsWith('src/generated/'))).toEqual([]);
+    // El recorrido sí ve los datos generados de un módulo que los importa.
+    expect([...runtimeImports('src/trust/roots.ts')]).toContain('src/generated/roots.ts');
   });
 
   it('gen writes src/generated/roots.ts from trust/roots.json through parseRootsFile', () => {

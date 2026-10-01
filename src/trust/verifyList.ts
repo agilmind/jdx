@@ -38,7 +38,7 @@ import type {
   TrustList,
   TrustListOutcome,
 } from '../types.js';
-import { ecThumbprint, isP256PublicKey } from './roots.js';
+import { ecThumbprint, isP256PublicKey } from './keys.js';
 
 /** El `typ` de cada firma de la lista. */
 export const TRUST_LIST_TYP = 'vnd.jupiter.jdx-trust+jws';

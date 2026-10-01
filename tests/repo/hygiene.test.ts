@@ -24,18 +24,21 @@ const INTERNAL: readonly RegExp[] = [
 ];
 
 /**
- * Las citas de documentos de fuera del repositorio: una sección con el signo
- * de sección (las de una RFC sí valen), un anexo con su letra, las carpetas de
- * la especificación y del plan, el repositorio privado, una parte del plan con
- * su letra y el documento que ordena las partes. "plan" y "parte" sueltos no
- * se buscan: son palabras del dominio (Registration.part, la parte de música).
+ * Citas de documentos que no están en el repositorio: el signo de sección
+ * (salvo el de una RFC), un apéndice, un anexo o una división con su letra,
+ * en español o en inglés, y rutas y nombres que no son públicos. Las palabras
+ * del dominio no cuentan: Registration.part, la letra de una obra.
  */
 const CITATIONS: readonly RegExp[] = [
   /(?<!\bRFC \d+ )\u00a7/u,
   /\bAne\x78o [A-Z]\b/u,
+  /\bAnne\x78 [A-Z]\b/u,
+  /\bAppendi\x78\b/u,
+  /\bAp\u00e9ndice\b/u,
   /\bdocs\/(?:spe\x63|pla\x6e)\b/u,
   /\bjdx-inte\x72no\b/iu,
   /\bPa\x72te [A-O]\b/u,
+  /\bPa\x72t [A-O]\b/u,
   /a\x72quitectu\x72a/iu,
 ];
 
@@ -73,7 +76,7 @@ describe('hygiene', () => {
     expect(citationHits(ROOT)).toEqual([]);
   });
 
-  it('the citation guard finds each kind and lets RFC sections, Registration.part and "la parte de música" pass', () => {
+  it('the citation guard finds each kind, in Spanish and English, and lets RFC sections, Registration.part and domain words pass', () => {
     const planted = trees.plant({
       'a.md': [
         'como dice el \u00a7' + '7.2',
@@ -83,14 +86,19 @@ describe('hygiene', () => {
         'el repositorio jdx-' + 'interno',
         'según la Par' + 'te E',
         'lo fija la ar' + 'quitectura',
+        'see Anne' + 'x A',
+        'as the Appendi' + 'x says',
+        'como dice el Ap\u00e9' + 'ndice',
+        'per Par' + 't E',
       ].join('\n'),
       'b.ts': [
         '// RFC 3339 \u00a7' + '5.7 y (RFC 7493 \u00a7' + '2.2)',
         "const part = 'Registration.part';",
         '// la parte de música y la parte de letra; el plan de pagos',
         "const x = { anexos: ['contrato'], parte: 'A' };",
+        '// Annexed files; part of the work; APPENDIX: How to apply the License',
       ].join('\n'),
     });
-    expect(citationHits(planted)).toEqual(['a.md:1', 'a.md:2', 'a.md:3', 'a.md:4', 'a.md:5', 'a.md:6', 'a.md:7']);
+    expect(citationHits(planted)).toEqual(['a.md:1', 'a.md:2', 'a.md:3', 'a.md:4', 'a.md:5', 'a.md:6', 'a.md:7', 'a.md:8', 'a.md:9', 'a.md:10', 'a.md:11']);
   });
 });

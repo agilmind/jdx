@@ -240,6 +240,9 @@ parámetros. El primero es el de SADAIC:
 - El perfil completo, con sus 35 reglas y sus parámetros, está en
   [`profiles/sadaic/0.1.0.json`](../profiles/sadaic/0.1.0.json).
 
+Un perfil leído de un archivo que no es el que trae el validador figura en el
+reporte con `+local` detrás de su versión (`…/sadaic/0.1@0.1.0+local`).
+
 ## 9. Versiones
 
 - `jdx` es la versión del formato (`1.0`). Una menor nueva agrega campos

@@ -36,9 +36,9 @@
     },
     "document": { "$ref": "#/$defs/Document" },
     "appliedProfiles": {
-      "$comment": "<id>@<version>, con el id y la versión de profile.schema.json.",
+      "$comment": "<id>@<version>, con el id y la versión de profile.schema.json; +local detrás de la versión si el perfil se leyó de un archivo y no es el empaquetado de ese id y versión.",
       "type": "array",
-      "items": { "type": "string", "pattern": "^https://jdx\\.jupiter\\.ar/profiles/[a-z][a-z0-9-]*/\\d+\\.\\d+@\\d+\\.\\d+\\.\\d+$" }
+      "items": { "type": "string", "pattern": "^https://jdx\\.jupiter\\.ar/profiles/[a-z][a-z0-9-]*/\\d+\\.\\d+@\\d+\\.\\d+\\.\\d+(\\+local)?$" }
     },
     "checks": {
       "type": "object",

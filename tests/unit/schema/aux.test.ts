@@ -263,7 +263,7 @@ describe('schemas auxiliares', () => {
     expect(errors('report', { ...REPORT, ack: { status: 'ingested', at: '2026-09-30T09:12:00.5-03:00' } })).toEqual([]);
   });
 
-  it('options.receivedAt is an instant or null, issuer ids follow their pattern and appliedProfiles are <id>@<version>', () => {
+  it('options.receivedAt is an instant or null, issuer ids follow their pattern and appliedProfiles are <id>@<version>, with +local for a local profile', () => {
     const withOptions = (options: Obj) => ({ ...REPORT, options: { ...(REPORT.options as Obj), ...options } });
     expect(errors('report', withOptions({ receivedAt: null }))).toEqual([]);
     expect(at(errors('report', withOptions({ receivedAt: 'ayer' })))).toEqual([['/options/receivedAt', 'pattern']]);
@@ -275,8 +275,16 @@ describe('schemas auxiliares', () => {
     ]);
     // El id de un perfil (el patrón de profile.schema.json) y su versión M.m.p.
     expect(errors('report', { ...REPORT, appliedProfiles: [] })).toEqual([]);
-    const applied = ['cualquier cosa', 'https://jdx.jupiter.ar/profiles/sadaic/0.1', 'sadaic/0.1@0.1.0', 'https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1'];
+    const applied = [
+      'cualquier cosa',
+      'https://jdx.jupiter.ar/profiles/sadaic/0.1',
+      'sadaic/0.1@0.1.0',
+      'https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1',
+      'https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0+otro',
+    ];
     expect(at(errors('report', { ...REPORT, appliedProfiles: applied }))).toEqual(applied.map((_, i) => [`/appliedProfiles/${i}`, 'pattern']));
+    // Un perfil leído de un archivo que no es el empaquetado lleva +local detrás de la versión.
+    expect(errors('report', { ...REPORT, appliedProfiles: ['https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0+local'] })).toEqual([]);
   });
 
   it('results[].source pattern', () => {

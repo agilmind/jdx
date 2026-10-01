@@ -173,8 +173,83 @@ describe('resolución del perfil', () => {
     expect(profile.shortId).toBe('sadaic/0.1');
     expect(profile.source).toBe('profile:sadaic/0.1@0.1.0');
     expect(profile.applied).toBe('https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0');
-    const patched = resolved(resolve({ ...sadaicProfile(), version: '0.1.3' }));
+    // Un patch que el validador trae se aplica con su versión.
+    const patched = resolved(resolve('sadaic/0.1', { bundled: [sadaicProfile(), { ...sadaicProfile(), version: '0.1.3' }] }));
     expect([patched.source, patched.applied]).toEqual(['profile:sadaic/0.1@0.1.3', 'https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.3']);
+  });
+
+  it('a profile read from a file that is not the bundled one of its id and version is marked +local', () => {
+    const marked = (profile: Profile) => {
+      const outcome = resolved(resolve(profile));
+      return [outcome.source, outcome.applied];
+    };
+    // Igual al empaquetado, aunque sus claves vengan en otro orden: es el empaquetado.
+    const reordered = Object.fromEntries(Object.entries(sadaicProfile()).reverse()) as unknown as Profile;
+    expect(marked(reordered)).toEqual(['profile:sadaic/0.1@0.1.0', 'https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0']);
+    // El mismo id y la misma versión con otras reglas, otro nivel u otros params: local.
+    const local = ['profile:sadaic/0.1@0.1.0+local', 'https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0+local'];
+    expect(marked(withRules((rules) => rules.filter((r) => r.ruleId !== 'JDX-CMP-001')))).toEqual(local);
+    expect(marked({ ...sadaicProfile(), defaultLevel: 'error' })).toEqual(local);
+    expect(marked(withRules((rules) => rules.map((r) => (r.ruleId === 'JDX-MIN-001' ? { ...r, params: { ageOfMajority: 21 } } : r))))).toEqual(local);
+    // Una versión que el validador no trae, también.
+    expect(marked({ ...sadaicProfile(), version: '0.1.3' })).toEqual(['profile:sadaic/0.1@0.1.3+local', 'https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.3+local']);
+    // El reporte admite la marca en appliedProfiles y en el source de un resultado.
+    const report = JSON.parse(files['schema/jdx-report.schema.json'] as string) as {
+      properties: { appliedProfiles: { items: { pattern: string } } };
+      $defs: { Result: { properties: { source: { pattern: string } } } };
+    };
+    expect(new RegExp(report.properties.appliedProfiles.items.pattern, 'u').test(local[1] as string)).toBe(true);
+    expect(new RegExp(report.$defs.Result.properties.source.pattern, 'u').test(local[0] as string)).toBe(true);
+  });
+
+  it('the catalog serves profiles of its major and of the same or an earlier minor', () => {
+    const at = (version: string) => ({ catalog: { ...catalog, catalog: version } });
+    // Las menores del catálogo solo suman reglas: un perfil de la 1.0 sigue valiendo con la 1.2 y con la 1.10.
+    for (const [validator, profile] of [['1.0', '1.0'], ['1.2', '1.0'], ['1.2', '1.2'], ['1.10', '1.9']]) {
+      expect(resolve({ ...sadaicProfile(), catalog: profile as string }, at(validator as string)).ok, `${validator} ${profile}`).toBe(true);
+    }
+    for (const [validator, profile] of [['1.0', '1.1'], ['1.2', '1.10'], ['1.2', '2.0'], ['2.0', '1.0']]) {
+      expect(findings(resolve({ ...sadaicProfile(), catalog: profile as string }, at(validator as string))), `${validator} ${profile}`).toEqual([
+        env006({ reason: 'unknownCatalog', catalog: profile as string }),
+      ]);
+    }
+  });
+
+  it('bundled profiles are the profiles/<family>/<M.m.p>.json files whose content matches the path', () => {
+    const text = files[PROFILE_FILE] as string;
+    const as = (version: string, id = 'https://jdx.jupiter.ar/profiles/sadaic/0.1') => JSON.stringify({ ...sadaicProfile(), id, version });
+    const more: Record<string, string> = {
+      ...files,
+      'profiles/sadaic/0.1.3.json': as('0.1.3'),
+      'profiles/sadaic/latest.json': text,
+      'profiles/sadaic/0.1.json': text,
+      'profiles/sadaic/0.1.4.json': as('0.1.5'),
+      'profiles/agadu/0.1.0.json': text,
+      'profiles/sadaic/0.2.0.json': as('0.2.0'),
+      'profiles/sadaic/0.1.6.json': '{ "id": ',
+      'profiles/sadaic/0.1.7.json': '[]',
+      'profiles/sadaic/x/0.1.8.json': as('0.1.8'),
+      'profiles/Sadaic/0.1.9.json': as('0.1.9'),
+    };
+    expect(bundledProfiles(more).map((p) => p.version)).toEqual(['0.1.0', '0.1.3']);
+    // Cada archivo de profiles/ del paquete es un perfil empaquetado.
+    expect(bundledProfiles(files)).toHaveLength(Object.keys(files).filter((path) => path.startsWith('profiles/')).length);
+  });
+
+  it('a bundled patch that does not conform to the profile schema is not chosen', () => {
+    const patch = (version: string): Profile => ({ ...sadaicProfile(), version });
+    const broken = { ...patch('0.1.10'), signature: 'sometimes' } as unknown as Profile;
+    expect(resolved(resolve('sadaic/0.1', { bundled: [patch('0.1.0'), broken, patch('0.1.3')] })).profile.version).toBe('0.1.3');
+    expect(findings(resolve('sadaic/0.1', { bundled: [broken] }))).toEqual([env006({ reason: 'unknownProfile', profile: 'sadaic/0.1' })]);
+  });
+
+  it('AGR-003 with capWithCondition.value below cap → ENV-006 invalidParams', () => {
+    const agr003 = (cap: number, value: number) =>
+      withRules((rules) => rules.map((r) => (r.ruleId === 'JDX-AGR-003' ? { ...r, params: { cap, capWithCondition: { value, conditionScheme: 'SADAIC_ART8' } } } : r)));
+    expect(findings(resolve(agr003(25, 20)))).toEqual([env006({ reason: 'invalidParams', ruleId: 'JDX-AGR-003' })]);
+    // Igual al tope vale: un perfil sin condición que suba el tope repite cap.
+    expect(resolve(agr003(25, 25)).ok).toBe(true);
+    expect(resolve(agr003(25, 33.3333)).ok).toBe(true);
   });
 
   it('35 rules, IDN-004 excluded', () => {

@@ -126,6 +126,7 @@
         "en": "The agreement gives the publisher {percent}%; the cap is {cap}%."
       },
       "profileParamsSchema": {
+        "$comment": "capWithCondition.value no puede ser menor que cap: un perfil con un tope con condición más bajo que el tope no se aplica (JDX-ENV-006, invalidParams).",
         "type": "object",
         "properties": {
           "cap": {

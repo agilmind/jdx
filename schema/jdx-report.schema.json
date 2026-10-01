@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/jdx-report.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Reporte del validador de JDX; no es un archivo JDX: admite null",
+  "type": "object",
+  "properties": {
+    "jdxReport": { "type": "string", "const": "1.0" },
+    "valid": { "type": ["boolean", "null"] },
+    "disposition": { "type": ["string", "null"], "enum": ["ingest", "ignore", "reject", null] },
+    "exitCode": { "type": "integer", "enum": [0, 1, 2, 3] },
+    "validator": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "const": "jdx" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "catalog": { "type": "string", "pattern": "^\\d+\\.\\d+$" }
+      },
+      "required": ["name", "version", "catalog"],
+      "additionalProperties": false
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "env": { "type": ["string", "null"], "enum": ["production", "sandbox", null] },
+        "profile": { "type": ["string", "null"] },
+        "signature": { "type": ["string", "null"], "enum": ["optional", "required", null] },
+        "failOn": { "type": "string", "enum": ["error", "warning"] },
+        "receivedAt": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|[+-]\\d{2}:\\d{2})$" },
+        "dir": { "type": "boolean" },
+        "lang": { "type": "string", "enum": ["es", "pt", "en"] }
+      },
+      "required": ["env", "profile", "signature", "failOn", "receivedAt", "dir", "lang"],
+      "additionalProperties": false
+    },
+    "document": { "$ref": "#/$defs/Document" },
+    "appliedProfiles": {
+      "$comment": "<id>@<version>, con el id y la versión de profile.schema.json.",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^https://jdx\\.jupiter\\.ar/profiles/[a-z][a-z0-9-]*/\\d+\\.\\d+@\\d+\\.\\d+\\.\\d+$" }
+    },
+    "checks": {
+      "type": "object",
+      "properties": {
+        "environment": { "$ref": "#/$defs/BucketStatus" },
+        "json": { "$ref": "#/$defs/BucketStatus" },
+        "schema": { "$ref": "#/$defs/BucketStatus" },
+        "core": { "$ref": "#/$defs/BucketStatus" },
+        "profile": { "$ref": "#/$defs/BucketStatus" },
+        "policy": { "$ref": "#/$defs/BucketStatus" },
+        "media": { "$ref": "#/$defs/BucketStatus" },
+        "signature": { "$ref": "#/$defs/SignatureCheckStatus" }
+      },
+      "required": ["environment", "json", "schema", "core", "profile", "policy", "media", "signature"],
+      "additionalProperties": false
+    },
+    "signature": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["absent", "verified", "invalid", "unknownKey", "keyPending", "keyRetired", "keyRevoked", "notEvaluated"]
+        },
+        "kid": { "type": ["string", "null"] },
+        "issuer": { "$ref": "#/$defs/IssuerOrNull" },
+        "env": { "type": ["string", "null"], "enum": ["production", "sandbox", null] },
+        "reason": {
+          "type": ["string", "null"],
+          "enum": [
+            "signature", "header", "alg", "payload", "aud", "audience", "unknownKey", "pending", "retired", "expired",
+            "compromised", "env", "issuer", "scope", null
+          ]
+        }
+      },
+      "required": ["status", "kid", "issuer", "env"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "signature.issuer queda null salvo con la firma verified.",
+          "type": "object",
+          "if": { "type": "object", "properties": { "status": { "type": "string", "const": "verified" } }, "required": ["status"] },
+          "else": { "type": "object", "properties": { "issuer": { "type": "null" } } }
+        }
+      ]
+    },
+    "trustList": {
+      "type": ["object", "null"],
+      "properties": {
+        "seq": { "type": "integer", "minimum": 1 },
+        "expiresAt": { "$ref": "#/$defs/Instant" }
+      },
+      "required": ["seq", "expiresAt"],
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "error": { "type": "integer", "minimum": 0 },
+        "warning": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["error", "warning", "info"],
+      "additionalProperties": false
+    },
+    "results": { "type": "array", "items": { "$ref": "#/$defs/Result" } },
+    "ack": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["ingested", "ignored", "rejected"] },
+        "at": { "$ref": "#/$defs/Instant" }
+      },
+      "required": ["status", "at"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "jdxReport", "valid", "disposition", "exitCode", "validator", "options", "document", "appliedProfiles", "checks",
+    "signature", "trustList", "summary", "results"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "BucketStatus": {
+      "$comment": "Cada check es passed, warning, failed o notEvaluated.",
+      "type": "string",
+      "enum": ["passed", "warning", "failed", "notEvaluated"]
+    },
+    "SignatureCheckStatus": {
+      "$comment": "El check de la firma usa verified o absent en lugar de passed.",
+      "type": "string",
+      "enum": ["verified", "absent", "warning", "failed", "notEvaluated"]
+    },
+    "Instant": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|[+-]\\d{2}:\\d{2})$" },
+    "IssuerOrNull": {
+      "type": ["object", "null"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"],
+      "additionalProperties": false
+    },
+    "Document": {
+      "type": "object",
+      "properties": {
+        "fileName": { "type": "string" },
+        "declarationId": { "type": ["string", "null"], "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+        "revision": { "type": ["integer", "null"], "minimum": 1 },
+        "jdx": { "type": ["string", "null"], "pattern": "^\\d+\\.\\d+$" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "size": { "type": "integer", "minimum": 0 },
+        "declaredProfiles": { "type": ["array", "null"], "items": { "type": "string" } },
+        "issuer": {
+          "$comment": "El emisor de declaration.issuer, si cumple su patrón; opcional en el schema, el validador lo emite siempre.",
+          "$ref": "#/$defs/IssuerOrNull"
+        },
+        "media": {
+          "$comment": "Los media con delivered distinto de false y datos completos; null si el schema no pasó. Opcional en el schema, el validador lo emite siempre.",
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/MediaRecord" }
+        }
+      },
+      "required": ["fileName", "declarationId", "revision", "jdx", "sha256", "size", "declaredProfiles"],
+      "additionalProperties": false
+    },
+    "MediaRecord": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string" },
+        "delivery": { "type": "integer", "minimum": 1 },
+        "size": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "required": ["path", "delivery", "size", "sha256"],
+      "additionalProperties": false
+    },
+    "Result": {
+      "type": "object",
+      "properties": {
+        "ruleId": { "type": "string", "pattern": "^JDX-[A-Z]{3}-\\d{3}$" },
+        "level": { "type": "string", "enum": ["error", "warning", "info"] },
+        "source": { "type": "string", "pattern": "^(environment|core|schema|policy|profile:[^@\\s]+@[^@\\s]+)$" },
+        "instanceLocation": { "type": "string", "pattern": "^(/[\\s\\S]*)?$" },
+        "keywordLocation": { "type": "string", "pattern": "^(/[\\s\\S]*)?$" },
+        "context": {
+          "type": "object",
+          "properties": {
+            "work": { "type": "string" },
+            "party": { "type": "string" },
+            "agreement": { "type": "string" },
+            "media": { "type": "string" },
+            "recording": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "message": { "type": "string" },
+        "params": { "type": "object" }
+      },
+      "required": ["ruleId", "level", "source", "instanceLocation", "message"],
+      "additionalProperties": false
+    }
+  }
+}

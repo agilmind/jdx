@@ -1,0 +1,12 @@
+{
+  "list": "legalRepresentativeCapacities",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "parent"
+    },
+    {
+      "code": "guardian"
+    }
+  ]
+}

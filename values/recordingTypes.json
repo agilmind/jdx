@@ -1,0 +1,21 @@
+{
+  "list": "recordingTypes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "studio"
+    },
+    {
+      "code": "live"
+    },
+    {
+      "code": "remix"
+    },
+    {
+      "code": "library"
+    },
+    {
+      "code": "demo"
+    }
+  ]
+}

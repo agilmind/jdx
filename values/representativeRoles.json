@@ -1,0 +1,21 @@
+{
+  "list": "representativeRoles",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "managingPartner"
+    },
+    {
+      "code": "director"
+    },
+    {
+      "code": "president"
+    },
+    {
+      "code": "attorney"
+    },
+    {
+      "code": "partner"
+    }
+  ]
+}

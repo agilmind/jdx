@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/trust-list.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Lista de confianza de JDX: el payload del JWS",
+  "type": "object",
+  "properties": {
+    "iss": { "type": "string", "const": "https://jdx.jupiter.ar" },
+    "env": { "type": "string", "enum": ["production", "sandbox"] },
+    "seq": { "type": "integer", "minimum": 1 },
+    "issuedAt": { "$ref": "#/$defs/Instant" },
+    "expiresAt": { "$ref": "#/$defs/Instant" },
+    "validator": {
+      "type": "object",
+      "properties": { "minVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" } },
+      "required": ["minVersion"],
+      "additionalProperties": false
+    },
+    "revokedRoots": { "type": "array", "items": { "$ref": "#/$defs/Kid" } },
+    "keys": { "type": "array", "items": { "$ref": "#/$defs/Key" } },
+    "trustAnchors": {
+      "type": "object",
+      "properties": { "agilsignRootSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" } },
+      "additionalProperties": false
+    }
+  },
+  "required": ["iss", "env", "seq", "issuedAt", "expiresAt", "validator", "revokedRoots", "keys"],
+  "additionalProperties": false,
+  "$defs": {
+    "Instant": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|[+-]\\d{2}:\\d{2})$" },
+    "Kid": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+    "Key": {
+      "type": "object",
+      "properties": {
+        "kty": { "type": "string", "const": "EC" },
+        "crv": { "type": "string", "const": "P-256" },
+        "x": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+        "y": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+        "kid": { "$ref": "#/$defs/Kid" },
+        "alg": { "type": "string", "const": "ES256" },
+        "use": { "type": "string", "const": "sig" },
+        "jdx": { "$ref": "#/$defs/KeyMeta" }
+      },
+      "required": ["kty", "crv", "x", "y", "kid", "alg", "use", "jdx"],
+      "additionalProperties": false
+    },
+    "KeyMeta": {
+      "type": "object",
+      "properties": {
+        "issuer": {
+          "type": "object",
+          "properties": { "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" }, "name": { "type": "string" } },
+          "required": ["id", "name"],
+          "additionalProperties": false
+        },
+        "status": { "type": "string", "enum": ["pending", "active", "retired", "revoked"] },
+        "activeAt": { "$ref": "#/$defs/Instant" },
+        "expiresAt": { "$ref": "#/$defs/Instant" },
+        "retiredAt": { "$ref": "#/$defs/Instant" },
+        "compromisedAt": { "$ref": "#/$defs/Instant" },
+        "reason": { "type": "string", "enum": ["superseded", "issuerDeregistered", "certificationWithdrawn", "compromised"] },
+        "scope": {
+          "type": "object",
+          "properties": {
+            "recipients": { "type": "array", "items": { "type": "string", "pattern": "^(\\d{3}|X_JDX_[A-Z0-9_]+)$" } },
+            "profiles": { "type": "array", "items": { "type": "string", "pattern": "^https://\\S+$" } },
+            "jdxMajor": { "type": "integer", "minimum": 1 }
+          },
+          "required": ["recipients", "profiles", "jdxMajor"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["issuer", "status", "activeAt", "expiresAt", "scope"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "Una clave pending o active no lleva retiro, motivo ni compromiso: van con retired o revoked.",
+          "type": "object",
+          "if": { "type": "object", "properties": { "status": { "type": "string", "enum": ["pending", "active"] } }, "required": ["status"] },
+          "then": {
+            "type": "object",
+            "properties": { "retiredAt": { "not": {} }, "compromisedAt": { "not": {} }, "reason": { "not": {} } }
+          }
+        },
+        {
+          "$comment": "Una clave retired lleva desde cuándo y por qué, y no un compromiso; compromised es motivo de revoked.",
+          "type": "object",
+          "if": { "type": "object", "properties": { "status": { "type": "string", "const": "retired" } }, "required": ["status"] },
+          "then": {
+            "type": "object",
+            "properties": {
+              "retiredAt": true,
+              "compromisedAt": { "not": {} },
+              "reason": { "type": "string", "enum": ["superseded", "issuerDeregistered", "certificationWithdrawn"] }
+            },
+            "required": ["retiredAt", "reason"]
+          }
+        },
+        {
+          "$comment": "Una clave revoked lleva el motivo compromised y desde cuándo se considera comprometida.",
+          "type": "object",
+          "if": { "type": "object", "properties": { "status": { "type": "string", "const": "revoked" } }, "required": ["status"] },
+          "then": {
+            "type": "object",
+            "properties": { "compromisedAt": true, "reason": { "type": "string", "const": "compromised" } },
+            "required": ["compromisedAt", "reason"]
+          }
+        }
+      ]
+    }
+  }
+}

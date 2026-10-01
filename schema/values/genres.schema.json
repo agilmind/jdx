@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/values/genres.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Géneros de una sociedad (values/sadaic-genres.json)",
+  "type": "object",
+  "properties": {
+    "list": { "type": "string", "pattern": "^[a-z][a-z0-9]*-genres$" },
+    "version": { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$" },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/Genre" } }
+  },
+  "required": ["list", "version", "entries"],
+  "additionalProperties": false,
+  "$defs": {
+    "Genre": {
+      "$comment": "Un género se identifica por el par (code, name): la lista puede repetir códigos.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "pattern": "^[1-9][0-9]{0,2}$" },
+        "name": { "type": "string", "minLength": 1 },
+        "group": { "type": "string", "minLength": 1 }
+      },
+      "required": ["code", "name", "group"],
+      "additionalProperties": false
+    }
+  }
+}

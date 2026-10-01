@@ -1,0 +1,45 @@
+{
+  "list": "mediaKinds",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "signedContract"
+    },
+    {
+      "code": "splitAgreement"
+    },
+    {
+      "code": "timestampProof"
+    },
+    {
+      "code": "printRunStatement"
+    },
+    {
+      "code": "legalDepositCopy"
+    },
+    {
+      "code": "registrationFiling"
+    },
+    {
+      "code": "registrationCertificate"
+    },
+    {
+      "code": "societyForm"
+    },
+    {
+      "code": "declarationForm"
+    },
+    {
+      "code": "score"
+    },
+    {
+      "code": "lyrics"
+    },
+    {
+      "code": "audio"
+    },
+    {
+      "code": "taxIdCertificate"
+    }
+  ]
+}

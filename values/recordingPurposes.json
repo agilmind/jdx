@@ -1,0 +1,15 @@
+{
+  "list": "recordingPurposes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "registrationAudio"
+    },
+    {
+      "code": "commercial"
+    },
+    {
+      "code": "reference"
+    }
+  ]
+}

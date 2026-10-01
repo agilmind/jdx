@@ -1,0 +1,14 @@
+{
+  "list": "sadaic-contract",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "CONTRATO_TIPO",
+      "name": {
+        "es": "Contrato tipo SADAIC",
+        "pt": "Contrato-padrão da SADAIC",
+        "en": "SADAIC standard contract"
+      }
+    }
+  ]
+}

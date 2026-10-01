@@ -1,0 +1,43 @@
+{
+  "name": "@agilmind/jdx",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JDX: formato JSON para declarar obras musicales, sus derechos y sus contratos ante las Sociedades de Gestión Colectiva (SGC). Un estándar creado por Agilmind SRL para ser implementado por las Sociedades de Gestión.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Agilmind SRL",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agilmind/jdx.git"
+  },
+  "homepage": "https://github.com/agilmind/jdx",
+  "bugs": {
+    "url": "https://github.com/agilmind/jdx/issues",
+    "email": "jdx@jupiter.ar"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "gen": "tsx scripts/gen.ts",
+    "gen:check": "tsx scripts/gen.ts --check",
+    "test": "npm run gen:check && vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "validate": "tsx scripts/validate.ts"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "jose": "6.2.12",
+    "semver": "7.8.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "@types/semver": "7.8.0",
+    "fast-check": "4.10.2",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3",
+    "yaml": "2.9.1"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "list": "contributorRoles",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "composer"
+    },
+    {
+      "code": "lyricist"
+    },
+    {
+      "code": "arranger"
+    },
+    {
+      "code": "adapter"
+    },
+    {
+      "code": "translator"
+    },
+    {
+      "code": "subArranger"
+    },
+    {
+      "code": "subLyricist"
+    },
+    {
+      "code": "librettist"
+    },
+    {
+      "code": "creator"
+    }
+  ]
+}

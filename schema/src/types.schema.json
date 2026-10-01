@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/src/types.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": {
+    "spdx": "LicenseRef-Agilmind-JDX",
+    "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE"
+  },
+  "title": "Tipos de JDX (schema/src/types.json)",
+  "type": "object",
+  "properties": {
+    "jdx": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "openLists": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][A-Za-z0-9]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/OpenList"
+      }
+    },
+    "types": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Za-z]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/Type"
+      }
+    }
+  },
+  "required": [
+    "jdx",
+    "openLists",
+    "types"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "OpenList": {
+      "type": "object",
+      "properties": {
+        "initial": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "style": {
+          "type": "string",
+          "enum": [
+            "enum",
+            "scheme"
+          ]
+        }
+      },
+      "required": [
+        "initial",
+        "style"
+      ],
+      "additionalProperties": false
+    },
+    "Type": {
+      "type": "object",
+      "properties": {
+        "group": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "extensions": {
+          "type": "boolean"
+        },
+        "props": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^\\$?[a-z][A-Za-z0-9]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/Prop"
+          }
+        }
+      },
+      "required": [
+        "group",
+        "description",
+        "extensions",
+        "props"
+      ],
+      "additionalProperties": false
+    },
+    "Prop": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/TypeRef"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "personalData": {
+          "type": "boolean",
+          "const": true
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "required",
+        "description"
+      ],
+      "additionalProperties": false
+    },
+    "TypeRef": {
+      "type": "object",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "scalar": {
+              "type": "string",
+              "enum": [
+                "text",
+                "boolean",
+                "integer",
+                "integer>=0",
+                "integer>=1",
+                "year",
+                "percent",
+                "instant",
+                "date",
+                "duration",
+                "amount",
+                "currency",
+                "sha256",
+                "uuid",
+                "localId",
+                "issuerId",
+                "kid",
+                "country",
+                "subdivision",
+                "tis",
+                "society",
+                "language",
+                "url",
+                "uri",
+                "email",
+                "phone",
+                "mediaType",
+                "fraction",
+                "schemaVersion"
+              ]
+            }
+          },
+          "required": [
+            "scalar"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Za-z]*$"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string",
+              "enum": [
+                "parties",
+                "works",
+                "recordings",
+                "agreements",
+                "media"
+              ]
+            },
+            "refTypes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][A-Za-z0-9]*$"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "closed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "closed"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "open": {
+              "type": "string",
+              "pattern": "^[a-z][A-Za-z0-9]*$"
+            }
+          },
+          "required": [
+            "open"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "array": {
+              "$ref": "#/$defs/TypeRef"
+            },
+            "minItems": {
+              "type": "integer",
+              "const": 1
+            }
+          },
+          "required": [
+            "array"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

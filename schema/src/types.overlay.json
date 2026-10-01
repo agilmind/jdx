@@ -1,0 +1,89 @@
+{
+  "constraints": [
+    { "id": "name-full-or-family", "kind": "anyOfRequired", "type": "Name", "props": ["full", "family"] },
+    { "id": "external-titles-or-identifiers", "kind": "anyOfRequired", "type": "External", "props": ["titles", "identifiers"] },
+    { "id": "external-recording-title-or-identifiers", "kind": "anyOfRequired", "type": "ExternalRecording", "props": ["title", "identifiers"] },
+    { "id": "work-ref-work-or-external", "kind": "oneOfRequired", "type": "WorkRef", "props": ["work", "external"] },
+    { "id": "component-work-or-external", "kind": "oneOfRequired", "type": "Component", "props": ["work", "external"] },
+    { "id": "sample-recording-or-external", "kind": "oneOfRequired", "type": "Sample", "props": ["recording", "external"] },
+    { "id": "agreement-parent-agreement-or-uid", "kind": "oneOfRequired", "type": "AgreementParent", "props": ["agreement", "uid"] },
+    {
+      "id": "identifier-tax-or-national-id-fields",
+      "kind": "requiredIf",
+      "type": "Identifier",
+      "when": { "path": "scheme", "in": ["TAX_ID", "NATIONAL_ID"] },
+      "props": ["country", "type"]
+    },
+    {
+      "id": "identifier-society-fields",
+      "kind": "requiredIf",
+      "type": "Identifier",
+      "when": { "path": "scheme", "in": ["SOCIETY_WORK", "SOCIETY_RECORDING"] },
+      "props": ["society"]
+    },
+    {
+      "id": "identifier-catalog-number-issuer",
+      "kind": "requiredIf",
+      "type": "Identifier",
+      "when": { "path": "scheme", "in": ["CATALOG_NUMBER"] },
+      "props": ["issuer"]
+    },
+    { "id": "term-fixed-duration", "kind": "requiredIf", "type": "Term", "when": { "path": "basis", "in": ["fixed"] }, "props": ["duration"] },
+    {
+      "id": "invested-amount-determined",
+      "kind": "requiredIf",
+      "type": "InvestedAmount",
+      "when": { "path": "status", "in": ["determined"] },
+      "props": ["amount", "currency"]
+    },
+    {
+      "id": "term-protection-period-without-duration",
+      "kind": "forbiddenIf",
+      "type": "Term",
+      "when": { "path": "basis", "in": ["protectionPeriod"] },
+      "props": ["duration"]
+    },
+    {
+      "id": "invested-amount-undetermined-without-amount",
+      "kind": "forbiddenIf",
+      "type": "InvestedAmount",
+      "when": { "path": "status", "in": ["undetermined"] },
+      "props": ["amount", "currency"]
+    },
+    {
+      "id": "media-not-delivered-without-path",
+      "kind": "forbiddenIf",
+      "type": "Media",
+      "when": { "path": "delivered", "in": ["false"] },
+      "props": ["path"]
+    },
+    {
+      "id": "agreement-protection-period-without-end-date",
+      "kind": "forbiddenIf",
+      "type": "Agreement",
+      "when": { "path": "term.basis", "in": ["protectionPeriod"] },
+      "props": ["endDate"]
+    },
+    {
+      "id": "post-term-collection-end-date-iff-date",
+      "kind": "requiredIff",
+      "type": "PostTermCollection",
+      "when": { "path": "status", "in": ["date"] },
+      "prop": "endDate"
+    },
+    {
+      "id": "party-organization-names-full",
+      "kind": "itemsIf",
+      "type": "Party",
+      "when": { "path": "kind", "in": ["organization"] },
+      "items": "names",
+      "require": ["full"],
+      "forbid": ["given", "family"]
+    }
+  ],
+  "personalDataWhen": {
+    "Name.type": { "path": "type", "in": ["legal"] },
+    "Identifier.scheme": { "path": "scheme", "in": ["TAX_ID", "NATIONAL_ID"] }
+  },
+  "translations": {}
+}

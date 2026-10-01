@@ -1,0 +1,9 @@
+{
+  "list": "classificationSchemes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "SADAIC_GENRE"
+    }
+  ]
+}

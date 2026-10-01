@@ -1,0 +1,21 @@
+{
+  "list": "originUsages",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "background"
+    },
+    {
+      "code": "logo"
+    },
+    {
+      "code": "theme"
+    },
+    {
+      "code": "visual"
+    },
+    {
+      "code": "rolledUpCue"
+    }
+  ]
+}

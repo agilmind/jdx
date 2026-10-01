@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/src/types.overlay.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": {
+    "spdx": "LicenseRef-Agilmind-JDX",
+    "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE"
+  },
+  "title": "Restricciones, datos personales condicionales y traducciones (schema/src/types.overlay.json)",
+  "type": "object",
+  "properties": {
+    "constraints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Constraint"
+      }
+    },
+    "personalDataWhen": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Za-z]*\\.\\$?[a-z][A-Za-z0-9]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/Condition"
+      }
+    },
+    "translations": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Za-z]*(\\.\\$?[a-z][A-Za-z0-9]*)?$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "pt": {
+            "type": "string"
+          },
+          "en": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "constraints",
+    "personalDataWhen",
+    "translations"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Condition": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^[a-z][A-Za-z0-9]*(\\.[a-z][A-Za-z0-9]*)*$"
+        },
+        "in": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "path",
+        "in"
+      ],
+      "additionalProperties": false
+    },
+    "Constraint": {
+      "type": "object",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "anyOfRequired",
+                "oneOfRequired"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Za-z]*$"
+            },
+            "props": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\$?[a-z][A-Za-z0-9]*$"
+              },
+              "minItems": 2,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "type",
+            "props"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "requiredIf",
+                "forbiddenIf"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Za-z]*$"
+            },
+            "when": {
+              "$ref": "#/$defs/Condition"
+            },
+            "props": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\$?[a-z][A-Za-z0-9]*$"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "type",
+            "when",
+            "props"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "type": "string",
+              "const": "requiredIff"
+            },
+            "type": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Za-z]*$"
+            },
+            "when": {
+              "$ref": "#/$defs/Condition"
+            },
+            "prop": {
+              "type": "string",
+              "pattern": "^\\$?[a-z][A-Za-z0-9]*$"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "type",
+            "when",
+            "prop"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/Id"
+            },
+            "kind": {
+              "type": "string",
+              "const": "itemsIf"
+            },
+            "type": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Za-z]*$"
+            },
+            "when": {
+              "$ref": "#/$defs/Condition"
+            },
+            "items": {
+              "type": "string",
+              "pattern": "^\\$?[a-z][A-Za-z0-9]*$"
+            },
+            "require": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\$?[a-z][A-Za-z0-9]*$"
+              }
+            },
+            "forbid": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\$?[a-z][A-Za-z0-9]*$"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "type",
+            "when",
+            "items",
+            "require",
+            "forbid"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+    }
+  }
+}

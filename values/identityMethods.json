@@ -1,0 +1,21 @@
+{
+  "list": "identityMethods",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "invitationLink"
+    },
+    {
+      "code": "emailOtp"
+    },
+    {
+      "code": "smsOtp"
+    },
+    {
+      "code": "totp"
+    },
+    {
+      "code": "digitalCertificate"
+    }
+  ]
+}

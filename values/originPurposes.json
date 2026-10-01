@@ -1,0 +1,27 @@
+{
+  "list": "originPurposes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "film"
+    },
+    {
+      "code": "television"
+    },
+    {
+      "code": "advertising"
+    },
+    {
+      "code": "library"
+    },
+    {
+      "code": "radio"
+    },
+    {
+      "code": "theatre"
+    },
+    {
+      "code": "videogame"
+    }
+  ]
+}

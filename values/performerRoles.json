@@ -1,0 +1,24 @@
+{
+  "list": "performerRoles",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "mainPerformer"
+    },
+    {
+      "code": "featuredPerformer"
+    },
+    {
+      "code": "conductor"
+    },
+    {
+      "code": "sessionMusician"
+    },
+    {
+      "code": "backgroundVocalist"
+    },
+    {
+      "code": "ensemble"
+    }
+  ]
+}

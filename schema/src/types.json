@@ -1,0 +1,3866 @@
+{
+  "jdx": "1.0",
+  "openLists": {
+    "nameTypes": {
+      "initial": [
+        "legal",
+        "pseudonym",
+        "trade"
+      ],
+      "style": "enum"
+    },
+    "identifierSchemes": {
+      "initial": [
+        "IPI_NAME",
+        "IPI_BASE",
+        "ISNI",
+        "IPN",
+        "TAX_ID",
+        "NATIONAL_ID",
+        "ISSUER",
+        "ISWC",
+        "SOCIETY_WORK",
+        "ISRC",
+        "SOCIETY_RECORDING",
+        "ICPN",
+        "CATALOG_NUMBER",
+        "ISAN"
+      ],
+      "style": "scheme"
+    },
+    "identifierTypes": {
+      "initial": [
+        "CUIT",
+        "CUIL",
+        "CDI",
+        "CPF",
+        "CNPJ",
+        "RFC",
+        "RUT",
+        "NIT",
+        "RUC",
+        "RIF",
+        "DNI",
+        "CI",
+        "CURP",
+        "CEDULA",
+        "RG",
+        "RUN",
+        "PASSPORT"
+      ],
+      "style": "scheme"
+    },
+    "classificationSchemes": {
+      "initial": [
+        "SADAIC_GENRE"
+      ],
+      "style": "scheme"
+    },
+    "conditionSchemes": {
+      "initial": [
+        "SADAIC_ART8"
+      ],
+      "style": "scheme"
+    },
+    "contractTemplateSchemes": {
+      "initial": [
+        "SADAIC_CONTRACT"
+      ],
+      "style": "scheme"
+    },
+    "registries": {
+      "initial": [
+        "DNDA_AR",
+        "INDAUTOR_MX",
+        "DNDA_CO",
+        "DINAPI_PY",
+        "INDECOPI_PE",
+        "SENADI_EC",
+        "DDI_CL",
+        "BN_UY",
+        "EDA_BR"
+      ],
+      "style": "scheme"
+    },
+    "registrationKinds": {
+      "initial": [
+        "unpublishedDeposit",
+        "publishedWork",
+        "contract",
+        "pseudonym"
+      ],
+      "style": "enum"
+    },
+    "legalRepresentativeCapacities": {
+      "initial": [
+        "parent",
+        "guardian"
+      ],
+      "style": "enum"
+    },
+    "successorCapacities": {
+      "initial": [
+        "heir",
+        "unifiedRepresentative"
+      ],
+      "style": "enum"
+    },
+    "representativeRoles": {
+      "initial": [
+        "managingPartner",
+        "director",
+        "president",
+        "attorney",
+        "partner"
+      ],
+      "style": "enum"
+    },
+    "titleTypes": {
+      "initial": [
+        "original",
+        "alternative",
+        "translated",
+        "transliterated",
+        "firstLine",
+        "formal",
+        "incorrect",
+        "part",
+        "search"
+      ],
+      "style": "enum"
+    },
+    "instrumentSchemes": {
+      "initial": [],
+      "style": "scheme"
+    },
+    "originPurposes": {
+      "initial": [
+        "film",
+        "television",
+        "advertising",
+        "library",
+        "radio",
+        "theatre",
+        "videogame"
+      ],
+      "style": "enum"
+    },
+    "originUsages": {
+      "initial": [
+        "background",
+        "logo",
+        "theme",
+        "visual",
+        "rolledUpCue"
+      ],
+      "style": "enum"
+    },
+    "contributorRoles": {
+      "initial": [
+        "composer",
+        "lyricist",
+        "arranger",
+        "adapter",
+        "translator",
+        "subArranger",
+        "subLyricist",
+        "librettist",
+        "creator"
+      ],
+      "style": "enum"
+    },
+    "recordingPurposes": {
+      "initial": [
+        "registrationAudio",
+        "commercial",
+        "reference"
+      ],
+      "style": "enum"
+    },
+    "recordingTypes": {
+      "initial": [
+        "studio",
+        "live",
+        "remix",
+        "library",
+        "demo"
+      ],
+      "style": "enum"
+    },
+    "carriers": {
+      "initial": [
+        "digital",
+        "cd",
+        "vinyl",
+        "cassette"
+      ],
+      "style": "enum"
+    },
+    "performerRoles": {
+      "initial": [
+        "mainPerformer",
+        "featuredPerformer",
+        "conductor",
+        "sessionMusician",
+        "backgroundVocalist",
+        "ensemble"
+      ],
+      "style": "enum"
+    },
+    "recordingContributorRoles": {
+      "initial": [
+        "studioProducer",
+        "recordingEngineer",
+        "mixingEngineer",
+        "masteringEngineer",
+        "remixer"
+      ],
+      "style": "enum"
+    },
+    "platforms": {
+      "initial": [
+        "spotify",
+        "appleMusic",
+        "youtube",
+        "youtubeMusic",
+        "deezer",
+        "amazonMusic",
+        "tidal",
+        "soundcloud",
+        "bandcamp"
+      ],
+      "style": "enum"
+    },
+    "editionTypes": {
+      "initial": [
+        "single",
+        "album",
+        "integral"
+      ],
+      "style": "enum"
+    },
+    "mediaKinds": {
+      "initial": [
+        "signedContract",
+        "splitAgreement",
+        "timestampProof",
+        "printRunStatement",
+        "legalDepositCopy",
+        "registrationFiling",
+        "registrationCertificate",
+        "societyForm",
+        "declarationForm",
+        "score",
+        "lyrics",
+        "audio",
+        "taxIdCertificate"
+      ],
+      "style": "enum"
+    },
+    "identityMethods": {
+      "initial": [
+        "invitationLink",
+        "emailOtp",
+        "smsOtp",
+        "totp",
+        "digitalCertificate"
+      ],
+      "style": "enum"
+    },
+    "contactSources": {
+      "initial": [
+        "declarant",
+        "signer"
+      ],
+      "style": "enum"
+    },
+    "anchorMethods": {
+      "initial": [
+        "openTimestamps"
+      ],
+      "style": "enum"
+    }
+  },
+  "types": {
+    "Document": {
+      "group": "Raíz y declaración",
+      "description": "La raíz del archivo: la declaración y sus listas de personas, obras, grabaciones, contratos y archivos.",
+      "extensions": true,
+      "props": {
+        "$schema": {
+          "type": {
+            "scalar": "uri"
+          },
+          "required": true,
+          "description": "URL del schema de la versión menor del archivo, por ejemplo `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. Es un identificador: no se descarga."
+        },
+        "jdx": {
+          "type": {
+            "scalar": "schemaVersion"
+          },
+          "required": true,
+          "description": "Versión del formato, `M.m` (hoy `1.0`)."
+        },
+        "profiles": {
+          "type": {
+            "array": {
+              "scalar": "uri"
+            }
+          },
+          "required": false,
+          "description": "Perfiles que el emisor cree que aplican. Es informativo: el perfil lo elige quien recibe."
+        },
+        "declaration": {
+          "type": {
+            "type": "Declaration"
+          },
+          "required": true,
+          "description": "Qué declaración es, qué revisión y quién la emite."
+        },
+        "parties": {
+          "type": {
+            "array": {
+              "type": "Party"
+            }
+          },
+          "required": false,
+          "description": "Personas y organizaciones: autores, editoras, intérpretes, productores, representantes. Cada una aparece una vez y el resto del archivo la referencia por su id."
+        },
+        "works": {
+          "type": {
+            "array": {
+              "type": "Work"
+            }
+          },
+          "required": false,
+          "description": "Obras declaradas."
+        },
+        "recordings": {
+          "type": {
+            "array": {
+              "type": "Recording"
+            }
+          },
+          "required": false,
+          "description": "Grabaciones de las obras."
+        },
+        "agreements": {
+          "type": {
+            "array": {
+              "type": "Agreement"
+            }
+          },
+          "required": false,
+          "description": "Contratos firmados: edición, subedición, cartas de reparto entre coautores, autorizaciones."
+        },
+        "media": {
+          "type": {
+            "array": {
+              "type": "Media"
+            }
+          },
+          "required": false,
+          "description": "Archivos que viajan aparte (PDF, audios, planillas), descritos por su tamaño y su hash."
+        },
+        "edition": {
+          "type": {
+            "type": "Edition"
+          },
+          "required": false,
+          "description": "La edición publicada. Si falta, la declaración es de obras no editadas."
+        }
+      }
+    },
+    "Declaration": {
+      "group": "Raíz y declaración",
+      "description": "Los datos de la declaración: identificador estable, revisión y emisor.",
+      "extensions": false,
+      "props": {
+        "id": {
+          "type": {
+            "scalar": "uuid"
+          },
+          "required": true,
+          "description": "Identificador estable de la declaración. Es el mismo en todas sus revisiones."
+        },
+        "revision": {
+          "type": {
+            "scalar": "integer>=1"
+          },
+          "required": true,
+          "description": "Número de revisión. Crece en cada reenvío; quien recibe reemplaza la declaración entera cuando llega una revisión mayor que la última que cargó."
+        },
+        "createdAt": {
+          "type": {
+            "scalar": "instant"
+          },
+          "required": true,
+          "description": "Cuándo se armó esta revisión. Es igual al `issuedAt` de la firma."
+        },
+        "issuer": {
+          "type": {
+            "type": "Issuer"
+          },
+          "required": true,
+          "description": "El emisor que arma y firma el archivo."
+        },
+        "declarant": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": false,
+          "description": "Quién declara: la editora o, en obras no editadas, el autor."
+        },
+        "recipients": {
+          "type": {
+            "array": {
+              "type": "Recipient"
+            }
+          },
+          "required": false,
+          "description": "Sociedades a las que va dirigida."
+        },
+        "language": {
+          "type": {
+            "scalar": "language"
+          },
+          "required": false,
+          "description": "Idioma de los textos libres del archivo."
+        }
+      }
+    },
+    "Issuer": {
+      "group": "Raíz y declaración",
+      "description": "El emisor del archivo, tal como figura en la lista de confianza.",
+      "extensions": false,
+      "props": {
+        "id": {
+          "type": {
+            "scalar": "localId"
+          },
+          "required": true,
+          "description": "Id del emisor en la lista de confianza."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Nombre del emisor."
+        },
+        "keyId": {
+          "type": {
+            "scalar": "kid"
+          },
+          "required": true,
+          "description": "Huella (`kid`) de la clave con la que firma."
+        }
+      }
+    },
+    "Recipient": {
+      "group": "Raíz y declaración",
+      "description": "Una sociedad destinataria.",
+      "extensions": false,
+      "props": {
+        "society": {
+          "type": {
+            "scalar": "society"
+          },
+          "required": true,
+          "description": "Código de la sociedad: el de CISAC (3 dígitos, `061`) o uno de JDX (`X_JDX_AADI`)."
+        }
+      }
+    },
+    "Name": {
+      "group": "Tipos comunes",
+      "description": "Un nombre de una persona u organización.",
+      "extensions": false,
+      "props": {
+        "type": {
+          "type": {
+            "open": "nameTypes"
+          },
+          "required": true,
+          "personalData": true,
+          "description": "Tipo de nombre: legal, seudónimo o nombre comercial."
+        },
+        "given": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre o nombres de pila. Solo personas."
+        },
+        "family": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Apellido o apellidos. Solo personas."
+        },
+        "full": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre completo sin desglosar: seudónimos, nombres comerciales y organizaciones."
+        },
+        "registrations": {
+          "type": {
+            "array": {
+              "type": "Registration"
+            }
+          },
+          "required": false,
+          "description": "Registro del seudónimo (`kind`: `pseudonym`)."
+        }
+      }
+    },
+    "Identifier": {
+      "group": "Tipos comunes",
+      "description": "Un identificador con su esquema: IPI, ISNI, ISWC, ISRC, CUIT, DNI, el código de una sociedad, etc.",
+      "extensions": false,
+      "props": {
+        "scheme": {
+          "type": {
+            "open": "identifierSchemes"
+          },
+          "required": true,
+          "personalData": true,
+          "description": "Esquema del identificador. Los esquemas propios de un emisor o de una sociedad llevan prefijo `X_`."
+        },
+        "value": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "El valor, como texto. Su formato lo controlan las reglas del perfil, no el schema."
+        },
+        "country": {
+          "type": {
+            "scalar": "country"
+          },
+          "required": false,
+          "description": "País que emite el identificador fiscal o el documento."
+        },
+        "type": {
+          "type": {
+            "open": "identifierTypes"
+          },
+          "required": false,
+          "description": "Tipo de identificador fiscal o de documento (`CUIT`, `DNI`, `CPF`…)."
+        },
+        "society": {
+          "type": {
+            "scalar": "society"
+          },
+          "required": false,
+          "description": "Sociedad que asignó el código."
+        },
+        "issuer": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Sello que asignó el número de catálogo."
+        }
+      }
+    },
+    "Classification": {
+      "group": "Tipos comunes",
+      "description": "El género de una obra, según el vocabulario de quien lo define.",
+      "extensions": false,
+      "props": {
+        "scheme": {
+          "type": {
+            "open": "classificationSchemes"
+          },
+          "required": true,
+          "description": "Vocabulario del género, por ejemplo `SADAIC_GENRE`."
+        },
+        "code": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Código del género en ese vocabulario. En `SADAIC_GENRE`, de 1 a 3 dígitos, sin ceros a la izquierda."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre del género. En `SADAIC_GENRE` identifica el género junto con `code`, porque la lista repite códigos."
+        }
+      }
+    },
+    "Condition": {
+      "group": "Tipos comunes",
+      "description": "Una condición de un contrato que cambia el tope editorial.",
+      "extensions": false,
+      "props": {
+        "scheme": {
+          "type": {
+            "open": "conditionSchemes"
+          },
+          "required": true,
+          "description": "Vocabulario de la condición, por ejemplo `SADAIC_ART8`."
+        },
+        "code": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Código de la condición en ese vocabulario."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre de la condición."
+        }
+      }
+    },
+    "StandardContract": {
+      "group": "Tipos comunes",
+      "description": "El contrato tipo en el que se basa un contrato.",
+      "extensions": false,
+      "props": {
+        "scheme": {
+          "type": {
+            "open": "contractTemplateSchemes"
+          },
+          "required": true,
+          "description": "Vocabulario del contrato tipo, por ejemplo `SADAIC_CONTRACT`."
+        },
+        "code": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Código del contrato tipo en ese vocabulario."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre del contrato tipo."
+        }
+      }
+    },
+    "Territories": {
+      "group": "Tipos comunes",
+      "description": "Territorios con códigos TIS de CISAC: los incluidos menos los excluidos.",
+      "extensions": false,
+      "props": {
+        "include": {
+          "type": {
+            "array": {
+              "scalar": "tis"
+            },
+            "minItems": 1
+          },
+          "required": true,
+          "description": "Territorios incluidos, por ejemplo `2136` (el mundo) o `0032` (Argentina)."
+        },
+        "exclude": {
+          "type": {
+            "array": {
+              "scalar": "tis"
+            }
+          },
+          "required": false,
+          "description": "Territorios que se restan de los incluidos."
+        }
+      }
+    },
+    "Address": {
+      "group": "Tipos comunes",
+      "description": "Un domicilio postal.",
+      "extensions": false,
+      "props": {
+        "street": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Calle y número."
+        },
+        "floor": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Piso."
+        },
+        "unit": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Departamento u oficina."
+        },
+        "city": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Ciudad o localidad."
+        },
+        "subdivision": {
+          "type": {
+            "type": "Subdivision"
+          },
+          "required": false,
+          "description": "Provincia o estado."
+        },
+        "postalCode": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Código postal."
+        },
+        "country": {
+          "type": {
+            "scalar": "country"
+          },
+          "required": false,
+          "description": "País."
+        }
+      }
+    },
+    "Place": {
+      "group": "Tipos comunes",
+      "description": "Un lugar: ciudad, provincia y país.",
+      "extensions": false,
+      "props": {
+        "city": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Ciudad o localidad."
+        },
+        "subdivision": {
+          "type": {
+            "type": "Subdivision"
+          },
+          "required": false,
+          "description": "Provincia o estado."
+        },
+        "country": {
+          "type": {
+            "scalar": "country"
+          },
+          "required": false,
+          "description": "País."
+        }
+      }
+    },
+    "Subdivision": {
+      "group": "Tipos comunes",
+      "description": "Una provincia, estado o departamento.",
+      "extensions": false,
+      "props": {
+        "code": {
+          "type": {
+            "scalar": "subdivision"
+          },
+          "required": false,
+          "description": "Código ISO 3166-2, por ejemplo `AR-B`."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Nombre, por ejemplo `Buenos Aires`."
+        }
+      }
+    },
+    "Contact": {
+      "group": "Tipos comunes",
+      "description": "Datos de contacto.",
+      "extensions": false,
+      "props": {
+        "email": {
+          "type": {
+            "scalar": "email"
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Correo electrónico."
+        },
+        "phone": {
+          "type": {
+            "scalar": "phone"
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Teléfono en formato internacional, por ejemplo `+5491155550000`."
+        }
+      }
+    },
+    "Amount": {
+      "group": "Tipos comunes",
+      "description": "Un importe con su moneda.",
+      "extensions": false,
+      "props": {
+        "amount": {
+          "type": {
+            "scalar": "amount"
+          },
+          "required": true,
+          "description": "Importe como texto decimal, con hasta 4 decimales: `\"1500.00\"`."
+        },
+        "currency": {
+          "type": {
+            "scalar": "currency"
+          },
+          "required": true,
+          "description": "Moneda ISO 4217, por ejemplo `ARS`."
+        }
+      }
+    },
+    "Registration": {
+      "group": "Tipos comunes",
+      "description": "Un registro ante un organismo nacional: depósito de obra, inscripción de contrato o de seudónimo.",
+      "extensions": false,
+      "props": {
+        "registry": {
+          "type": {
+            "open": "registries"
+          },
+          "required": true,
+          "description": "Organismo, por ejemplo `DNDA_AR`."
+        },
+        "kind": {
+          "type": {
+            "open": "registrationKinds"
+          },
+          "required": true,
+          "description": "Qué se registró: obra inédita, obra publicada, contrato o seudónimo."
+        },
+        "number": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Número de registro o de expediente."
+        },
+        "date": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha del registro."
+        },
+        "expiryDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Vencimiento del registro, si lo tiene."
+        },
+        "filing": {
+          "type": {
+            "ref": "media",
+            "refTypes": [
+              "registrationFiling"
+            ]
+          },
+          "required": false,
+          "description": "El archivo de la presentación."
+        },
+        "certificate": {
+          "type": {
+            "ref": "media",
+            "refTypes": [
+              "registrationCertificate"
+            ]
+          },
+          "required": false,
+          "description": "El archivo del certificado oficial. Puede llegar en una revisión posterior."
+        }
+      }
+    },
+    "WorkRegistration": {
+      "group": "Tipos comunes",
+      "description": "Un registro de una obra, que además dice qué parte de la obra registra.",
+      "extensions": false,
+      "props": {
+        "registry": {
+          "type": {
+            "open": "registries"
+          },
+          "required": true,
+          "description": "Organismo, por ejemplo `DNDA_AR`."
+        },
+        "kind": {
+          "type": {
+            "open": "registrationKinds"
+          },
+          "required": true,
+          "description": "Qué se registró: obra inédita, obra publicada, contrato o seudónimo."
+        },
+        "part": {
+          "type": {
+            "closed": [
+              "music",
+              "lyrics",
+              "both"
+            ]
+          },
+          "required": false,
+          "description": "Parte registrada: música, letra o las dos."
+        },
+        "number": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Número de registro o de expediente."
+        },
+        "date": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha del registro."
+        },
+        "expiryDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Vencimiento del registro, si lo tiene."
+        },
+        "filing": {
+          "type": {
+            "ref": "media",
+            "refTypes": [
+              "registrationFiling"
+            ]
+          },
+          "required": false,
+          "description": "El archivo de la presentación."
+        },
+        "certificate": {
+          "type": {
+            "ref": "media",
+            "refTypes": [
+              "registrationCertificate"
+            ]
+          },
+          "required": false,
+          "description": "El archivo del certificado oficial. Puede llegar en una revisión posterior."
+        }
+      }
+    },
+    "Party": {
+      "group": "Personas",
+      "description": "Una persona u organización: autor, editora, intérprete, productor, representante, heredero.",
+      "extensions": true,
+      "props": {
+        "id": {
+          "type": {
+            "scalar": "localId"
+          },
+          "required": true,
+          "description": "Id local, único en el archivo (`p1`)."
+        },
+        "kind": {
+          "type": {
+            "closed": [
+              "person",
+              "organization"
+            ]
+          },
+          "required": true,
+          "description": "Persona humana u organización."
+        },
+        "names": {
+          "type": {
+            "array": {
+              "type": "Name"
+            }
+          },
+          "required": false,
+          "description": "Nombres: el legal y los seudónimos o nombres comerciales."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "Identificadores: IPI, ISNI, CUIT o CUIL, DNI y otros."
+        },
+        "gender": {
+          "type": {
+            "closed": [
+              "female",
+              "male",
+              "nonBinary",
+              "undisclosed"
+            ]
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Género."
+        },
+        "birthDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Fecha de nacimiento."
+        },
+        "deathDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Fecha de fallecimiento. Sirve para el dominio público y los herederos."
+        },
+        "nationality": {
+          "type": {
+            "scalar": "country"
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Nacionalidad."
+        },
+        "maritalStatus": {
+          "type": {
+            "closed": [
+              "single",
+              "married",
+              "commonLawUnion",
+              "civilUnion",
+              "separated",
+              "divorced",
+              "widowed",
+              "notDeclared"
+            ]
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Estado civil."
+        },
+        "address": {
+          "type": {
+            "type": "Address"
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Domicilio."
+        },
+        "contact": {
+          "type": {
+            "type": "Contact"
+          },
+          "required": false,
+          "personalData": true,
+          "description": "Correo y teléfono."
+        },
+        "affiliations": {
+          "type": {
+            "array": {
+              "type": "Affiliation"
+            }
+          },
+          "required": false,
+          "description": "Sociedades en las que está afiliada, con su número de socio."
+        },
+        "legalRepresentatives": {
+          "type": {
+            "array": {
+              "type": "LegalRepresentative"
+            }
+          },
+          "required": false,
+          "description": "Padre, madre o tutor de un autor menor de edad."
+        },
+        "successors": {
+          "type": {
+            "array": {
+              "type": "Successor"
+            }
+          },
+          "required": false,
+          "description": "Herederos o derechohabientes."
+        },
+        "representatives": {
+          "type": {
+            "array": {
+              "type": "Representative"
+            }
+          },
+          "required": false,
+          "description": "Quienes representan a una organización y pueden firmar por ella."
+        },
+        "media": {
+          "type": {
+            "array": {
+              "ref": "media"
+            }
+          },
+          "required": false,
+          "description": "Archivos de la persona, por ejemplo una constancia de CUIL."
+        }
+      }
+    },
+    "Affiliation": {
+      "group": "Personas",
+      "description": "La afiliación de una persona u organización a una sociedad.",
+      "extensions": false,
+      "props": {
+        "society": {
+          "type": {
+            "scalar": "society"
+          },
+          "required": true,
+          "description": "Código de la sociedad."
+        },
+        "memberNumber": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Número de socio o, para una editora, su número de cuenta en la sociedad."
+        },
+        "rights": {
+          "type": {
+            "array": {
+              "closed": [
+                "performing",
+                "mechanical",
+                "synchronization",
+                "print"
+              ]
+            }
+          },
+          "required": false,
+          "description": "Derechos que la sociedad gestiona para ella. Si falta, todos."
+        },
+        "territories": {
+          "type": {
+            "type": "Territories"
+          },
+          "required": false,
+          "description": "Territorios de la afiliación. Si falta, el mundo (`2136`)."
+        },
+        "startDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Desde cuándo."
+        },
+        "endDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Hasta cuándo. Si falta, sigue vigente."
+        }
+      }
+    },
+    "LegalRepresentative": {
+      "group": "Personas",
+      "description": "El representante legal de un autor menor de edad.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "El representante."
+        },
+        "capacity": {
+          "type": {
+            "open": "legalRepresentativeCapacities"
+          },
+          "required": false,
+          "description": "En qué carácter: padre o madre (`parent`) o tutor (`guardian`)."
+        }
+      }
+    },
+    "Successor": {
+      "group": "Personas",
+      "description": "Un heredero o derechohabiente.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "El heredero."
+        },
+        "capacity": {
+          "type": {
+            "open": "successorCapacities"
+          },
+          "required": false,
+          "description": "En qué carácter: heredero (`heir`) o representante unificado (`unifiedRepresentative`)."
+        }
+      }
+    },
+    "Representative": {
+      "group": "Personas",
+      "description": "Quien representa a una organización.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "La persona que representa a la organización."
+        },
+        "role": {
+          "type": {
+            "open": "representativeRoles"
+          },
+          "required": false,
+          "description": "Cargo: socio gerente, director, presidente, apoderado o socio."
+        },
+        "title": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "El cargo tal como se imprime, por ejemplo `Socia gerente`."
+        },
+        "signatory": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "Si puede firmar por la organización."
+        }
+      }
+    },
+    "Work": {
+      "group": "Obras",
+      "description": "Una obra musical.",
+      "extensions": true,
+      "props": {
+        "id": {
+          "type": {
+            "scalar": "localId"
+          },
+          "required": true,
+          "description": "Id local, único en el archivo (`w1`)."
+        },
+        "titles": {
+          "type": {
+            "array": {
+              "type": "Title"
+            },
+            "minItems": 1
+          },
+          "required": true,
+          "description": "Títulos: el original y los alternativos. Al menos uno."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "ISWC, código de la obra en una sociedad, id del emisor."
+        },
+        "classifications": {
+          "type": {
+            "array": {
+              "type": "Classification"
+            }
+          },
+          "required": false,
+          "description": "Géneros."
+        },
+        "distributionCategory": {
+          "type": {
+            "closed": [
+              "POP",
+              "SER",
+              "JAZ",
+              "UNC"
+            ]
+          },
+          "required": false,
+          "description": "Categoría de reparto de CISAC: popular, seria, jazz o sin clasificar."
+        },
+        "duration": {
+          "type": {
+            "scalar": "duration"
+          },
+          "required": false,
+          "description": "Duración, por ejemplo `PT3M25S`."
+        },
+        "textMusicRelationship": {
+          "type": {
+            "closed": [
+              "music",
+              "text",
+              "musicAndText",
+              "musicAndTextSeparate"
+            ]
+          },
+          "required": false,
+          "description": "Solo música, solo texto, música y texto, o música y texto que no se crearon uno para el otro."
+        },
+        "lyricsLanguages": {
+          "type": {
+            "array": {
+              "scalar": "language"
+            }
+          },
+          "required": false,
+          "description": "Idiomas de la letra."
+        },
+        "lyrics": {
+          "type": {
+            "type": "Lyrics"
+          },
+          "required": false,
+          "description": "Texto de la letra."
+        },
+        "creationDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha de creación."
+        },
+        "firstPerformance": {
+          "type": {
+            "type": "FirstPerformance"
+          },
+          "required": false,
+          "description": "Estreno."
+        },
+        "publicationStatus": {
+          "type": {
+            "closed": [
+              "unpublished",
+              "published"
+            ]
+          },
+          "required": false,
+          "description": "Inédita o editada."
+        },
+        "registrations": {
+          "type": {
+            "array": {
+              "type": "WorkRegistration"
+            }
+          },
+          "required": false,
+          "description": "Registros nacionales de la obra (por ejemplo, el depósito en la DNDA), por parte."
+        },
+        "version": {
+          "type": {
+            "type": "Version"
+          },
+          "required": false,
+          "description": "Si es original o derivada (arreglo, adaptación, traducción) y de qué obra."
+        },
+        "composite": {
+          "type": {
+            "type": "Composite"
+          },
+          "required": false,
+          "description": "Si combina otras obras: medley, popurrí, mashup."
+        },
+        "excerptOf": {
+          "type": {
+            "type": "WorkRef"
+          },
+          "required": false,
+          "description": "Obra de la que es un fragmento."
+        },
+        "commissioned": {
+          "type": {
+            "type": "Commission"
+          },
+          "required": false,
+          "description": "Si es una obra por encargo y quién la encargó."
+        },
+        "ai": {
+          "type": {
+            "type": "Ai"
+          },
+          "required": false,
+          "description": "Participación de inteligencia artificial en la obra."
+        },
+        "instrumentation": {
+          "type": {
+            "type": "Instrumentation"
+          },
+          "required": false,
+          "description": "Voces e instrumentos, para música de concierto."
+        },
+        "grandRights": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "Si es una obra dramático-musical."
+        },
+        "origin": {
+          "type": {
+            "type": "Origin"
+          },
+          "required": false,
+          "description": "Uso audiovisual o publicitario para el que se creó."
+        },
+        "contributors": {
+          "type": {
+            "array": {
+              "type": "Contributor"
+            }
+          },
+          "required": false,
+          "description": "Quiénes la crearon y con qué rol."
+        },
+        "authorship": {
+          "type": {
+            "array": {
+              "type": "Authorship"
+            }
+          },
+          "required": false,
+          "description": "Titularidad original por parte (música y letra). Cada parte suma 100."
+        },
+        "shares": {
+          "type": {
+            "array": {
+              "type": "Share"
+            }
+          },
+          "required": false,
+          "description": "Quién cobra: filas por derecho y territorio, con porcentajes sobre la obra entera."
+        },
+        "recordings": {
+          "type": {
+            "array": {
+              "ref": "recordings"
+            }
+          },
+          "required": false,
+          "description": "Grabaciones de la obra. Tiene que coincidir con `works` de cada grabación."
+        },
+        "media": {
+          "type": {
+            "array": {
+              "ref": "media"
+            }
+          },
+          "required": false,
+          "description": "Archivos de la obra: partitura, letra, boletín."
+        },
+        "notes": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Observaciones generales."
+        }
+      }
+    },
+    "Title": {
+      "group": "Obras",
+      "description": "Un título de una obra.",
+      "extensions": false,
+      "props": {
+        "type": {
+          "type": {
+            "open": "titleTypes"
+          },
+          "required": false,
+          "description": "Tipo: original, alternativo, traducido, transliterado, primera línea, etc."
+        },
+        "text": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "El título."
+        },
+        "language": {
+          "type": {
+            "scalar": "language"
+          },
+          "required": false,
+          "description": "Idioma del título."
+        }
+      }
+    },
+    "Lyrics": {
+      "group": "Obras",
+      "description": "La letra de una obra.",
+      "extensions": false,
+      "props": {
+        "text": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Texto completo de la letra."
+        },
+        "language": {
+          "type": {
+            "scalar": "language"
+          },
+          "required": false,
+          "description": "Idioma de la letra."
+        }
+      }
+    },
+    "FirstPerformance": {
+      "group": "Obras",
+      "description": "El estreno de una obra.",
+      "extensions": false,
+      "props": {
+        "date": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha del estreno."
+        },
+        "venue": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Sala o lugar."
+        },
+        "city": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Ciudad."
+        },
+        "country": {
+          "type": {
+            "scalar": "country"
+          },
+          "required": false,
+          "description": "País."
+        }
+      }
+    },
+    "WorkRef": {
+      "group": "Obras",
+      "description": "Una referencia a otra obra: una del archivo (`work`) o una externa (`external`), exactamente una de las dos.",
+      "extensions": false,
+      "props": {
+        "work": {
+          "type": {
+            "ref": "works"
+          },
+          "required": false,
+          "description": "Una obra del archivo."
+        },
+        "external": {
+          "type": {
+            "type": "External"
+          },
+          "required": false,
+          "description": "Una obra que no está en el archivo."
+        }
+      }
+    },
+    "External": {
+      "group": "Obras",
+      "description": "Una obra que no está en el archivo.",
+      "extensions": false,
+      "props": {
+        "titles": {
+          "type": {
+            "array": {
+              "type": "Title"
+            }
+          },
+          "required": false,
+          "description": "Títulos."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "Identificadores, por ejemplo el ISWC."
+        },
+        "writers": {
+          "type": {
+            "array": {
+              "type": "ExternalWriter"
+            }
+          },
+          "required": false,
+          "description": "Sus autores."
+        },
+        "publicDomain": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "Si está en dominio público, según declara el emisor."
+        }
+      }
+    },
+    "ExternalWriter": {
+      "group": "Obras",
+      "description": "Un autor de una obra externa.",
+      "extensions": false,
+      "props": {
+        "names": {
+          "type": {
+            "array": {
+              "type": "Name"
+            }
+          },
+          "required": false,
+          "description": "Nombres."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "Identificadores, por ejemplo el IPI."
+        },
+        "birthDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha de nacimiento."
+        },
+        "deathDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha de fallecimiento. Sirve para el dominio público."
+        }
+      }
+    },
+    "Version": {
+      "group": "Obras",
+      "description": "Si la obra es original o derivada de otra.",
+      "extensions": false,
+      "props": {
+        "type": {
+          "type": {
+            "closed": [
+              "original",
+              "arrangement",
+              "adaptation",
+              "translation",
+              "lyricReplacement",
+              "other"
+            ]
+          },
+          "required": true,
+          "description": "Original, arreglo, adaptación, traducción, reemplazo de la letra u otra."
+        },
+        "original": {
+          "type": {
+            "type": "WorkRef"
+          },
+          "required": false,
+          "description": "La obra de origen de una derivada."
+        },
+        "authorization": {
+          "type": {
+            "ref": "agreements",
+            "refTypes": [
+              "derivativeAuthorization"
+            ]
+          },
+          "required": false,
+          "description": "El contrato que autoriza la derivación. No hace falta si la obra de origen es de dominio público."
+        }
+      }
+    },
+    "Composite": {
+      "group": "Obras",
+      "description": "Una obra hecha de otras.",
+      "extensions": false,
+      "props": {
+        "type": {
+          "type": {
+            "closed": [
+              "medley",
+              "potpourri",
+              "composite",
+              "mashup",
+              "withSamples"
+            ]
+          },
+          "required": true,
+          "description": "Medley, popurrí, obra compuesta, mashup u obra con samples."
+        },
+        "components": {
+          "type": {
+            "array": {
+              "type": "Component"
+            }
+          },
+          "required": false,
+          "description": "Las obras que la componen."
+        }
+      }
+    },
+    "Component": {
+      "group": "Obras",
+      "description": "Una obra que forma parte de una compuesta: del archivo (`work`) o externa (`external`), exactamente una de las dos.",
+      "extensions": false,
+      "props": {
+        "work": {
+          "type": {
+            "ref": "works"
+          },
+          "required": false,
+          "description": "Una obra del archivo."
+        },
+        "external": {
+          "type": {
+            "type": "External"
+          },
+          "required": false,
+          "description": "Una obra que no está en el archivo."
+        },
+        "duration": {
+          "type": {
+            "scalar": "duration"
+          },
+          "required": false,
+          "description": "Duración del fragmento usado."
+        }
+      }
+    },
+    "Commission": {
+      "group": "Obras",
+      "description": "Si la obra fue por encargo.",
+      "extensions": false,
+      "props": {
+        "commissioned": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": true,
+          "description": "Si fue por encargo."
+        },
+        "commissioner": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": false,
+          "description": "Quién la encargó."
+        }
+      }
+    },
+    "Ai": {
+      "group": "Obras",
+      "description": "La participación de inteligencia artificial en una obra, por elemento.",
+      "extensions": false,
+      "props": {
+        "declared": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "Si el declarante informó sobre IA. Ausente o `false` quiere decir «no informado», no «sin IA»."
+        },
+        "elements": {
+          "type": {
+            "array": {
+              "type": "AiElement"
+            }
+          },
+          "required": false,
+          "description": "La participación en cada elemento: letra, melodía, armonía, arreglo."
+        },
+        "humanContribution": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Descripción del aporte humano."
+        }
+      }
+    },
+    "AiElement": {
+      "group": "Obras",
+      "description": "La participación de IA en un elemento de la obra.",
+      "extensions": false,
+      "props": {
+        "element": {
+          "type": {
+            "closed": [
+              "lyrics",
+              "melody",
+              "harmony",
+              "arrangement"
+            ]
+          },
+          "required": true,
+          "description": "Elemento: letra, melodía, armonía o arreglo."
+        },
+        "involvement": {
+          "type": {
+            "closed": [
+              "none",
+              "assisted",
+              "generated"
+            ]
+          },
+          "required": true,
+          "description": "Nivel: ninguno, asistido o generado."
+        },
+        "tools": {
+          "type": {
+            "array": {
+              "scalar": "text"
+            }
+          },
+          "required": false,
+          "description": "Herramientas usadas."
+        },
+        "prompt": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Instrucción usada, si se informa."
+        }
+      }
+    },
+    "Instrumentation": {
+      "group": "Obras",
+      "description": "Las voces y los instrumentos de una obra.",
+      "extensions": false,
+      "props": {
+        "voices": {
+          "type": {
+            "scalar": "integer>=0"
+          },
+          "required": false,
+          "description": "Cantidad de voces."
+        },
+        "instruments": {
+          "type": {
+            "array": {
+              "type": "Instrument"
+            }
+          },
+          "required": false,
+          "description": "Instrumentos."
+        },
+        "description": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Descripción libre de la instrumentación."
+        }
+      }
+    },
+    "Instrument": {
+      "group": "Obras",
+      "description": "Un instrumento de una obra, con su cantidad.",
+      "extensions": false,
+      "props": {
+        "scheme": {
+          "type": {
+            "open": "instrumentSchemes"
+          },
+          "required": true,
+          "description": "Vocabulario del instrumento. Todavía no hay uno recomendado: se usan esquemas propios `X_`."
+        },
+        "code": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Código del instrumento en ese vocabulario."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre del instrumento."
+        },
+        "count": {
+          "type": {
+            "scalar": "integer>=1"
+          },
+          "required": false,
+          "description": "Cantidad."
+        }
+      }
+    },
+    "Origin": {
+      "group": "Obras",
+      "description": "El uso audiovisual o publicitario para el que se creó una obra.",
+      "extensions": false,
+      "props": {
+        "purpose": {
+          "type": {
+            "open": "originPurposes"
+          },
+          "required": false,
+          "description": "Para qué: cine, televisión, publicidad, librería musical, radio, teatro, videojuego."
+        },
+        "usage": {
+          "type": {
+            "open": "originUsages"
+          },
+          "required": false,
+          "description": "Cómo se usa: fondo, logo, tema, visual o cues agrupados."
+        },
+        "productionTitle": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Título de la producción."
+        },
+        "productionNumber": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Número de la producción."
+        },
+        "productionYear": {
+          "type": {
+            "scalar": "year"
+          },
+          "required": false,
+          "description": "Año de la producción."
+        },
+        "episodeTitle": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Título del episodio."
+        },
+        "episodeNumber": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Número del episodio."
+        },
+        "advertiser": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Anunciante."
+        },
+        "product": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Producto publicitado."
+        },
+        "library": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Librería musical."
+        },
+        "cdIdentifier": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Identificador del CD de la librería."
+        },
+        "cutNumber": {
+          "type": {
+            "scalar": "integer>=1"
+          },
+          "required": false,
+          "description": "Número de corte en ese CD."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "Identificadores de la producción, por ejemplo el ISAN."
+        }
+      }
+    },
+    "Contributor": {
+      "group": "Derechos",
+      "description": "Quién creó la obra y con qué rol.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "La persona."
+        },
+        "roles": {
+          "type": {
+            "array": {
+              "open": "contributorRoles"
+            },
+            "minItems": 1
+          },
+          "required": true,
+          "description": "Roles: compositor, autor de la letra, arreglador, adaptador, traductor, etc. Al menos uno."
+        },
+        "creditedAs": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre con el que figura publicado."
+        }
+      }
+    },
+    "Authorship": {
+      "group": "Derechos",
+      "description": "La titularidad original de una parte de la obra.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "El autor."
+        },
+        "part": {
+          "type": {
+            "closed": [
+              "music",
+              "lyrics"
+            ]
+          },
+          "required": true,
+          "description": "Parte: música o letra."
+        },
+        "percent": {
+          "type": {
+            "scalar": "percent"
+          },
+          "required": true,
+          "description": "Porcentaje de esa parte. Cada parte suma 100 en cada obra."
+        },
+        "agreement": {
+          "type": {
+            "ref": "agreements",
+            "refTypes": [
+              "writerSplit"
+            ]
+          },
+          "required": false,
+          "description": "La carta de reparto entre coautores, si la hay."
+        }
+      }
+    },
+    "Share": {
+      "group": "Derechos",
+      "description": "Una fila de cobro: quién cobra qué porcentaje de la obra, por derecho y territorio.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "Quién cobra."
+        },
+        "role": {
+          "type": {
+            "closed": [
+              "writer",
+              "originalPublisher",
+              "subPublisher",
+              "substitutedPublisher",
+              "administrator",
+              "incomeParticipant",
+              "acquirer"
+            ]
+          },
+          "required": true,
+          "description": "Rol: autor, editora original, subeditora, subeditora sustituta, administradora, partícipe de ingresos o adquirente."
+        },
+        "via": {
+          "type": {
+            "array": {
+              "ref": "parties"
+            }
+          },
+          "required": false,
+          "description": "De dónde sale lo que cobra: para una editora original, los autores que representa; para una subeditora, la editora original."
+        },
+        "agreement": {
+          "type": {
+            "ref": "agreements",
+            "refTypes": [
+              "publishing",
+              "subPublishing",
+              "administration",
+              "assignment",
+              "writerSplit"
+            ]
+          },
+          "required": false,
+          "description": "El contrato que da ese derecho."
+        },
+        "rights": {
+          "type": {
+            "array": {
+              "closed": [
+                "performing",
+                "mechanical",
+                "synchronization",
+                "print"
+              ]
+            }
+          },
+          "required": false,
+          "description": "Derechos: ejecución, mecánico, sincronización, impresión. Si falta, los del contrato; si el contrato no los dice, los cuatro."
+        },
+        "territories": {
+          "type": {
+            "type": "Territories"
+          },
+          "required": false,
+          "description": "Territorios. Si falta, los del contrato; si el contrato no los dice, el mundo (`2136`)."
+        },
+        "percent": {
+          "type": {
+            "scalar": "percent"
+          },
+          "required": true,
+          "description": "Porcentaje sobre la obra entera."
+        }
+      }
+    },
+    "Recording": {
+      "group": "Grabaciones",
+      "description": "Una grabación de una o más obras.",
+      "extensions": true,
+      "props": {
+        "id": {
+          "type": {
+            "scalar": "localId"
+          },
+          "required": true,
+          "description": "Id local, único en el archivo (`r1`)."
+        },
+        "title": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Título."
+        },
+        "versionTitle": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Título de la versión, por ejemplo «En vivo»."
+        },
+        "displayArtist": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Artista como figura en los créditos."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "ISRC, código de la grabación en una sociedad, id del emisor."
+        },
+        "isrcIssuer": {
+          "type": {
+            "type": "IsrcIssuer"
+          },
+          "required": false,
+          "description": "Quién asignó el ISRC."
+        },
+        "works": {
+          "type": {
+            "array": {
+              "ref": "works"
+            }
+          },
+          "required": false,
+          "description": "Obras que contiene. Tiene que coincidir con `recordings` de cada obra."
+        },
+        "purposes": {
+          "type": {
+            "array": {
+              "open": "recordingPurposes"
+            }
+          },
+          "required": false,
+          "description": "Para qué se entrega: audio de registro, comercial o de referencia."
+        },
+        "type": {
+          "type": {
+            "open": "recordingTypes"
+          },
+          "required": false,
+          "description": "Tipo: estudio, en vivo, remix, librería o demo."
+        },
+        "duration": {
+          "type": {
+            "scalar": "duration"
+          },
+          "required": false,
+          "description": "Duración."
+        },
+        "recordingDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha de grabación."
+        },
+        "fixationCountry": {
+          "type": {
+            "scalar": "country"
+          },
+          "required": false,
+          "description": "País donde se grabó."
+        },
+        "firstPublication": {
+          "type": {
+            "type": "FirstPublication"
+          },
+          "required": false,
+          "description": "Primera publicación."
+        },
+        "producers": {
+          "type": {
+            "array": {
+              "type": "Producer"
+            }
+          },
+          "required": false,
+          "description": "Productores fonográficos."
+        },
+        "pLine": {
+          "type": {
+            "type": "PLine"
+          },
+          "required": false,
+          "description": "Leyenda ℗."
+        },
+        "label": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": false,
+          "description": "Sello."
+        },
+        "release": {
+          "type": {
+            "type": "Release"
+          },
+          "required": false,
+          "description": "Lanzamiento en el que salió."
+        },
+        "performers": {
+          "type": {
+            "array": {
+              "type": "Performer"
+            }
+          },
+          "required": false,
+          "description": "Intérpretes."
+        },
+        "contributors": {
+          "type": {
+            "array": {
+              "type": "RecordingContributor"
+            }
+          },
+          "required": false,
+          "description": "Otros colaboradores: productor artístico, ingenieros, remixer."
+        },
+        "samples": {
+          "type": {
+            "array": {
+              "type": "Sample"
+            }
+          },
+          "required": false,
+          "description": "Grabaciones sampleadas."
+        },
+        "ai": {
+          "type": {
+            "type": "RecordingAi"
+          },
+          "required": false,
+          "description": "Participación de inteligencia artificial en la grabación."
+        },
+        "languageOfPerformance": {
+          "type": {
+            "scalar": "language"
+          },
+          "required": false,
+          "description": "Idioma en que se canta."
+        },
+        "links": {
+          "type": {
+            "array": {
+              "type": "Link"
+            }
+          },
+          "required": false,
+          "description": "Publicación en plataformas digitales."
+        },
+        "media": {
+          "type": {
+            "array": {
+              "ref": "media"
+            }
+          },
+          "required": false,
+          "description": "Archivos de la grabación: el audio."
+        }
+      }
+    },
+    "IsrcIssuer": {
+      "group": "Grabaciones",
+      "description": "Quién asignó el ISRC de una grabación.",
+      "extensions": false,
+      "props": {
+        "kind": {
+          "type": {
+            "closed": [
+              "agency",
+              "aggregator"
+            ]
+          },
+          "required": false,
+          "description": "Agencia o agregador."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre."
+        }
+      }
+    },
+    "FirstPublication": {
+      "group": "Grabaciones",
+      "description": "La primera publicación de una grabación.",
+      "extensions": false,
+      "props": {
+        "date": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha."
+        },
+        "country": {
+          "type": {
+            "scalar": "country"
+          },
+          "required": false,
+          "description": "País."
+        },
+        "simultaneous": {
+          "type": {
+            "array": {
+              "scalar": "country"
+            }
+          },
+          "required": false,
+          "description": "Países de publicación simultánea."
+        }
+      }
+    },
+    "Producer": {
+      "group": "Grabaciones",
+      "description": "Un productor fonográfico.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "El productor."
+        },
+        "role": {
+          "type": {
+            "closed": [
+              "original",
+              "licensor",
+              "licensee"
+            ]
+          },
+          "required": false,
+          "description": "Productor original, licenciante o licenciatario."
+        },
+        "percent": {
+          "type": {
+            "scalar": "percent"
+          },
+          "required": false,
+          "description": "Porcentaje de propiedad del máster."
+        }
+      }
+    },
+    "PLine": {
+      "group": "Grabaciones",
+      "description": "La leyenda ℗ de una grabación.",
+      "extensions": false,
+      "props": {
+        "year": {
+          "type": {
+            "scalar": "year"
+          },
+          "required": false,
+          "description": "Año."
+        },
+        "owner": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": false,
+          "description": "Titular."
+        },
+        "text": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Texto completo, por ejemplo `℗ 2026 Sello Sur`."
+        }
+      }
+    },
+    "Release": {
+      "group": "Grabaciones",
+      "description": "Un lanzamiento: álbum, simple.",
+      "extensions": false,
+      "props": {
+        "title": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Título."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "UPC/EAN (`ICPN`) y número de catálogo (`CATALOG_NUMBER`)."
+        },
+        "date": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha de lanzamiento."
+        },
+        "carrier": {
+          "type": {
+            "open": "carriers"
+          },
+          "required": false,
+          "description": "Soporte: digital, CD, vinilo, casete."
+        }
+      }
+    },
+    "Performer": {
+      "group": "Grabaciones",
+      "description": "Un intérprete de una grabación.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "El intérprete."
+        },
+        "role": {
+          "type": {
+            "open": "performerRoles"
+          },
+          "required": false,
+          "description": "Rol: principal, invitado, director, músico de sesión, corista o conjunto."
+        },
+        "instruments": {
+          "type": {
+            "array": {
+              "type": "PerformerInstrument"
+            }
+          },
+          "required": false,
+          "description": "Instrumentos que toca."
+        },
+        "credited": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "Si figura en los créditos."
+        },
+        "societyCategories": {
+          "type": {
+            "array": {
+              "type": "SocietyCategory"
+            }
+          },
+          "required": false,
+          "description": "Su categoría en una sociedad de intérpretes, si se conoce."
+        },
+        "participation": {
+          "type": {
+            "type": "Participation"
+          },
+          "required": false,
+          "description": "Fracción de participación."
+        },
+        "members": {
+          "type": {
+            "array": {
+              "ref": "parties"
+            }
+          },
+          "required": false,
+          "description": "Integrantes, si es un conjunto."
+        }
+      }
+    },
+    "PerformerInstrument": {
+      "group": "Grabaciones",
+      "description": "Un instrumento de un intérprete.",
+      "extensions": false,
+      "props": {
+        "scheme": {
+          "type": {
+            "open": "instrumentSchemes"
+          },
+          "required": true,
+          "description": "Vocabulario del instrumento. Todavía no hay uno recomendado: se usan esquemas propios `X_`."
+        },
+        "code": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Código del instrumento en ese vocabulario."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre del instrumento."
+        }
+      }
+    },
+    "SocietyCategory": {
+      "group": "Grabaciones",
+      "description": "La categoría de un intérprete en una sociedad.",
+      "extensions": false,
+      "props": {
+        "society": {
+          "type": {
+            "scalar": "society"
+          },
+          "required": true,
+          "description": "Código de la sociedad."
+        },
+        "code": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Categoría en esa sociedad, por ejemplo `G1`."
+        }
+      }
+    },
+    "Participation": {
+      "group": "Grabaciones",
+      "description": "La participación de un intérprete.",
+      "extensions": false,
+      "props": {
+        "fraction": {
+          "type": {
+            "scalar": "fraction"
+          },
+          "required": true,
+          "description": "Fracción, por ejemplo `1/3`."
+        }
+      }
+    },
+    "RecordingContributor": {
+      "group": "Grabaciones",
+      "description": "Un colaborador técnico o artístico de una grabación.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "El colaborador."
+        },
+        "role": {
+          "type": {
+            "open": "recordingContributorRoles"
+          },
+          "required": true,
+          "description": "Rol: productor artístico, ingeniero de grabación, de mezcla o de masterización, remixer."
+        }
+      }
+    },
+    "Sample": {
+      "group": "Grabaciones",
+      "description": "Una grabación sampleada: del archivo (`recording`) o externa (`external`), exactamente una de las dos.",
+      "extensions": false,
+      "props": {
+        "recording": {
+          "type": {
+            "ref": "recordings"
+          },
+          "required": false,
+          "description": "Una grabación del archivo."
+        },
+        "external": {
+          "type": {
+            "type": "ExternalRecording"
+          },
+          "required": false,
+          "description": "Una grabación que no está en el archivo."
+        },
+        "producer": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": false,
+          "description": "Productor de la grabación sampleada."
+        },
+        "authorization": {
+          "type": {
+            "ref": "agreements",
+            "refTypes": [
+              "derivativeAuthorization"
+            ]
+          },
+          "required": false,
+          "description": "El contrato que autoriza el uso."
+        }
+      }
+    },
+    "ExternalRecording": {
+      "group": "Grabaciones",
+      "description": "Una grabación que no está en el archivo.",
+      "extensions": false,
+      "props": {
+        "title": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Título."
+        },
+        "displayArtist": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Artista como figura en los créditos."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "Identificadores, por ejemplo el ISRC."
+        }
+      }
+    },
+    "RecordingAi": {
+      "group": "Grabaciones",
+      "description": "La participación de inteligencia artificial en una grabación, por elemento.",
+      "extensions": false,
+      "props": {
+        "declared": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "Si el declarante informó sobre IA. Ausente o `false` quiere decir «no informado», no «sin IA»."
+        },
+        "elements": {
+          "type": {
+            "array": {
+              "type": "RecordingAiElement"
+            }
+          },
+          "required": false,
+          "description": "La participación en cada elemento: voces, instrumentos, arreglo."
+        }
+      }
+    },
+    "RecordingAiElement": {
+      "group": "Grabaciones",
+      "description": "La participación de IA en un elemento de la grabación.",
+      "extensions": false,
+      "props": {
+        "element": {
+          "type": {
+            "closed": [
+              "vocals",
+              "instruments",
+              "arrangement"
+            ]
+          },
+          "required": true,
+          "description": "Elemento: voces, instrumentos o arreglo."
+        },
+        "involvement": {
+          "type": {
+            "closed": [
+              "none",
+              "assisted",
+              "generated"
+            ]
+          },
+          "required": true,
+          "description": "Nivel: ninguno, asistido o generado."
+        },
+        "tools": {
+          "type": {
+            "array": {
+              "scalar": "text"
+            }
+          },
+          "required": false,
+          "description": "Herramientas usadas."
+        },
+        "prompt": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Instrucción usada, si se informa."
+        }
+      }
+    },
+    "Link": {
+      "group": "Grabaciones",
+      "description": "Una publicación en una plataforma digital.",
+      "extensions": false,
+      "props": {
+        "platform": {
+          "type": {
+            "open": "platforms"
+          },
+          "required": false,
+          "description": "Plataforma: Spotify, Apple Music, YouTube, etc."
+        },
+        "url": {
+          "type": {
+            "scalar": "url"
+          },
+          "required": true,
+          "description": "Dirección de la publicación."
+        }
+      }
+    },
+    "Agreement": {
+      "group": "Contratos",
+      "description": "Un contrato firmado.",
+      "extensions": true,
+      "props": {
+        "id": {
+          "type": {
+            "scalar": "localId"
+          },
+          "required": true,
+          "description": "Id local, único en el archivo (`a1`)."
+        },
+        "uid": {
+          "type": {
+            "scalar": "uuid"
+          },
+          "required": false,
+          "description": "Identificador estable del contrato: lo reconoce entre revisiones y desde otras declaraciones."
+        },
+        "type": {
+          "type": {
+            "closed": [
+              "publishing",
+              "subPublishing",
+              "administration",
+              "assignment",
+              "derivativeAuthorization",
+              "writerSplit"
+            ]
+          },
+          "required": true,
+          "description": "Tipo: edición, subedición, administración, cesión, autorización de obra derivada o carta de reparto entre coautores."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "Número de contrato del emisor o de una sociedad."
+        },
+        "parties": {
+          "type": {
+            "array": {
+              "type": "AgreementParty"
+            }
+          },
+          "required": false,
+          "description": "Las partes y su rol."
+        },
+        "parent": {
+          "type": {
+            "type": "AgreementParent"
+          },
+          "required": false,
+          "description": "Contrato del que depende; por ejemplo, una subedición apunta a su edición."
+        },
+        "works": {
+          "type": {
+            "array": {
+              "ref": "works"
+            }
+          },
+          "required": false,
+          "description": "Obras de esta declaración que cubre."
+        },
+        "numberOfWorks": {
+          "type": {
+            "scalar": "integer>=1"
+          },
+          "required": false,
+          "description": "Total de obras del contrato."
+        },
+        "scope": {
+          "type": {
+            "closed": [
+              "works",
+              "catalog"
+            ]
+          },
+          "required": false,
+          "description": "Si cubre obras determinadas o un catálogo."
+        },
+        "grantedRights": {
+          "type": {
+            "array": {
+              "closed": [
+                "performing",
+                "mechanical",
+                "synchronization",
+                "print"
+              ]
+            }
+          },
+          "required": false,
+          "description": "Lo que el contrato transfiere; en el contrato tipo, la edición impresa (`print`)."
+        },
+        "rights": {
+          "type": {
+            "array": {
+              "closed": [
+                "performing",
+                "mechanical",
+                "synchronization",
+                "print"
+              ]
+            }
+          },
+          "required": false,
+          "description": "Derechos sobre los que participa la editora."
+        },
+        "excludedRights": {
+          "type": {
+            "array": {
+              "type": "ExcludedRight"
+            }
+          },
+          "required": false,
+          "description": "Derechos excluidos por una observación."
+        },
+        "territories": {
+          "type": {
+            "type": "Territories"
+          },
+          "required": false,
+          "description": "Territorio del contrato."
+        },
+        "signatureDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha de la última firma."
+        },
+        "signedPlace": {
+          "type": {
+            "type": "Place"
+          },
+          "required": false,
+          "description": "Lugar de la firma."
+        },
+        "startDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Inicio de la vigencia."
+        },
+        "term": {
+          "type": {
+            "type": "Term"
+          },
+          "required": false,
+          "description": "Plazo: el de protección del derecho de autor o uno fijo."
+        },
+        "endDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fin de la vigencia. Con plazo fijo, es el inicio más la duración."
+        },
+        "renewal": {
+          "type": {
+            "type": "Renewal"
+          },
+          "required": false,
+          "description": "Renovación."
+        },
+        "postTermCollection": {
+          "type": {
+            "type": "PostTermCollection"
+          },
+          "required": false,
+          "description": "Cobro posterior al fin del contrato."
+        },
+        "publisherShare": {
+          "type": {
+            "type": "PublisherShare"
+          },
+          "required": false,
+          "description": "Total de las editoras sobre la obra bajo este contrato, con la condición que sube el tope, si la hay."
+        },
+        "terms": {
+          "type": {
+            "type": "Terms"
+          },
+          "required": false,
+          "description": "Plantilla, contrato tipo y valores pactados."
+        },
+        "observations": {
+          "type": {
+            "array": {
+              "type": "Observation"
+            }
+          },
+          "required": false,
+          "description": "Observaciones impresas en el contrato."
+        },
+        "registrations": {
+          "type": {
+            "array": {
+              "type": "Registration"
+            }
+          },
+          "required": false,
+          "description": "Inscripción del contrato ante un organismo (`kind`: `contract`)."
+        },
+        "media": {
+          "type": {
+            "array": {
+              "ref": "media",
+              "refTypes": [
+                "signedContract",
+                "splitAgreement"
+              ]
+            }
+          },
+          "required": false,
+          "description": "El PDF firmado."
+        }
+      }
+    },
+    "AgreementParty": {
+      "group": "Contratos",
+      "description": "Una parte de un contrato.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "La persona u organización."
+        },
+        "role": {
+          "type": {
+            "closed": [
+              "grantor",
+              "grantee",
+              "coWriter"
+            ]
+          },
+          "required": true,
+          "description": "Rol: cedente (`grantor`), cesionario (`grantee`) o coautor (`coWriter`, en una carta de reparto)."
+        }
+      }
+    },
+    "AgreementParent": {
+      "group": "Contratos",
+      "description": "El contrato del que depende otro: del archivo (`agreement`) o de otra declaración (`uid`), exactamente uno de los dos.",
+      "extensions": false,
+      "props": {
+        "agreement": {
+          "type": {
+            "ref": "agreements"
+          },
+          "required": false,
+          "description": "Un contrato del archivo."
+        },
+        "uid": {
+          "type": {
+            "scalar": "uuid"
+          },
+          "required": false,
+          "description": "El `uid` de un contrato de otra declaración."
+        },
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "Número de ese contrato."
+        }
+      }
+    },
+    "ExcludedRight": {
+      "group": "Contratos",
+      "description": "Un derecho excluido de un contrato.",
+      "extensions": false,
+      "props": {
+        "right": {
+          "type": {
+            "closed": [
+              "performing",
+              "mechanical",
+              "synchronization",
+              "print"
+            ]
+          },
+          "required": true,
+          "description": "El derecho excluido."
+        },
+        "observation": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Texto de la observación que lo excluye."
+        }
+      }
+    },
+    "Term": {
+      "group": "Contratos",
+      "description": "El plazo de un contrato.",
+      "extensions": false,
+      "props": {
+        "basis": {
+          "type": {
+            "closed": [
+              "protectionPeriod",
+              "fixed"
+            ]
+          },
+          "required": true,
+          "description": "El plazo de protección del derecho de autor (`protectionPeriod`) o uno fijo (`fixed`)."
+        },
+        "duration": {
+          "type": {
+            "scalar": "duration"
+          },
+          "required": false,
+          "description": "Duración del plazo fijo, por ejemplo `P10Y`."
+        }
+      }
+    },
+    "Renewal": {
+      "group": "Contratos",
+      "description": "La renovación de un contrato.",
+      "extensions": false,
+      "props": {
+        "automatic": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "Si se renueva sola."
+        },
+        "period": {
+          "type": {
+            "scalar": "duration"
+          },
+          "required": false,
+          "description": "Duración de cada renovación."
+        },
+        "maxRenewals": {
+          "type": {
+            "scalar": "integer>=0"
+          },
+          "required": false,
+          "description": "Cantidad máxima de renovaciones."
+        },
+        "noticePeriod": {
+          "type": {
+            "scalar": "duration"
+          },
+          "required": false,
+          "description": "Anticipación del aviso para no renovar."
+        }
+      }
+    },
+    "PostTermCollection": {
+      "group": "Contratos",
+      "description": "El cobro posterior al fin de un contrato.",
+      "extensions": false,
+      "props": {
+        "status": {
+          "type": {
+            "closed": [
+              "none",
+              "openEnded",
+              "date"
+            ]
+          },
+          "required": true,
+          "description": "Sin cobro posterior (`none`), sin fecha de fin (`openEnded`) o hasta una fecha (`date`)."
+        },
+        "endDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Hasta cuándo se cobra."
+        }
+      }
+    },
+    "PublisherShare": {
+      "group": "Contratos",
+      "description": "El porcentaje total de las editoras bajo un contrato.",
+      "extensions": false,
+      "props": {
+        "percent": {
+          "type": {
+            "scalar": "percent"
+          },
+          "required": true,
+          "description": "Porcentaje sobre la obra entera."
+        },
+        "condition": {
+          "type": {
+            "type": "Condition"
+          },
+          "required": false,
+          "description": "Condición que permite superar el tope, por ejemplo una del art. 8 del contrato tipo (`SADAIC_ART8`)."
+        }
+      }
+    },
+    "Terms": {
+      "group": "Contratos",
+      "description": "Las condiciones de un contrato.",
+      "extensions": false,
+      "props": {
+        "template": {
+          "type": {
+            "type": "Template"
+          },
+          "required": false,
+          "description": "Plantilla del emisor con la que se generó."
+        },
+        "basedOn": {
+          "type": {
+            "type": "StandardContract"
+          },
+          "required": false,
+          "description": "Contrato tipo en el que se basa."
+        },
+        "values": {
+          "type": {
+            "type": "TermValues"
+          },
+          "required": false,
+          "description": "Valores pactados."
+        }
+      }
+    },
+    "Template": {
+      "group": "Contratos",
+      "description": "La plantilla con la que se generó un contrato.",
+      "extensions": false,
+      "props": {
+        "code": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Código de la plantilla en el emisor."
+        },
+        "sha256": {
+          "type": {
+            "scalar": "sha256"
+          },
+          "required": true,
+          "description": "Hash de la plantilla."
+        }
+      }
+    },
+    "TermValues": {
+      "group": "Contratos",
+      "description": "Los valores pactados en un contrato tipo.",
+      "extensions": false,
+      "props": {
+        "retailPricePercent": {
+          "type": {
+            "scalar": "percent"
+          },
+          "required": false,
+          "description": "Porcentaje sobre el precio de venta de la edición impresa."
+        },
+        "arrangementRetailPricePercent": {
+          "type": {
+            "scalar": "percent"
+          },
+          "required": false,
+          "description": "Porcentaje sobre el precio de venta de orquestaciones y transcripciones."
+        },
+        "collectionStart": {
+          "type": {
+            "closed": [
+              "presentationSemester",
+              "nextSemester"
+            ]
+          },
+          "required": false,
+          "description": "Desde cuándo se cobra: el semestre de la presentación o el siguiente."
+        },
+        "investedAmount": {
+          "type": {
+            "type": "InvestedAmount"
+          },
+          "required": false,
+          "description": "Monto invertido por la editora."
+        }
+      }
+    },
+    "InvestedAmount": {
+      "group": "Contratos",
+      "description": "El monto invertido por la editora.",
+      "extensions": false,
+      "props": {
+        "status": {
+          "type": {
+            "closed": [
+              "determined",
+              "undetermined"
+            ]
+          },
+          "required": true,
+          "description": "Si el monto está determinado (`determined`) o no (`undetermined`)."
+        },
+        "amount": {
+          "type": {
+            "scalar": "amount"
+          },
+          "required": false,
+          "description": "Importe."
+        },
+        "currency": {
+          "type": {
+            "scalar": "currency"
+          },
+          "required": false,
+          "description": "Moneda."
+        }
+      }
+    },
+    "Observation": {
+      "group": "Contratos",
+      "description": "Una observación impresa en un contrato.",
+      "extensions": false,
+      "props": {
+        "title": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Título."
+        },
+        "article": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Artículo que modifica, como texto (`\"10\"`)."
+        },
+        "parties": {
+          "type": {
+            "array": {
+              "ref": "parties"
+            }
+          },
+          "required": false,
+          "description": "Partes a las que se refiere."
+        },
+        "text": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Texto de la observación."
+        }
+      }
+    },
+    "Edition": {
+      "group": "Edición",
+      "description": "Una edición publicada.",
+      "extensions": true,
+      "props": {
+        "identifiers": {
+          "type": {
+            "array": {
+              "type": "Identifier"
+            }
+          },
+          "required": false,
+          "description": "Número de edición del emisor o de una sociedad."
+        },
+        "name": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre de la edición."
+        },
+        "registeredTitle": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Título registrado."
+        },
+        "type": {
+          "type": {
+            "open": "editionTypes"
+          },
+          "required": false,
+          "description": "Tipo: simple, álbum o integral."
+        },
+        "contentType": {
+          "type": {
+            "closed": [
+              "scores",
+              "audios",
+              "scoresAndAudios"
+            ]
+          },
+          "required": false,
+          "description": "Contenido: partituras, audios o los dos."
+        },
+        "ordinal": {
+          "type": {
+            "scalar": "integer>=1"
+          },
+          "required": false,
+          "description": "Número de edición (1 para la primera)."
+        },
+        "publishers": {
+          "type": {
+            "array": {
+              "ref": "parties"
+            }
+          },
+          "required": false,
+          "description": "Editoras de la edición."
+        },
+        "publicationDate": {
+          "type": {
+            "scalar": "date"
+          },
+          "required": false,
+          "description": "Fecha de publicación."
+        },
+        "publicationPlace": {
+          "type": {
+            "type": "Place"
+          },
+          "required": false,
+          "description": "Lugar de publicación."
+        },
+        "publicationLinks": {
+          "type": {
+            "array": {
+              "scalar": "url"
+            }
+          },
+          "required": false,
+          "description": "Enlaces de la publicación digital."
+        },
+        "price": {
+          "type": {
+            "type": "Amount"
+          },
+          "required": false,
+          "description": "Precio."
+        },
+        "printRun": {
+          "type": {
+            "type": "PrintRun"
+          },
+          "required": false,
+          "description": "Tirada."
+        },
+        "works": {
+          "type": {
+            "array": {
+              "ref": "works"
+            }
+          },
+          "required": false,
+          "description": "Obras de la edición, en orden."
+        },
+        "registrations": {
+          "type": {
+            "array": {
+              "type": "Registration"
+            }
+          },
+          "required": false,
+          "description": "Registro de la edición como obra publicada."
+        },
+        "deposit": {
+          "type": {
+            "type": "Deposit"
+          },
+          "required": false,
+          "description": "Depósito legal."
+        },
+        "media": {
+          "type": {
+            "array": {
+              "ref": "media"
+            }
+          },
+          "required": false,
+          "description": "Archivos de la edición: ejemplar, declaración de tirada, planilla de la sociedad, presentación del registro."
+        }
+      }
+    },
+    "PrintRun": {
+      "group": "Edición",
+      "description": "La tirada de una edición.",
+      "extensions": false,
+      "props": {
+        "mode": {
+          "type": {
+            "closed": [
+              "printed",
+              "onDemand"
+            ]
+          },
+          "required": false,
+          "description": "Impresa o bajo demanda."
+        },
+        "saleCopies": {
+          "type": {
+            "scalar": "integer>=0"
+          },
+          "required": false,
+          "description": "Ejemplares para la venta."
+        },
+        "promotionalCopies": {
+          "type": {
+            "scalar": "integer>=0"
+          },
+          "required": false,
+          "description": "Ejemplares de promoción."
+        }
+      }
+    },
+    "Deposit": {
+      "group": "Edición",
+      "description": "El depósito legal de una edición.",
+      "extensions": false,
+      "props": {
+        "mode": {
+          "type": {
+            "closed": [
+              "physical",
+              "digital"
+            ]
+          },
+          "required": true,
+          "description": "Físico o digital."
+        },
+        "sha256": {
+          "type": {
+            "scalar": "sha256"
+          },
+          "required": false,
+          "description": "Hash del ejemplar depositado."
+        },
+        "copy": {
+          "type": {
+            "ref": "media",
+            "refTypes": [
+              "legalDepositCopy"
+            ]
+          },
+          "required": false,
+          "description": "El archivo del ejemplar. Si van `sha256` y `copy`, los hashes tienen que coincidir."
+        }
+      }
+    },
+    "Media": {
+      "group": "Archivos",
+      "description": "Un archivo que viaja aparte, descrito por su tamaño y su hash.",
+      "extensions": true,
+      "props": {
+        "id": {
+          "type": {
+            "scalar": "localId"
+          },
+          "required": true,
+          "description": "Id local, único en el archivo (`m1`)."
+        },
+        "kind": {
+          "type": {
+            "open": "mediaKinds"
+          },
+          "required": true,
+          "description": "Qué es: contrato firmado, carta de reparto, ejemplar, declaración de tirada, presentación o certificado de registro, planilla, boletín, partitura, letra, audio, etc."
+        },
+        "mediaType": {
+          "type": {
+            "scalar": "mediaType"
+          },
+          "required": false,
+          "description": "Tipo de archivo, por ejemplo `application/pdf`."
+        },
+        "size": {
+          "type": {
+            "scalar": "integer>=0"
+          },
+          "required": false,
+          "description": "Tamaño en bytes del archivo entregado."
+        },
+        "sha256": {
+          "type": {
+            "scalar": "sha256"
+          },
+          "required": false,
+          "description": "Hash SHA-256 de los bytes exactos del archivo entregado."
+        },
+        "path": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Ruta relativa a la raíz de la entrega: segmentos `[A-Za-z0-9._-]` separados por `/`."
+        },
+        "delivery": {
+          "type": {
+            "scalar": "integer>=1"
+          },
+          "required": false,
+          "description": "Revisión en la que viajó el archivo. Un archivo ya entregado se vuelve a declarar en las revisiones siguientes, con su revisión de entrega."
+        },
+        "delivered": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "`false` si el archivo se declara pero no viaja. Por defecto, `true`."
+        },
+        "personalData": {
+          "type": {
+            "scalar": "boolean"
+          },
+          "required": false,
+          "description": "Si el archivo contiene datos personales."
+        },
+        "evidence": {
+          "type": {
+            "type": "Evidence"
+          },
+          "required": false,
+          "description": "Pruebas de la firma del documento."
+        }
+      }
+    },
+    "Evidence": {
+      "group": "Archivos",
+      "description": "Las pruebas de la firma de un documento.",
+      "extensions": false,
+      "props": {
+        "esignature": {
+          "type": {
+            "type": "ESignature"
+          },
+          "required": false,
+          "description": "Firma electrónica: proveedor, tipo y sello de tiempo."
+        },
+        "signers": {
+          "type": {
+            "array": {
+              "type": "Signer"
+            }
+          },
+          "required": false,
+          "description": "Quién firmó y cuándo."
+        },
+        "annexed": {
+          "type": {
+            "array": {
+              "type": "Annexed"
+            }
+          },
+          "required": false,
+          "description": "Archivos anexados al documento, con el hash impreso en el anexo."
+        },
+        "anchors": {
+          "type": {
+            "array": {
+              "type": "Anchor"
+            }
+          },
+          "required": false,
+          "description": "Anclajes del documento en una cadena de bloques."
+        }
+      }
+    },
+    "ESignature": {
+      "group": "Archivos",
+      "description": "La firma electrónica de un documento.",
+      "extensions": false,
+      "props": {
+        "provider": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": true,
+          "description": "Proveedor de firma."
+        },
+        "envelopeId": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Id del documento en el proveedor."
+        },
+        "legalClass": {
+          "type": {
+            "closed": [
+              "electronic",
+              "digital"
+            ]
+          },
+          "required": false,
+          "description": "Firma electrónica o firma digital, en el sentido de la ley."
+        },
+        "identityMethods": {
+          "type": {
+            "array": {
+              "open": "identityMethods"
+            }
+          },
+          "required": false,
+          "description": "Cómo se identificó a los firmantes: enlace de invitación, código por correo o SMS, TOTP, certificado digital."
+        },
+        "contactSource": {
+          "type": {
+            "open": "contactSources"
+          },
+          "required": false,
+          "description": "Quién cargó los datos de contacto de los firmantes: el declarante o el propio firmante."
+        },
+        "timestamp": {
+          "type": {
+            "type": "Timestamp"
+          },
+          "required": false,
+          "description": "Sello de tiempo del documento."
+        }
+      }
+    },
+    "Timestamp": {
+      "group": "Archivos",
+      "description": "El sello de tiempo RFC 3161 de un documento.",
+      "extensions": false,
+      "props": {
+        "source": {
+          "type": {
+            "closed": [
+              "pdfEmbedded",
+              "tsa"
+            ]
+          },
+          "required": true,
+          "description": "De dónde se tomó: del PDF (`pdfEmbedded`) o de la autoridad de sellado (`tsa`)."
+        },
+        "generatedAt": {
+          "type": {
+            "scalar": "instant"
+          },
+          "required": true,
+          "description": "Fecha y hora del sello."
+        }
+      }
+    },
+    "Signer": {
+      "group": "Archivos",
+      "description": "Un firmante de un documento.",
+      "extensions": false,
+      "props": {
+        "party": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": true,
+          "description": "Quién firmó."
+        },
+        "onBehalfOf": {
+          "type": {
+            "ref": "parties"
+          },
+          "required": false,
+          "description": "En nombre de quién firmó, si representa a una organización."
+        },
+        "signedAt": {
+          "type": {
+            "scalar": "instant"
+          },
+          "required": false,
+          "description": "Cuándo firmó."
+        }
+      }
+    },
+    "Annexed": {
+      "group": "Archivos",
+      "description": "Un archivo anexado a un documento.",
+      "extensions": false,
+      "props": {
+        "fileName": {
+          "type": {
+            "scalar": "text"
+          },
+          "required": false,
+          "description": "Nombre del archivo como figura en el anexo."
+        },
+        "media": {
+          "type": {
+            "ref": "media"
+          },
+          "required": false,
+          "description": "El archivo, si viaja en la entrega. Su hash tiene que coincidir."
+        },
+        "sha256": {
+          "type": {
+            "scalar": "sha256"
+          },
+          "required": true,
+          "description": "Hash impreso en el anexo."
+        }
+      }
+    },
+    "Anchor": {
+      "group": "Archivos",
+      "description": "Un anclaje de un documento en una cadena de bloques.",
+      "extensions": false,
+      "props": {
+        "method": {
+          "type": {
+            "open": "anchorMethods"
+          },
+          "required": true,
+          "description": "Método, por ejemplo `openTimestamps`."
+        },
+        "proof": {
+          "type": {
+            "ref": "media",
+            "refTypes": [
+              "timestampProof"
+            ]
+          },
+          "required": false,
+          "description": "El archivo de la prueba (`.ots`)."
+        }
+      }
+    }
+  }
+}

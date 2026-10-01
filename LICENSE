@@ -1,0 +1,37 @@
+Licencia de JDX (Jupiter Data eXchange)
+Copyright © 2026 Agilmind SRL. Todos los derechos reservados.
+Identificador SPDX: LicenseRef-Agilmind-JDX
+
+JDX fue creado por Agilmind SRL. Esta licencia cubre la especificación, los
+schemas, el catálogo de reglas, los perfiles, las listas de valores, el
+validador de referencia, la suite de conformidad y la documentación de este
+repositorio (en adelante, "JDX").
+
+1. Uso libre. Cualquier persona puede leer, descargar y estudiar JDX, y usar
+   el validador, los schemas y la suite de conformidad para evaluarlo y
+   probarlo, incluso desarrollando integraciones en entornos de prueba que no
+   intercambien declaraciones reales con una Sociedad de Gestión Colectiva
+   (SGC).
+
+2. Uso con autorización. Requiere autorización previa y por escrito de
+   Agilmind SRL:
+   a) generar, firmar o enviar declaraciones JDX a una SGC, o intercambiarlas
+      con ella, fuera de un entorno de prueba;
+   b) ofrecer a terceros productos o servicios que usen JDX con ese fin;
+   c) redistribuir JDX o publicar versiones modificadas.
+
+3. Sociedades de Gestión Colectiva. Las SGC pueden usar JDX para recibir,
+   validar y cargar declaraciones sin necesidad de autorización.
+
+4. Signos distintivos. "Jupiter" y "Jupiter Certified" son signos de
+   Agilmind SRL; usarlos para identificar productos o servicios requiere
+   autorización.
+
+5. Datos de terceros. Los datos de terceros incluidos en JDX (por ejemplo,
+   listas de géneros de una SGC, códigos y nombres de países o
+   identificadores de normas internacionales) pertenecen a sus titulares, se
+   incluyen con su atribución en THIRD-PARTY-NOTICES y esta licencia no los
+   cubre.
+
+6. Sin garantías. JDX se entrega tal cual, sin garantías de ningún tipo.
+   Agilmind SRL no responde por daños derivados de su uso.

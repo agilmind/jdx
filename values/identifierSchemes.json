@@ -1,0 +1,48 @@
+{
+  "list": "identifierSchemes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "IPI_NAME"
+    },
+    {
+      "code": "IPI_BASE"
+    },
+    {
+      "code": "ISNI"
+    },
+    {
+      "code": "IPN"
+    },
+    {
+      "code": "TAX_ID"
+    },
+    {
+      "code": "NATIONAL_ID"
+    },
+    {
+      "code": "ISSUER"
+    },
+    {
+      "code": "ISWC"
+    },
+    {
+      "code": "SOCIETY_WORK"
+    },
+    {
+      "code": "ISRC"
+    },
+    {
+      "code": "SOCIETY_RECORDING"
+    },
+    {
+      "code": "ICPN"
+    },
+    {
+      "code": "CATALOG_NUMBER"
+    },
+    {
+      "code": "ISAN"
+    }
+  ]
+}

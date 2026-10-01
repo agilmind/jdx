@@ -1,0 +1,33 @@
+{
+  "list": "platforms",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "spotify"
+    },
+    {
+      "code": "appleMusic"
+    },
+    {
+      "code": "youtube"
+    },
+    {
+      "code": "youtubeMusic"
+    },
+    {
+      "code": "deezer"
+    },
+    {
+      "code": "amazonMusic"
+    },
+    {
+      "code": "tidal"
+    },
+    {
+      "code": "soundcloud"
+    },
+    {
+      "code": "bandcamp"
+    }
+  ]
+}

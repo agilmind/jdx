@@ -1,0 +1,18 @@
+{
+  "list": "registrationKinds",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "unpublishedDeposit"
+    },
+    {
+      "code": "publishedWork"
+    },
+    {
+      "code": "contract"
+    },
+    {
+      "code": "pseudonym"
+    }
+  ]
+}

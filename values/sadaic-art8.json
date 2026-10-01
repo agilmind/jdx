@@ -1,0 +1,22 @@
+{
+  "list": "sadaic-art8",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "promotionalRecords",
+      "name": {
+        "es": "Tiraje de 200 discos promocionales fuera de venta",
+        "pt": "Tiragem de 200 discos promocionais fora de venda",
+        "en": "Run of 200 promotional records not for sale"
+      }
+    },
+    {
+      "code": "commercialRecording",
+      "name": {
+        "es": "Grabación fonográfica puesta en el comercio bajo un sello reconocido",
+        "pt": "Gravação fonográfica lançada no comércio sob um selo reconhecido",
+        "en": "Sound recording released commercially under a recognized label"
+      }
+    }
+  ]
+}

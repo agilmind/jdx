@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/values/open-list.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Valores de una lista abierta (values/<lista>.json)",
+  "type": "object",
+  "properties": {
+    "list": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*(-[a-z0-9]+)*$" },
+    "version": { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$" },
+    "values": { "type": "array", "items": { "$ref": "#/$defs/Entry" } }
+  },
+  "required": ["list", "version", "values"],
+  "additionalProperties": false,
+  "$defs": {
+    "Entry": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$comment": "Valor de enumeración (lowerCamelCase) o de esquema (UPPER_SNAKE_CASE). Los valores propios (X_) no van en las listas de JDX: no se comparan con ellas.",
+          "type": "string",
+          "pattern": "^(?!X_)([a-z][A-Za-z0-9]*|[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)$"
+        },
+        "name": {
+          "type": "object",
+          "properties": {
+            "es": { "type": "string", "minLength": 1 },
+            "pt": { "type": "string", "minLength": 1 },
+            "en": { "type": "string", "minLength": 1 }
+          },
+          "minProperties": 1,
+          "additionalProperties": false
+        },
+        "schemes": {
+          "$comment": "Los esquemas a los que pertenece el valor (values/identifierTypes.json: TAX_ID o NATIONAL_ID).",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": ["code"],
+      "additionalProperties": false
+    }
+  }
+}

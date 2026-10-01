@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/values/societies.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Sociedades (values/societies.json)",
+  "type": "object",
+  "properties": {
+    "list": { "type": "string", "const": "societies" },
+    "version": { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$" },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/Society" } }
+  },
+  "required": ["list", "version", "entries"],
+  "additionalProperties": false,
+  "$defs": {
+    "Society": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "pattern": "^(\\d{3}|X_JDX_[A-Z0-9_]+)$" },
+        "name": { "type": "string", "minLength": 1 },
+        "country": { "type": "string", "pattern": "^[A-Z]{2}$" },
+        "cisac": { "type": "boolean" },
+        "replacedBy": { "type": "string", "pattern": "^\\d{3}$" }
+      },
+      "required": ["code", "name", "cisac"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "Un código CISAC tiene 3 dígitos. Una sociedad sin código CISAC usa uno de JDX (X_JDX_), que gana replacedBy si CISAC le asigna uno después, y su código sigue valiendo.",
+          "type": "object",
+          "if": {
+            "type": "object",
+            "properties": { "cisac": { "type": "boolean", "const": true } },
+            "required": ["cisac"]
+          },
+          "then": { "type": "object", "properties": { "code": { "type": "string", "pattern": "^\\d{3}$" }, "replacedBy": { "not": {} } } },
+          "else": { "type": "object", "properties": { "code": { "type": "string", "pattern": "^X_JDX_" } } }
+        }
+      ]
+    }
+  }
+}

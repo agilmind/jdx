@@ -1,0 +1,12 @@
+{
+  "list": "societies",
+  "version": "2026-10",
+  "entries": [
+    { "code": "061", "name": "SADAIC", "country": "AR", "cisac": true },
+    { "code": "X_JDX_AADI", "name": "AADI", "country": "AR", "cisac": false },
+    { "code": "X_JDX_ACINPRO", "name": "ACINPRO", "country": "CO", "cisac": false },
+    { "code": "X_JDX_CAPIF", "name": "CAPIF", "country": "AR", "cisac": false },
+    { "code": "X_JDX_SONIEM", "name": "SONIEM", "country": "PE", "cisac": false },
+    { "code": "X_JDX_SUDEI", "name": "SUDEI", "country": "UY", "cisac": false }
+  ]
+}

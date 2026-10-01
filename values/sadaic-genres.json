@@ -1,0 +1,1531 @@
+{
+  "list": "sadaic-genres",
+  "version": "2026-10",
+  "entries": [
+    {
+      "code": "500",
+      "name": "AFRO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "594",
+      "name": "AGOGO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "501",
+      "name": "AIRES ESPAÑOLES",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "502",
+      "name": "ALBORADA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "455",
+      "name": "ALEGRO VIVACE",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "627",
+      "name": "ANATEADA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "400",
+      "name": "ANDANTE",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "401",
+      "name": "ARIA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "633",
+      "name": "AUQUI AUQUI",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "300",
+      "name": "BAGUALA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "301",
+      "name": "BAILECITO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "402",
+      "name": "BAILE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "302",
+      "name": "BAILES",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "503",
+      "name": "BAION",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "100",
+      "name": "BALADA",
+      "group": "MELODICO"
+    },
+    {
+      "code": "403",
+      "name": "BALLET",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "595",
+      "name": "BAMBUCO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "504",
+      "name": "BARCAROLA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "505",
+      "name": "BATUCADA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "101",
+      "name": "BEAT",
+      "group": "MELODICO"
+    },
+    {
+      "code": "102",
+      "name": "BEGUINE",
+      "group": "MELODICO"
+    },
+    {
+      "code": "404",
+      "name": "BERCEUSE",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "103",
+      "name": "BLUES",
+      "group": "MELODICO"
+    },
+    {
+      "code": "405",
+      "name": "BOCETO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "105",
+      "name": "BOGALOO",
+      "group": "MELODICO"
+    },
+    {
+      "code": "104",
+      "name": "BOLERO",
+      "group": "MELODICO"
+    },
+    {
+      "code": "506",
+      "name": "BOMBA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "106",
+      "name": "BOOGIE BOOGIE",
+      "group": "MELODICO"
+    },
+    {
+      "code": "507",
+      "name": "BOSSA NOVA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "508",
+      "name": "BOTECITO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "509",
+      "name": "BULERIAS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "615",
+      "name": "CACHACA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "302",
+      "name": "CACHARPAYA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "406",
+      "name": "CAJITA DE MUSICA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "107",
+      "name": "CALIPSO",
+      "group": "MELODICO"
+    },
+    {
+      "code": "303",
+      "name": "CAMPERA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "510",
+      "name": "CAN CAN",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "108",
+      "name": "CANCION",
+      "group": "MELODICO"
+    },
+    {
+      "code": "453",
+      "name": "CANCION DE CUNA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "358",
+      "name": "CANCION FOLKLORICA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "643",
+      "name": "CANCION INDIA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "407",
+      "name": "CANCION INFANTIL",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "642",
+      "name": "CANCION MAPUCHE",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "1",
+      "name": "CANDOMBE",
+      "group": "POPULAR"
+    },
+    {
+      "code": "408",
+      "name": "CANON",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "409",
+      "name": "CANTATA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "511",
+      "name": "CANTE JONDO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "109",
+      "name": "CANZONETTA",
+      "group": "MELODICO"
+    },
+    {
+      "code": "410",
+      "name": "CAPRICCIO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "304",
+      "name": "CARAMBA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "348",
+      "name": "CARNAVAL",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "305",
+      "name": "CARNAVALITO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "600",
+      "name": "CASASCHOKT",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "512",
+      "name": "CATERETE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "513",
+      "name": "CATUMBE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "520",
+      "name": "CHA CHA CHA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "311",
+      "name": "CHACARERA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "647",
+      "name": "CHACARERA DEL MONTE",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "312",
+      "name": "CHAMAME",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "313",
+      "name": "CHAMARRITA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "521",
+      "name": "CHARANGA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "110",
+      "name": "CHARLESTON",
+      "group": "MELODICO"
+    },
+    {
+      "code": "314",
+      "name": "CHAYA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "522",
+      "name": "CHORO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "634",
+      "name": "CHUNTUNQUI",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "601",
+      "name": "CHUTUNSKY",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "306",
+      "name": "CIELITO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "307",
+      "name": "CIFRA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "411",
+      "name": "CONCIERTO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "514",
+      "name": "CONGA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "308",
+      "name": "CONTRAPUNTO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "515",
+      "name": "COPLAS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "309",
+      "name": "COPLERA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "412",
+      "name": "CORAL",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "353",
+      "name": "CORRALERA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "517",
+      "name": "CORRIDO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "347",
+      "name": "COSTERA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "613",
+      "name": "COUNTRY",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "518",
+      "name": "COUPLE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "355",
+      "name": "CUANDO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "413",
+      "name": "CUARTETO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "310",
+      "name": "CUECA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "516",
+      "name": "CUMBIA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "519",
+      "name": "CZARDAS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "602",
+      "name": "DABKE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "315",
+      "name": "DANZA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "644",
+      "name": "DANZA INDIGENA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "316",
+      "name": "DECIMAS",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "414",
+      "name": "DELIRIO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "604",
+      "name": "DENGUE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "608",
+      "name": "DISCO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "111",
+      "name": "DIXELAND",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "415",
+      "name": "ELEGIA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "630",
+      "name": "ERKENCHADA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "317",
+      "name": "ESCONDIDO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "318",
+      "name": "ESTILO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "416",
+      "name": "ESTUDIO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "524",
+      "name": "FADO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "525",
+      "name": "FANDANGO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "526",
+      "name": "FANDANGUILLO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "417",
+      "name": "FANTASIA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "527",
+      "name": "FARRUCA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "528",
+      "name": "FLAMENCO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "133",
+      "name": "FOLK",
+      "group": "MELODICO"
+    },
+    {
+      "code": "112",
+      "name": "FOX TROT",
+      "group": "MELODICO"
+    },
+    {
+      "code": "418",
+      "name": "FUGA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "609",
+      "name": "FUNKY",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "614",
+      "name": "FUSION",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "529",
+      "name": "GAITA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "530",
+      "name": "GALOPA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "319",
+      "name": "GALOPE INDIANO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "531",
+      "name": "GARROTIN",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "320",
+      "name": "GATO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "419",
+      "name": "GAVOTA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "532",
+      "name": "GRANADINA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "113",
+      "name": "GUAJIRA",
+      "group": "MELODICO"
+    },
+    {
+      "code": "619",
+      "name": "GUALAMBAO",
+      "group": "POPULAR"
+    },
+    {
+      "code": "534",
+      "name": "GUARACHA",
+      "group": "MELODICO"
+    },
+    {
+      "code": "535",
+      "name": "GUARANIA",
+      "group": "MELODICO"
+    },
+    {
+      "code": "536",
+      "name": "GUARASON",
+      "group": "MELODICO"
+    },
+    {
+      "code": "537",
+      "name": "HABANERA",
+      "group": "MELODICO"
+    },
+    {
+      "code": "420",
+      "name": "HIMNO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "625",
+      "name": "HIP HOP",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "598",
+      "name": "HUASTECA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "323",
+      "name": "HUAYNO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "632",
+      "name": "HUAYNO SIKURI",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "321",
+      "name": "HUELLA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "538",
+      "name": "HUPANGO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "421",
+      "name": "IMPRONTU",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "422",
+      "name": "INTERMEDIO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "539",
+      "name": "JALAITO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "540",
+      "name": "JARABE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "541",
+      "name": "JAVA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "605",
+      "name": "JAZZ",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "114",
+      "name": "JINGLE",
+      "group": "MELODICO"
+    },
+    {
+      "code": "542",
+      "name": "JOROPO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "543",
+      "name": "JOTA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "454",
+      "name": "JUGUETE MUSICAL",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "640",
+      "name": "KAANI",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "599",
+      "name": "KALUYO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "631",
+      "name": "KANTU",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "356",
+      "name": "KASHUA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "349",
+      "name": "KIRGI",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "544",
+      "name": "LAGARTERANAS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "607",
+      "name": "LAMBADA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "324",
+      "name": "LAMENTO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "545",
+      "name": "LANCEROS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "423",
+      "name": "LARGO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "325",
+      "name": "LETANIAS",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "618",
+      "name": "LIMBO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "326",
+      "name": "LITORALEÑA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "346",
+      "name": "LONCO MEO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "546",
+      "name": "MACUMBA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "327",
+      "name": "MADRIGAL",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "586",
+      "name": "MALAGUEÑAS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "328",
+      "name": "MALAMBO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "354",
+      "name": "MALON",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "547",
+      "name": "MAMBO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "548",
+      "name": "MANAKE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "603",
+      "name": "MARACATO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "424",
+      "name": "MARCHA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "617",
+      "name": "MARCHA DISCO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "549",
+      "name": "MARCHINHA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "550",
+      "name": "MAREA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "551",
+      "name": "MAXIXA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "552",
+      "name": "MAZURCA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "592",
+      "name": "MEGAMBO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "114",
+      "name": "MELODIA",
+      "group": "MELODICO"
+    },
+    {
+      "code": "553",
+      "name": "MERECUMBE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "554",
+      "name": "MERENGUE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "555",
+      "name": "MEREQUETENGUE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "2",
+      "name": "MILONGA",
+      "group": "POPULAR"
+    },
+    {
+      "code": "3",
+      "name": "MILONGON",
+      "group": "POPULAR"
+    },
+    {
+      "code": "425",
+      "name": "MINUE",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "556",
+      "name": "MORUNO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "557",
+      "name": "MOSAICO ESPAÑOL",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "558",
+      "name": "MUÑEIRA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "426",
+      "name": "MUSICA DE CAMARA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "427",
+      "name": "MUSICA SACRA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "428",
+      "name": "MUSICA SINFONICA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "621",
+      "name": "NEW AGE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "429",
+      "name": "NOCTURNO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "329",
+      "name": "NORTEÑA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "433",
+      "name": "OBERTURA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "430",
+      "name": "OPERA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "431",
+      "name": "OPERETA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "115",
+      "name": "ORACION",
+      "group": "MELODICO"
+    },
+    {
+      "code": "432",
+      "name": "ORATORIO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "559",
+      "name": "PACHANGA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "330",
+      "name": "PALA PALA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "597",
+      "name": "PARRANDA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "116",
+      "name": "PASACALLE",
+      "group": "MELODICO"
+    },
+    {
+      "code": "560",
+      "name": "PASEAITO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "587",
+      "name": "PASEO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "561",
+      "name": "PASILLO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "562",
+      "name": "PASO DOBLE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "434",
+      "name": "PASTORAL",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "117",
+      "name": "PATA PATA",
+      "group": "MELODICO"
+    },
+    {
+      "code": "435",
+      "name": "PAVANA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "352",
+      "name": "PERICON",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "563",
+      "name": "PETENERA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "637",
+      "name": "PIM PIM",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "564",
+      "name": "PLAYERA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "565",
+      "name": "PLEGARIA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "331",
+      "name": "POEMA FOLKLORICO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "437",
+      "name": "POEMA SINFONICO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "566",
+      "name": "POLCA / POLKA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "359",
+      "name": "POLCA CORRENTINA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "436",
+      "name": "POLONESA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "624",
+      "name": "POP",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "567",
+      "name": "PORRO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "800",
+      "name": "POTPOURRI",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "118",
+      "name": "PREGON",
+      "group": "MELODICO"
+    },
+    {
+      "code": "438",
+      "name": "PRELUDIO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "622",
+      "name": "PUNK",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "332",
+      "name": "PURAJEHI",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "629",
+      "name": "QUENA QUENA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "439",
+      "name": "QUINTETO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "119",
+      "name": "RAG TIME",
+      "group": "MELODICO"
+    },
+    {
+      "code": "569",
+      "name": "RANCHEIRA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "333",
+      "name": "RANCHERA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "611",
+      "name": "RAP",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "440",
+      "name": "RAPSODIA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "334",
+      "name": "RASGUIDO DOBLE",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "588",
+      "name": "RASPA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "610",
+      "name": "REGGAE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "646",
+      "name": "REGGAETON",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "351",
+      "name": "REMEDIO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "570",
+      "name": "RETUMBO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "441",
+      "name": "REVERIE",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "612",
+      "name": "RHYTHM AND BLUES",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "135",
+      "name": "RITMO ALEGRE",
+      "group": "MELODICO"
+    },
+    {
+      "code": "120",
+      "name": "RITMO LATINO",
+      "group": "MELODICO"
+    },
+    {
+      "code": "136",
+      "name": "RITMO TAHITIANO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "121",
+      "name": "ROCK",
+      "group": "MELODICO"
+    },
+    {
+      "code": "350",
+      "name": "ROGATIVA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "442",
+      "name": "ROMANZA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "443",
+      "name": "RONDA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "444",
+      "name": "RONDO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "571",
+      "name": "RUMBA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "606",
+      "name": "SALSA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "572",
+      "name": "SAMBA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "636",
+      "name": "SAYA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "446",
+      "name": "SCHERZZO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "573",
+      "name": "SCHOTTIS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "589",
+      "name": "SEGUIDILLAS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "445",
+      "name": "SERENATA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "335",
+      "name": "SERRANA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "590",
+      "name": "SEVILLANAS",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "447",
+      "name": "SEXTETO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "122",
+      "name": "SHAKE",
+      "group": "MELODICO"
+    },
+    {
+      "code": "123",
+      "name": "SHERIKO",
+      "group": "MELODICO"
+    },
+    {
+      "code": "124",
+      "name": "SHIMMY",
+      "group": "MELODICO"
+    },
+    {
+      "code": "360",
+      "name": "SHOTIS MISIONERO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "626",
+      "name": "SIKURIADA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "448",
+      "name": "SINFONIA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "499",
+      "name": "SINFONICO Y CAMARA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "616",
+      "name": "SKA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "125",
+      "name": "SLOP",
+      "group": "MELODICO"
+    },
+    {
+      "code": "126",
+      "name": "SLOW",
+      "group": "MELODICO"
+    },
+    {
+      "code": "574",
+      "name": "SOLEARES",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "127",
+      "name": "SON",
+      "group": "MELODICO"
+    },
+    {
+      "code": "449",
+      "name": "SONATA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "450",
+      "name": "SONATINA",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "593",
+      "name": "SOUFLE",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "128",
+      "name": "SOUL",
+      "group": "MELODICO"
+    },
+    {
+      "code": "134",
+      "name": "SOW",
+      "group": "MELODICO"
+    },
+    {
+      "code": "129",
+      "name": "STORNELLO",
+      "group": "MELODICO"
+    },
+    {
+      "code": "451",
+      "name": "SUITE",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "336",
+      "name": "SUREÑA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "131",
+      "name": "SURF",
+      "group": "MELODICO"
+    },
+    {
+      "code": "130",
+      "name": "SWING",
+      "group": "MELODICO"
+    },
+    {
+      "code": "641",
+      "name": "TAIELL / TAIL",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "575",
+      "name": "TAMBORITO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "4",
+      "name": "TANGO",
+      "group": "POPULAR"
+    },
+    {
+      "code": "576",
+      "name": "TANGUILLO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "337",
+      "name": "TAQUIRARI / TAKIRARI",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "577",
+      "name": "TARANTELLA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "628",
+      "name": "TARKEADA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "623",
+      "name": "TECNO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "578",
+      "name": "TELECOTECO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "357",
+      "name": "TERMINO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "579",
+      "name": "TIJERA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "580",
+      "name": "TIJUANA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "635",
+      "name": "TINKU",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "638",
+      "name": "TOBA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "338",
+      "name": "TONADA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "452",
+      "name": "TRIO",
+      "group": "SINFONICO Y CAMARA"
+    },
+    {
+      "code": "339",
+      "name": "TRISTE",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "340",
+      "name": "TRIUNFO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "620",
+      "name": "TROPICAL",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "132",
+      "name": "TWIST",
+      "group": "MELODICO"
+    },
+    {
+      "code": "591",
+      "name": "VALLENATO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "5",
+      "name": "VALS",
+      "group": "POPULAR"
+    },
+    {
+      "code": "341",
+      "name": "VALSEADO",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "342",
+      "name": "VIDALA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "639",
+      "name": "VIDALA COMPARSERA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "343",
+      "name": "VIDALITA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "581",
+      "name": "VILLANCICO",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "344",
+      "name": "YARAVI",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "582",
+      "name": "YENKA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "345",
+      "name": "ZAMBA",
+      "group": "FOLKLORE"
+    },
+    {
+      "code": "583",
+      "name": "ZAMBRA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "584",
+      "name": "ZARZUELA",
+      "group": "INTERNACIONAL"
+    },
+    {
+      "code": "585",
+      "name": "ZORTZICO",
+      "group": "INTERNACIONAL"
+    }
+  ]
+}

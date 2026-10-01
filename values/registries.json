@@ -1,0 +1,33 @@
+{
+  "list": "registries",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "DNDA_AR"
+    },
+    {
+      "code": "INDAUTOR_MX"
+    },
+    {
+      "code": "DNDA_CO"
+    },
+    {
+      "code": "DINAPI_PY"
+    },
+    {
+      "code": "INDECOPI_PE"
+    },
+    {
+      "code": "SENADI_EC"
+    },
+    {
+      "code": "DDI_CL"
+    },
+    {
+      "code": "BN_UY"
+    },
+    {
+      "code": "EDA_BR"
+    }
+  ]
+}

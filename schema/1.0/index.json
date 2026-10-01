@@ -1,0 +1,879 @@
+{
+  "minor": "1.0",
+  "refs": [
+    {
+      "pattern": "/declaration/declarant",
+      "list": "parties"
+    },
+    {
+      "pattern": "/parties/*/names/*/registrations/*/filing",
+      "list": "media",
+      "refTypes": [
+        "registrationFiling"
+      ]
+    },
+    {
+      "pattern": "/parties/*/names/*/registrations/*/certificate",
+      "list": "media",
+      "refTypes": [
+        "registrationCertificate"
+      ]
+    },
+    {
+      "pattern": "/parties/*/legalRepresentatives/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/parties/*/successors/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/parties/*/representatives/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/parties/*/media/*",
+      "list": "media"
+    },
+    {
+      "pattern": "/works/*/registrations/*/filing",
+      "list": "media",
+      "refTypes": [
+        "registrationFiling"
+      ]
+    },
+    {
+      "pattern": "/works/*/registrations/*/certificate",
+      "list": "media",
+      "refTypes": [
+        "registrationCertificate"
+      ]
+    },
+    {
+      "pattern": "/works/*/version/original/work",
+      "list": "works"
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/names/*/registrations/*/filing",
+      "list": "media",
+      "refTypes": [
+        "registrationFiling"
+      ]
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/names/*/registrations/*/certificate",
+      "list": "media",
+      "refTypes": [
+        "registrationCertificate"
+      ]
+    },
+    {
+      "pattern": "/works/*/version/authorization",
+      "list": "agreements",
+      "refTypes": [
+        "derivativeAuthorization"
+      ]
+    },
+    {
+      "pattern": "/works/*/composite/components/*/work",
+      "list": "works"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/names/*/registrations/*/filing",
+      "list": "media",
+      "refTypes": [
+        "registrationFiling"
+      ]
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/names/*/registrations/*/certificate",
+      "list": "media",
+      "refTypes": [
+        "registrationCertificate"
+      ]
+    },
+    {
+      "pattern": "/works/*/excerptOf/work",
+      "list": "works"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/names/*/registrations/*/filing",
+      "list": "media",
+      "refTypes": [
+        "registrationFiling"
+      ]
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/names/*/registrations/*/certificate",
+      "list": "media",
+      "refTypes": [
+        "registrationCertificate"
+      ]
+    },
+    {
+      "pattern": "/works/*/commissioned/commissioner",
+      "list": "parties"
+    },
+    {
+      "pattern": "/works/*/contributors/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/works/*/authorship/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/works/*/authorship/*/agreement",
+      "list": "agreements",
+      "refTypes": [
+        "writerSplit"
+      ]
+    },
+    {
+      "pattern": "/works/*/shares/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/works/*/shares/*/via/*",
+      "list": "parties"
+    },
+    {
+      "pattern": "/works/*/shares/*/agreement",
+      "list": "agreements",
+      "refTypes": [
+        "publishing",
+        "subPublishing",
+        "administration",
+        "assignment",
+        "writerSplit"
+      ]
+    },
+    {
+      "pattern": "/works/*/recordings/*",
+      "list": "recordings"
+    },
+    {
+      "pattern": "/works/*/media/*",
+      "list": "media"
+    },
+    {
+      "pattern": "/recordings/*/works/*",
+      "list": "works"
+    },
+    {
+      "pattern": "/recordings/*/producers/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/recordings/*/pLine/owner",
+      "list": "parties"
+    },
+    {
+      "pattern": "/recordings/*/label",
+      "list": "parties"
+    },
+    {
+      "pattern": "/recordings/*/performers/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/recordings/*/performers/*/members/*",
+      "list": "parties"
+    },
+    {
+      "pattern": "/recordings/*/contributors/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/recordings/*/samples/*/recording",
+      "list": "recordings"
+    },
+    {
+      "pattern": "/recordings/*/samples/*/producer",
+      "list": "parties"
+    },
+    {
+      "pattern": "/recordings/*/samples/*/authorization",
+      "list": "agreements",
+      "refTypes": [
+        "derivativeAuthorization"
+      ]
+    },
+    {
+      "pattern": "/recordings/*/media/*",
+      "list": "media"
+    },
+    {
+      "pattern": "/agreements/*/parties/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/agreements/*/parent/agreement",
+      "list": "agreements"
+    },
+    {
+      "pattern": "/agreements/*/works/*",
+      "list": "works"
+    },
+    {
+      "pattern": "/agreements/*/observations/*/parties/*",
+      "list": "parties"
+    },
+    {
+      "pattern": "/agreements/*/registrations/*/filing",
+      "list": "media",
+      "refTypes": [
+        "registrationFiling"
+      ]
+    },
+    {
+      "pattern": "/agreements/*/registrations/*/certificate",
+      "list": "media",
+      "refTypes": [
+        "registrationCertificate"
+      ]
+    },
+    {
+      "pattern": "/agreements/*/media/*",
+      "list": "media",
+      "refTypes": [
+        "signedContract",
+        "splitAgreement"
+      ]
+    },
+    {
+      "pattern": "/media/*/evidence/signers/*/party",
+      "list": "parties"
+    },
+    {
+      "pattern": "/media/*/evidence/signers/*/onBehalfOf",
+      "list": "parties"
+    },
+    {
+      "pattern": "/media/*/evidence/annexed/*/media",
+      "list": "media"
+    },
+    {
+      "pattern": "/media/*/evidence/anchors/*/proof",
+      "list": "media",
+      "refTypes": [
+        "timestampProof"
+      ]
+    },
+    {
+      "pattern": "/edition/publishers/*",
+      "list": "parties"
+    },
+    {
+      "pattern": "/edition/works/*",
+      "list": "works"
+    },
+    {
+      "pattern": "/edition/registrations/*/filing",
+      "list": "media",
+      "refTypes": [
+        "registrationFiling"
+      ]
+    },
+    {
+      "pattern": "/edition/registrations/*/certificate",
+      "list": "media",
+      "refTypes": [
+        "registrationCertificate"
+      ]
+    },
+    {
+      "pattern": "/edition/deposit/copy",
+      "list": "media",
+      "refTypes": [
+        "legalDepositCopy"
+      ]
+    },
+    {
+      "pattern": "/edition/media/*",
+      "list": "media"
+    }
+  ],
+  "openLists": [
+    {
+      "pattern": "/parties/*/names/*/type",
+      "list": "nameTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/parties/*/names/*/registrations/*/registry",
+      "list": "registries",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/parties/*/names/*/registrations/*/kind",
+      "list": "registrationKinds",
+      "style": "enum"
+    },
+    {
+      "pattern": "/parties/*/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/parties/*/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/parties/*/legalRepresentatives/*/capacity",
+      "list": "legalRepresentativeCapacities",
+      "style": "enum"
+    },
+    {
+      "pattern": "/parties/*/successors/*/capacity",
+      "list": "successorCapacities",
+      "style": "enum"
+    },
+    {
+      "pattern": "/parties/*/representatives/*/role",
+      "list": "representativeRoles",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/titles/*/type",
+      "list": "titleTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/classifications/*/scheme",
+      "list": "classificationSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/registrations/*/registry",
+      "list": "registries",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/registrations/*/kind",
+      "list": "registrationKinds",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/version/original/external/titles/*/type",
+      "list": "titleTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/version/original/external/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/version/original/external/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/names/*/type",
+      "list": "nameTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/names/*/registrations/*/registry",
+      "list": "registries",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/names/*/registrations/*/kind",
+      "list": "registrationKinds",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/titles/*/type",
+      "list": "titleTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/names/*/type",
+      "list": "nameTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/names/*/registrations/*/registry",
+      "list": "registries",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/names/*/registrations/*/kind",
+      "list": "registrationKinds",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/titles/*/type",
+      "list": "titleTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/names/*/type",
+      "list": "nameTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/names/*/registrations/*/registry",
+      "list": "registries",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/names/*/registrations/*/kind",
+      "list": "registrationKinds",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/instrumentation/instruments/*/scheme",
+      "list": "instrumentSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/origin/purpose",
+      "list": "originPurposes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/origin/usage",
+      "list": "originUsages",
+      "style": "enum"
+    },
+    {
+      "pattern": "/works/*/origin/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/origin/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/works/*/contributors/*/roles/*",
+      "list": "contributorRoles",
+      "style": "enum"
+    },
+    {
+      "pattern": "/recordings/*/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/recordings/*/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/recordings/*/purposes/*",
+      "list": "recordingPurposes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/recordings/*/type",
+      "list": "recordingTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/recordings/*/release/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/recordings/*/release/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/recordings/*/release/carrier",
+      "list": "carriers",
+      "style": "enum"
+    },
+    {
+      "pattern": "/recordings/*/performers/*/role",
+      "list": "performerRoles",
+      "style": "enum"
+    },
+    {
+      "pattern": "/recordings/*/performers/*/instruments/*/scheme",
+      "list": "instrumentSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/recordings/*/contributors/*/role",
+      "list": "recordingContributorRoles",
+      "style": "enum"
+    },
+    {
+      "pattern": "/recordings/*/samples/*/external/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/recordings/*/samples/*/external/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/recordings/*/links/*/platform",
+      "list": "platforms",
+      "style": "enum"
+    },
+    {
+      "pattern": "/agreements/*/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/agreements/*/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/agreements/*/parent/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/agreements/*/parent/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/agreements/*/publisherShare/condition/scheme",
+      "list": "conditionSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/agreements/*/terms/basedOn/scheme",
+      "list": "contractTemplateSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/agreements/*/registrations/*/registry",
+      "list": "registries",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/agreements/*/registrations/*/kind",
+      "list": "registrationKinds",
+      "style": "enum"
+    },
+    {
+      "pattern": "/media/*/kind",
+      "list": "mediaKinds",
+      "style": "enum"
+    },
+    {
+      "pattern": "/media/*/evidence/esignature/identityMethods/*",
+      "list": "identityMethods",
+      "style": "enum"
+    },
+    {
+      "pattern": "/media/*/evidence/esignature/contactSource",
+      "list": "contactSources",
+      "style": "enum"
+    },
+    {
+      "pattern": "/media/*/evidence/anchors/*/method",
+      "list": "anchorMethods",
+      "style": "enum"
+    },
+    {
+      "pattern": "/edition/identifiers/*/scheme",
+      "list": "identifierSchemes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/edition/identifiers/*/type",
+      "list": "identifierTypes",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/edition/type",
+      "list": "editionTypes",
+      "style": "enum"
+    },
+    {
+      "pattern": "/edition/registrations/*/registry",
+      "list": "registries",
+      "style": "scheme"
+    },
+    {
+      "pattern": "/edition/registrations/*/kind",
+      "list": "registrationKinds",
+      "style": "enum"
+    }
+  ],
+  "percents": [
+    "/works/*/authorship/*/percent",
+    "/works/*/shares/*/percent",
+    "/recordings/*/producers/*/percent",
+    "/agreements/*/publisherShare/percent",
+    "/agreements/*/terms/values/retailPricePercent",
+    "/agreements/*/terms/values/arrangementRetailPricePercent"
+  ],
+  "dates": [
+    "/parties/*/names/*/registrations/*/date",
+    "/parties/*/names/*/registrations/*/expiryDate",
+    "/parties/*/birthDate",
+    "/parties/*/deathDate",
+    "/parties/*/affiliations/*/startDate",
+    "/parties/*/affiliations/*/endDate",
+    "/works/*/creationDate",
+    "/works/*/firstPerformance/date",
+    "/works/*/registrations/*/date",
+    "/works/*/registrations/*/expiryDate",
+    "/works/*/version/original/external/writers/*/names/*/registrations/*/date",
+    "/works/*/version/original/external/writers/*/names/*/registrations/*/expiryDate",
+    "/works/*/version/original/external/writers/*/birthDate",
+    "/works/*/version/original/external/writers/*/deathDate",
+    "/works/*/composite/components/*/external/writers/*/names/*/registrations/*/date",
+    "/works/*/composite/components/*/external/writers/*/names/*/registrations/*/expiryDate",
+    "/works/*/composite/components/*/external/writers/*/birthDate",
+    "/works/*/composite/components/*/external/writers/*/deathDate",
+    "/works/*/excerptOf/external/writers/*/names/*/registrations/*/date",
+    "/works/*/excerptOf/external/writers/*/names/*/registrations/*/expiryDate",
+    "/works/*/excerptOf/external/writers/*/birthDate",
+    "/works/*/excerptOf/external/writers/*/deathDate",
+    "/recordings/*/recordingDate",
+    "/recordings/*/firstPublication/date",
+    "/recordings/*/release/date",
+    "/agreements/*/signatureDate",
+    "/agreements/*/startDate",
+    "/agreements/*/endDate",
+    "/agreements/*/postTermCollection/endDate",
+    "/agreements/*/registrations/*/date",
+    "/agreements/*/registrations/*/expiryDate",
+    "/edition/publicationDate",
+    "/edition/registrations/*/date",
+    "/edition/registrations/*/expiryDate"
+  ],
+  "instants": [
+    "/declaration/createdAt",
+    "/media/*/evidence/esignature/timestamp/generatedAt",
+    "/media/*/evidence/signers/*/signedAt"
+  ],
+  "personalData": [
+    "/parties/*/gender",
+    "/parties/*/birthDate",
+    "/parties/*/deathDate",
+    "/parties/*/nationality",
+    "/parties/*/maritalStatus",
+    "/parties/*/address",
+    "/parties/*/contact",
+    "/parties/*/contact/email",
+    "/parties/*/contact/phone"
+  ],
+  "personalDataWhen": [
+    {
+      "pattern": "/parties/*/names/*",
+      "path": "type",
+      "in": [
+        "legal"
+      ]
+    },
+    {
+      "pattern": "/parties/*/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/works/*/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/works/*/version/original/external/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/names/*",
+      "path": "type",
+      "in": [
+        "legal"
+      ]
+    },
+    {
+      "pattern": "/works/*/version/original/external/writers/*/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/names/*",
+      "path": "type",
+      "in": [
+        "legal"
+      ]
+    },
+    {
+      "pattern": "/works/*/composite/components/*/external/writers/*/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/names/*",
+      "path": "type",
+      "in": [
+        "legal"
+      ]
+    },
+    {
+      "pattern": "/works/*/excerptOf/external/writers/*/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/works/*/origin/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/recordings/*/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/recordings/*/release/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/recordings/*/samples/*/external/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/agreements/*/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/agreements/*/parent/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "pattern": "/edition/identifiers/*",
+      "path": "scheme",
+      "in": [
+        "TAX_ID",
+        "NATIONAL_ID"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "list": "nameTypes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "legal"
+    },
+    {
+      "code": "pseudonym"
+    },
+    {
+      "code": "trade"
+    }
+  ]
+}

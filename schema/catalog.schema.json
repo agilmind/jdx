@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/catalog.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Catálogo de reglas de JDX (catalog/<M.m>/rules.json)",
+  "type": "object",
+  "properties": {
+    "catalog": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/Rule" } }
+  },
+  "required": ["catalog", "rules"],
+  "additionalProperties": false,
+  "$defs": {
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^JDX-[A-Z]{3}-\\d{3}$" },
+        "layer": { "type": "string", "enum": ["environment", "core", "schema", "profile", "policy"] },
+        "check": { "type": "string", "enum": ["environment", "json", "schema", "core", "profile", "policy", "media", "signature"] },
+        "status": { "type": "string", "enum": ["active", "retired"] },
+        "since": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+        "implemented": { "type": "boolean" },
+        "level": { "type": "string", "enum": ["error", "warning", "info"] },
+        "predicate": { "$ref": "#/$defs/Texts" },
+        "message": { "$ref": "#/$defs/Texts" },
+        "profileParamsSchema": { "type": "object" },
+        "resultParamsSchema": { "type": "object" },
+        "contextSchema": { "type": "object" },
+        "example": {
+          "type": "object",
+          "properties": { "params": { "type": "object" }, "context": { "$ref": "#/$defs/Context" } },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id", "layer", "check", "status", "since", "implemented", "predicate", "message",
+        "profileParamsSchema", "resultParamsSchema", "contextSchema", "example"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "El nivel es fijo fuera del perfil; en el perfil lo da cada perfil (defaultLevel o rules[].level).",
+          "type": "object",
+          "if": {
+            "type": "object",
+            "properties": { "layer": { "type": "string", "enum": ["environment", "core", "schema", "policy"] } },
+            "required": ["layer"]
+          },
+          "then": { "type": "object", "properties": { "level": true }, "required": ["level"] },
+          "else": { "type": "object", "properties": { "level": { "not": {} } } }
+        }
+      ]
+    },
+    "Texts": {
+      "type": "object",
+      "properties": {
+        "es": { "type": "string", "minLength": 1 },
+        "pt": { "type": "string", "minLength": 1 },
+        "en": { "type": "string", "minLength": 1 }
+      },
+      "required": ["es", "pt", "en"],
+      "additionalProperties": false
+    },
+    "Context": {
+      "type": "object",
+      "properties": {
+        "work": { "type": "string" },
+        "party": { "type": "string" },
+        "agreement": { "type": "string" },
+        "media": { "type": "string" },
+        "recording": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

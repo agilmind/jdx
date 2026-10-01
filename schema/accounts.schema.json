@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/accounts.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Cuentas del receptor: el archivo de --accounts",
+  "type": "object",
+  "properties": {
+    "accounts": { "type": "array", "items": { "$ref": "#/$defs/Account" } }
+  },
+  "required": ["accounts"],
+  "additionalProperties": false,
+  "$defs": {
+    "Account": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "scheme": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$" },
+              "value": { "type": "string", "minLength": 1 }
+            },
+            "required": ["scheme", "value"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["id", "identifiers"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,396 @@
+                                POR SUBGENERO
+
+
+
+
+                     LISTADO DE GENEROS AUTORIZADOS
+ACTUALIZADO AL 10 / 10 / 2006
+         SUBGENERO                    CODIGO            GENERO
+AFRO                                     500    INTERNACIONAL
+AGOGO                                    594    INTERNACIONAL
+AIRES ESPAÑOLES                          501    INTERNACIONAL
+ALBORADA                                 502    INTERNACIONAL
+ALEGRO VIVACE                            455    SINFONICO Y CAMARA
+ANATEADA                                 627    FOLKLORE
+ANDANTE                                  400    SINFONICO Y CAMARA
+ARIA                                     401    SINFONICO Y CAMARA
+AUQUI AUQUI                              633    FOLKLORE
+BAGUALA                                  300    FOLKLORE
+BAILECITO                                301    FOLKLORE
+BAILE                                    402    INTERNACIONAL
+BAILES                                   302    FOLKLORE
+BAION                                    503    INTERNACIONAL
+BALADA                                   100    MELODICO
+BALLET                                   403    SINFONICO Y CAMARA
+BAMBUCO                                  595    INTERNACIONAL
+BARCAROLA                                504    INTERNACIONAL
+BATUCADA                                 505    INTERNACIONAL
+BEAT                                     101    MELODICO
+BEGUINE                                  102    MELODICO
+BERCEUSE                                 404    SINFONICO Y CAMARA
+BLUES                                    103    MELODICO
+BOCETO                                   405    SINFONICO Y CAMARA
+BOGALOO                                  105    MELODICO
+BOLERO                                   104    MELODICO
+BOMBA                                    506    INTERNACIONAL
+BOOGIE BOOGIE                            106    MELODICO
+BOSSA NOVA                               507    INTERNACIONAL
+BOTECITO                                 508    INTERNACIONAL
+BULERIAS                                 509    INTERNACIONAL
+CACHACA                                  615    INTERNACIONAL
+CACHARPAYA                               302    FOLKLORE
+CAJITA DE MUSICA                         406    SINFONICO Y CAMARA
+CALIPSO                                  107    MELODICO
+CAMPERA                                  303    FOLKLORE
+CAN CAN                                  510    INTERNACIONAL
+CANCION                                  108    MELODICO
+CANCION DE CUNA                          453    SINFONICO Y CAMARA
+CANCION FOLKLORICA                       358    FOLKLORE
+
+
+                                   Página 1
+                                POR SUBGENERO
+
+
+
+
+                     LISTADO DE GENEROS AUTORIZADOS
+ACTUALIZADO AL 10 / 10 / 2006
+         SUBGENERO                    CODIGO            GENERO
+CANCION INDIA                            643    FOLKLORE
+CANCION INFANTIL                         407    SINFONICO Y CAMARA
+CANCION MAPUCHE                          642    FOLKLORE
+CANDOMBE                                  1     POPULAR
+CANON                                    408    SINFONICO Y CAMARA
+CANTATA                                  409    SINFONICO Y CAMARA
+CANTE JONDO                              511    INTERNACIONAL
+CANZONETTA                               109    MELODICO
+CAPRICCIO                                410    SINFONICO Y CAMARA
+CARAMBA                                  304    FOLKLORE
+CARNAVAL                                 348    FOLKLORE
+CARNAVALITO                              305    FOLKLORE
+CASASCHOKT                               600    INTERNACIONAL
+CATERETE                                 512    INTERNACIONAL
+CATUMBE                                  513    INTERNACIONAL
+CHA CHA CHA                              520    INTERNACIONAL
+CHACARERA                                311    FOLKLORE
+CHACARERA DEL MONTE                      647    FOLKLORE
+CHAMAME                                  312    FOLKLORE
+CHAMARRITA                               313    FOLKLORE
+CHARANGA                                 521    INTERNACIONAL
+CHARLESTON                               110    MELODICO
+CHAYA                                    314    FOLKLORE
+CHORO                                    522    INTERNACIONAL
+CHUNTUNQUI                               634    FOLKLORE
+CHUTUNSKY                                601    INTERNACIONAL
+CIELITO                                  306    FOLKLORE
+CIFRA                                    307    FOLKLORE
+CONCIERTO                                411    SINFONICO Y CAMARA
+CONGA                                    514    INTERNACIONAL
+CONTRAPUNTO                              308    FOLKLORE
+COPLAS                                   515    INTERNACIONAL
+COPLERA                                  309    FOLKLORE
+CORAL                                    412    SINFONICO Y CAMARA
+CORRALERA                                353    FOLKLORE
+CORRIDO                                  517    INTERNACIONAL
+COSTERA                                  347    FOLKLORE
+COUNTRY                                  613    INTERNACIONAL
+COUPLE                                   518    INTERNACIONAL
+CUANDO                                   355    FOLKLORE
+
+
+                                   Página 2
+                                POR SUBGENERO
+
+
+
+
+                     LISTADO DE GENEROS AUTORIZADOS
+ACTUALIZADO AL 10 / 10 / 2006
+         SUBGENERO                    CODIGO            GENERO
+CUARTETO                                 413    SINFONICO Y CAMARA
+CUECA                                    310    FOLKLORE
+CUMBIA                                   516    INTERNACIONAL
+CZARDAS                                  519    INTERNACIONAL
+DABKE                                    602    INTERNACIONAL
+DANZA                                    315    FOLKLORE
+DANZA INDIGENA                           644    FOLKLORE
+DECIMAS                                  316    FOLKLORE
+DELIRIO                                  414    SINFONICO Y CAMARA
+DENGUE                                   604    INTERNACIONAL
+DISCO                                    608    INTERNACIONAL
+DIXELAND                                 111    INTERNACIONAL
+ELEGIA                                   415    SINFONICO Y CAMARA
+ERKENCHADA                               630    FOLKLORE
+ESCONDIDO                                317    FOLKLORE
+ESTILO                                   318    FOLKLORE
+ESTUDIO                                  416    SINFONICO Y CAMARA
+FADO                                     524    INTERNACIONAL
+FANDANGO                                 525    INTERNACIONAL
+FANDANGUILLO                             526    INTERNACIONAL
+FANTASIA                                 417    SINFONICO Y CAMARA
+FARRUCA                                  527    INTERNACIONAL
+FLAMENCO                                 528    INTERNACIONAL
+FOLK                                     133    MELODICO
+FOX TROT                                 112    MELODICO
+FUGA                                     418    SINFONICO Y CAMARA
+FUNKY                                    609    INTERNACIONAL
+FUSION                                   614    INTERNACIONAL
+GAITA                                    529    INTERNACIONAL
+GALOPA                                   530    INTERNACIONAL
+GALOPE INDIANO                           319    FOLKLORE
+GARROTIN                                 531    INTERNACIONAL
+GATO                                     320    FOLKLORE
+GAVOTA                                   419    SINFONICO Y CAMARA
+GRANADINA                                532    INTERNACIONAL
+GUAJIRA                                  113    MELODICO
+GUALAMBAO                                619    POPULAR
+GUARACHA                                 534    MELODICO
+GUARANIA                                 535    MELODICO
+GUARASON                                 536    MELODICO
+
+
+                                   Página 3
+                                POR SUBGENERO
+
+
+
+
+                     LISTADO DE GENEROS AUTORIZADOS
+ACTUALIZADO AL 10 / 10 / 2006
+         SUBGENERO                    CODIGO            GENERO
+HABANERA                                 537    MELODICO
+HIMNO                                    420    SINFONICO Y CAMARA
+HIP HOP                                  625    INTERNACIONAL
+HUASTECA                                 598    INTERNACIONAL
+HUAYNO                                   323    FOLKLORE
+HUAYNO SIKURI                            632    FOLKLORE
+HUELLA                                   321    FOLKLORE
+HUPANGO                                  538    INTERNACIONAL
+IMPRONTU                                 421    SINFONICO Y CAMARA
+INTERMEDIO                               422    SINFONICO Y CAMARA
+JALAITO                                  539    INTERNACIONAL
+JARABE                                   540    INTERNACIONAL
+JAVA                                     541    INTERNACIONAL
+JAZZ                                     605    INTERNACIONAL
+JINGLE                                   114    MELODICO
+JOROPO                                   542    INTERNACIONAL
+JOTA                                     543    INTERNACIONAL
+JUGUETE MUSICAL                          454    SINFONICO Y CAMARA
+KAANI                                    640    FOLKLORE
+KALUYO                                   599    INTERNACIONAL
+KANTU                                    631    FOLKLORE
+KASHUA                                   356    FOLKLORE
+KIRGI                                    349    FOLKLORE
+LAGARTERANAS                             544    INTERNACIONAL
+LAMBADA                                  607    INTERNACIONAL
+LAMENTO                                  324    FOLKLORE
+LANCEROS                                 545    INTERNACIONAL
+LARGO                                    423    SINFONICO Y CAMARA
+LETANIAS                                 325    FOLKLORE
+LIMBO                                    618    INTERNACIONAL
+LITORALEÑA                               326    FOLKLORE
+LONCO MEO                                346    FOLKLORE
+MACUMBA                                  546    INTERNACIONAL
+MADRIGAL                                 327    FOLKLORE
+MALAGUEÑAS                               586    INTERNACIONAL
+MALAMBO                                  328    FOLKLORE
+MALON                                    354    FOLKLORE
+MAMBO                                    547    INTERNACIONAL
+MANAKE                                   548    INTERNACIONAL
+MARACATO                                 603    INTERNACIONAL
+
+
+                                   Página 4
+                                POR SUBGENERO
+
+
+
+
+                     LISTADO DE GENEROS AUTORIZADOS
+ACTUALIZADO AL 10 / 10 / 2006
+         SUBGENERO                    CODIGO            GENERO
+MARCHA                                   424    SINFONICO Y CAMARA
+MARCHA DISCO                             617    INTERNACIONAL
+MARCHINHA                                549    INTERNACIONAL
+MAREA                                    550    INTERNACIONAL
+MAXIXA                                   551    INTERNACIONAL
+MAZURCA                                  552    INTERNACIONAL
+MEGAMBO                                  592    INTERNACIONAL
+MELODIA                                  114    MELODICO
+MERECUMBE                                553    INTERNACIONAL
+MERENGUE                                 554    INTERNACIONAL
+MEREQUETENGUE                            555    INTERNACIONAL
+MILONGA                                   2     POPULAR
+MILONGON                                  3     POPULAR
+MINUE                                    425    SINFONICO Y CAMARA
+MORUNO                                   556    INTERNACIONAL
+MOSAICO ESPAÑOL                          557    INTERNACIONAL
+MUÑEIRA                                  558    INTERNACIONAL
+MUSICA DE CAMARA                         426    SINFONICO Y CAMARA
+MUSICA SACRA                             427    SINFONICO Y CAMARA
+MUSICA SINFONICA                         428    SINFONICO Y CAMARA
+NEW AGE                                  621    INTERNACIONAL
+NOCTURNO                                 429    SINFONICO Y CAMARA
+NORTEÑA                                  329    FOLKLORE
+OBERTURA                                 433    SINFONICO Y CAMARA
+OPERA                                    430    SINFONICO Y CAMARA
+OPERETA                                  431    SINFONICO Y CAMARA
+ORACION                                  115    MELODICO
+ORATORIO                                 432    SINFONICO Y CAMARA
+PACHANGA                                 559    INTERNACIONAL
+PALA PALA                                330    FOLKLORE
+PARRANDA                                 597    INTERNACIONAL
+PASACALLE                                116    MELODICO
+PASEAITO                                 560    INTERNACIONAL
+PASEO                                    587    INTERNACIONAL
+PASILLO                                  561    INTERNACIONAL
+PASO DOBLE                               562    INTERNACIONAL
+PASTORAL                                 434    SINFONICO Y CAMARA
+PATA PATA                                117    MELODICO
+PAVANA                                   435    SINFONICO Y CAMARA
+PERICON                                  352    FOLKLORE
+
+
+                                   Página 5
+                                POR SUBGENERO
+
+
+
+
+                     LISTADO DE GENEROS AUTORIZADOS
+ACTUALIZADO AL 10 / 10 / 2006
+         SUBGENERO                    CODIGO            GENERO
+PETENERA                                 563    INTERNACIONAL
+PIM PIM                                  637    FOLKLORE
+PLAYERA                                  564    INTERNACIONAL
+PLEGARIA                                 565    INTERNACIONAL
+POEMA FOLKLORICO                         331    FOLKLORE
+POEMA SINFONICO                          437    SINFONICO Y CAMARA
+POLCA / POLKA                            566    INTERNACIONAL
+POLCA CORRENTINA                         359    FOLKLORE
+POLONESA                                 436    SINFONICO Y CAMARA
+POP                                      624    INTERNACIONAL
+PORRO                                    567    INTERNACIONAL
+POTPOURRI                                800    INTERNACIONAL
+PREGON                                   118    MELODICO
+PRELUDIO                                 438    SINFONICO Y CAMARA
+PUNK                                     622    INTERNACIONAL
+PURAJEHI                                 332    FOLKLORE
+QUENA QUENA                              629    FOLKLORE
+QUINTETO                                 439    SINFONICO Y CAMARA
+RAG TIME                                 119    MELODICO
+RANCHEIRA                                569    INTERNACIONAL
+RANCHERA                                 333    FOLKLORE
+RAP                                      611    INTERNACIONAL
+RAPSODIA                                 440    SINFONICO Y CAMARA
+RASGUIDO DOBLE                           334    FOLKLORE
+RASPA                                    588    INTERNACIONAL
+REGGAE                                   610    INTERNACIONAL
+REGGAETON                                646    INTERNACIONAL
+REMEDIO                                  351    FOLKLORE
+RETUMBO                                  570    INTERNACIONAL
+REVERIE                                  441    SINFONICO Y CAMARA
+RHYTHM AND BLUES                         612    INTERNACIONAL
+RITMO ALEGRE                             135    MELODICO
+RITMO LATINO                             120    MELODICO
+RITMO TAHITIANO                          136    INTERNACIONAL
+ROCK                                     121    MELODICO
+ROGATIVA                                 350    FOLKLORE
+ROMANZA                                  442    SINFONICO Y CAMARA
+RONDA                                    443    SINFONICO Y CAMARA
+RONDO                                    444    SINFONICO Y CAMARA
+RUMBA                                    571    INTERNACIONAL
+
+
+                                   Página 6
+                                POR SUBGENERO
+
+
+
+
+                     LISTADO DE GENEROS AUTORIZADOS
+ACTUALIZADO AL 10 / 10 / 2006
+         SUBGENERO                    CODIGO            GENERO
+SALSA                                    606    INTERNACIONAL
+SAMBA                                    572    INTERNACIONAL
+SAYA                                     636    FOLKLORE
+SCHERZZO                                 446    SINFONICO Y CAMARA
+SCHOTTIS                                 573    INTERNACIONAL
+SEGUIDILLAS                              589    INTERNACIONAL
+SERENATA                                 445    SINFONICO Y CAMARA
+SERRANA                                  335    FOLKLORE
+SEVILLANAS                               590    INTERNACIONAL
+SEXTETO                                  447    SINFONICO Y CAMARA
+SHAKE                                    122    MELODICO
+SHERIKO                                  123    MELODICO
+SHIMMY                                   124    MELODICO
+SHOTIS MISIONERO                         360    FOLKLORE
+SIKURIADA                                626    FOLKLORE
+SINFONIA                                 448    SINFONICO Y CAMARA
+SINFONICO Y CAMARA                       499    SINFONICO Y CAMARA
+SKA                                      616    INTERNACIONAL
+SLOP                                     125    MELODICO
+SLOW                                     126    MELODICO
+SOLEARES                                 574    INTERNACIONAL
+SON                                      127    MELODICO
+SONATA                                   449    SINFONICO Y CAMARA
+SONATINA                                 450    SINFONICO Y CAMARA
+SOUFLE                                   593    INTERNACIONAL
+SOUL                                     128    MELODICO
+SOW                                      134    MELODICO
+STORNELLO                                129    MELODICO
+SUITE                                    451    SINFONICO Y CAMARA
+SUREÑA                                   336    FOLKLORE
+SURF                                     131    MELODICO
+SWING                                    130    MELODICO
+TAIELL / TAIL                            641    FOLKLORE
+TAMBORITO                                575    INTERNACIONAL
+TANGO                                     4     POPULAR
+TANGUILLO                                576    INTERNACIONAL
+TAQUIRARI / TAKIRARI                     337    FOLKLORE
+TARANTELLA                               577    INTERNACIONAL
+TARKEADA                                 628    FOLKLORE
+TECNO                                    623    INTERNACIONAL
+
+
+                                   Página 7
+                                POR SUBGENERO
+
+
+
+
+                     LISTADO DE GENEROS AUTORIZADOS
+ACTUALIZADO AL 10 / 10 / 2006
+         SUBGENERO                    CODIGO            GENERO
+TELECOTECO                               578    INTERNACIONAL
+TERMINO                                  357    FOLKLORE
+TIJERA                                   579    INTERNACIONAL
+TIJUANA                                  580    INTERNACIONAL
+TINKU                                    635    FOLKLORE
+TOBA                                     638    FOLKLORE
+TONADA                                   338    FOLKLORE
+TRIO                                     452    SINFONICO Y CAMARA
+TRISTE                                   339    FOLKLORE
+TRIUNFO                                  340    FOLKLORE
+TROPICAL                                 620    INTERNACIONAL
+TWIST                                    132    MELODICO
+VALLENATO                                591    INTERNACIONAL
+VALS                                      5     POPULAR
+VALSEADO                                 341    FOLKLORE
+VIDALA                                   342    FOLKLORE
+VIDALA COMPARSERA                        639    FOLKLORE
+VIDALITA                                 343    FOLKLORE
+VILLANCICO                               581    INTERNACIONAL
+YARAVI                                   344    FOLKLORE
+YENKA                                    582    INTERNACIONAL
+ZAMBA                                    345    FOLKLORE
+ZAMBRA                                   583    INTERNACIONAL
+ZARZUELA                                 584    INTERNACIONAL
+ZORTZICO                                 585    INTERNACIONAL
+
+
+
+
+                                   Página 8
+

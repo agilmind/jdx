@@ -1,0 +1,33 @@
+{
+  "list": "titleTypes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "original"
+    },
+    {
+      "code": "alternative"
+    },
+    {
+      "code": "translated"
+    },
+    {
+      "code": "transliterated"
+    },
+    {
+      "code": "firstLine"
+    },
+    {
+      "code": "formal"
+    },
+    {
+      "code": "incorrect"
+    },
+    {
+      "code": "part"
+    },
+    {
+      "code": "search"
+    }
+  ]
+}

@@ -1,0 +1,1506 @@
+{
+  "list": "tis",
+  "version": "2026-10",
+  "entries": [
+    {
+      "code": "0004",
+      "kind": "country",
+      "iso2": "AF"
+    },
+    {
+      "code": "0008",
+      "kind": "country",
+      "iso2": "AL"
+    },
+    {
+      "code": "0010",
+      "kind": "country",
+      "iso2": "AQ"
+    },
+    {
+      "code": "0012",
+      "kind": "country",
+      "iso2": "DZ"
+    },
+    {
+      "code": "0016",
+      "kind": "country",
+      "iso2": "AS"
+    },
+    {
+      "code": "0020",
+      "kind": "country",
+      "iso2": "AD"
+    },
+    {
+      "code": "0024",
+      "kind": "country",
+      "iso2": "AO"
+    },
+    {
+      "code": "0028",
+      "kind": "country",
+      "iso2": "AG"
+    },
+    {
+      "code": "0031",
+      "kind": "country",
+      "iso2": "AZ"
+    },
+    {
+      "code": "0032",
+      "kind": "country",
+      "iso2": "AR"
+    },
+    {
+      "code": "0036",
+      "kind": "country",
+      "iso2": "AU"
+    },
+    {
+      "code": "0040",
+      "kind": "country",
+      "iso2": "AT"
+    },
+    {
+      "code": "0044",
+      "kind": "country",
+      "iso2": "BS"
+    },
+    {
+      "code": "0048",
+      "kind": "country",
+      "iso2": "BH"
+    },
+    {
+      "code": "0050",
+      "kind": "country",
+      "iso2": "BD"
+    },
+    {
+      "code": "0051",
+      "kind": "country",
+      "iso2": "AM"
+    },
+    {
+      "code": "0052",
+      "kind": "country",
+      "iso2": "BB"
+    },
+    {
+      "code": "0056",
+      "kind": "country",
+      "iso2": "BE"
+    },
+    {
+      "code": "0060",
+      "kind": "country",
+      "iso2": "BM"
+    },
+    {
+      "code": "0064",
+      "kind": "country",
+      "iso2": "BT"
+    },
+    {
+      "code": "0068",
+      "kind": "country",
+      "iso2": "BO"
+    },
+    {
+      "code": "0070",
+      "kind": "country",
+      "iso2": "BA"
+    },
+    {
+      "code": "0072",
+      "kind": "country",
+      "iso2": "BW"
+    },
+    {
+      "code": "0074",
+      "kind": "country",
+      "iso2": "BV"
+    },
+    {
+      "code": "0076",
+      "kind": "country",
+      "iso2": "BR"
+    },
+    {
+      "code": "0084",
+      "kind": "country",
+      "iso2": "BZ"
+    },
+    {
+      "code": "0086",
+      "kind": "country",
+      "iso2": "IO"
+    },
+    {
+      "code": "0090",
+      "kind": "country",
+      "iso2": "SB"
+    },
+    {
+      "code": "0092",
+      "kind": "country",
+      "iso2": "VG"
+    },
+    {
+      "code": "0096",
+      "kind": "country",
+      "iso2": "BN"
+    },
+    {
+      "code": "0100",
+      "kind": "country",
+      "iso2": "BG"
+    },
+    {
+      "code": "0104",
+      "kind": "country",
+      "iso2": "MM"
+    },
+    {
+      "code": "0108",
+      "kind": "country",
+      "iso2": "BI"
+    },
+    {
+      "code": "0112",
+      "kind": "country",
+      "iso2": "BY"
+    },
+    {
+      "code": "0116",
+      "kind": "country",
+      "iso2": "KH"
+    },
+    {
+      "code": "0120",
+      "kind": "country",
+      "iso2": "CM"
+    },
+    {
+      "code": "0124",
+      "kind": "country",
+      "iso2": "CA"
+    },
+    {
+      "code": "0132",
+      "kind": "country",
+      "iso2": "CV"
+    },
+    {
+      "code": "0136",
+      "kind": "country",
+      "iso2": "KY"
+    },
+    {
+      "code": "0140",
+      "kind": "country",
+      "iso2": "CF"
+    },
+    {
+      "code": "0144",
+      "kind": "country",
+      "iso2": "LK"
+    },
+    {
+      "code": "0148",
+      "kind": "country",
+      "iso2": "TD"
+    },
+    {
+      "code": "0152",
+      "kind": "country",
+      "iso2": "CL"
+    },
+    {
+      "code": "0156",
+      "kind": "country",
+      "iso2": "CN"
+    },
+    {
+      "code": "0158",
+      "kind": "country",
+      "iso2": "TW"
+    },
+    {
+      "code": "0162",
+      "kind": "country",
+      "iso2": "CX"
+    },
+    {
+      "code": "0166",
+      "kind": "country",
+      "iso2": "CC"
+    },
+    {
+      "code": "0170",
+      "kind": "country",
+      "iso2": "CO"
+    },
+    {
+      "code": "0174",
+      "kind": "country",
+      "iso2": "KM"
+    },
+    {
+      "code": "0175",
+      "kind": "country",
+      "iso2": "YT"
+    },
+    {
+      "code": "0178",
+      "kind": "country",
+      "iso2": "CG"
+    },
+    {
+      "code": "0180",
+      "kind": "country",
+      "iso2": "CD"
+    },
+    {
+      "code": "0184",
+      "kind": "country",
+      "iso2": "CK"
+    },
+    {
+      "code": "0188",
+      "kind": "country",
+      "iso2": "CR"
+    },
+    {
+      "code": "0191",
+      "kind": "country",
+      "iso2": "HR"
+    },
+    {
+      "code": "0192",
+      "kind": "country",
+      "iso2": "CU"
+    },
+    {
+      "code": "0196",
+      "kind": "country",
+      "iso2": "CY"
+    },
+    {
+      "code": "0203",
+      "kind": "country",
+      "iso2": "CZ"
+    },
+    {
+      "code": "0204",
+      "kind": "country",
+      "iso2": "BJ"
+    },
+    {
+      "code": "0208",
+      "kind": "country",
+      "iso2": "DK"
+    },
+    {
+      "code": "0212",
+      "kind": "country",
+      "iso2": "DM"
+    },
+    {
+      "code": "0214",
+      "kind": "country",
+      "iso2": "DO"
+    },
+    {
+      "code": "0218",
+      "kind": "country",
+      "iso2": "EC"
+    },
+    {
+      "code": "0222",
+      "kind": "country",
+      "iso2": "SV"
+    },
+    {
+      "code": "0226",
+      "kind": "country",
+      "iso2": "GQ"
+    },
+    {
+      "code": "0231",
+      "kind": "country",
+      "iso2": "ET"
+    },
+    {
+      "code": "0232",
+      "kind": "country",
+      "iso2": "ER"
+    },
+    {
+      "code": "0233",
+      "kind": "country",
+      "iso2": "EE"
+    },
+    {
+      "code": "0234",
+      "kind": "country",
+      "iso2": "FO"
+    },
+    {
+      "code": "0238",
+      "kind": "country",
+      "iso2": "FK"
+    },
+    {
+      "code": "0239",
+      "kind": "country",
+      "iso2": "GS"
+    },
+    {
+      "code": "0242",
+      "kind": "country",
+      "iso2": "FJ"
+    },
+    {
+      "code": "0246",
+      "kind": "country",
+      "iso2": "FI"
+    },
+    {
+      "code": "0248",
+      "kind": "country",
+      "iso2": "AX"
+    },
+    {
+      "code": "0250",
+      "kind": "country",
+      "iso2": "FR"
+    },
+    {
+      "code": "0254",
+      "kind": "country",
+      "iso2": "GF"
+    },
+    {
+      "code": "0258",
+      "kind": "country",
+      "iso2": "PF"
+    },
+    {
+      "code": "0260",
+      "kind": "country",
+      "iso2": "TF"
+    },
+    {
+      "code": "0262",
+      "kind": "country",
+      "iso2": "DJ"
+    },
+    {
+      "code": "0266",
+      "kind": "country",
+      "iso2": "GA"
+    },
+    {
+      "code": "0268",
+      "kind": "country",
+      "iso2": "GE"
+    },
+    {
+      "code": "0270",
+      "kind": "country",
+      "iso2": "GM"
+    },
+    {
+      "code": "0275",
+      "kind": "country",
+      "iso2": "PS"
+    },
+    {
+      "code": "0276",
+      "kind": "country",
+      "iso2": "DE"
+    },
+    {
+      "code": "0288",
+      "kind": "country",
+      "iso2": "GH"
+    },
+    {
+      "code": "0292",
+      "kind": "country",
+      "iso2": "GI"
+    },
+    {
+      "code": "0296",
+      "kind": "country",
+      "iso2": "KI"
+    },
+    {
+      "code": "0300",
+      "kind": "country",
+      "iso2": "GR"
+    },
+    {
+      "code": "0304",
+      "kind": "country",
+      "iso2": "GL"
+    },
+    {
+      "code": "0308",
+      "kind": "country",
+      "iso2": "GD"
+    },
+    {
+      "code": "0312",
+      "kind": "country",
+      "iso2": "GP"
+    },
+    {
+      "code": "0316",
+      "kind": "country",
+      "iso2": "GU"
+    },
+    {
+      "code": "0320",
+      "kind": "country",
+      "iso2": "GT"
+    },
+    {
+      "code": "0324",
+      "kind": "country",
+      "iso2": "GN"
+    },
+    {
+      "code": "0328",
+      "kind": "country",
+      "iso2": "GY"
+    },
+    {
+      "code": "0332",
+      "kind": "country",
+      "iso2": "HT"
+    },
+    {
+      "code": "0334",
+      "kind": "country",
+      "iso2": "HM"
+    },
+    {
+      "code": "0336",
+      "kind": "country",
+      "iso2": "VA"
+    },
+    {
+      "code": "0340",
+      "kind": "country",
+      "iso2": "HN"
+    },
+    {
+      "code": "0344",
+      "kind": "country",
+      "iso2": "HK"
+    },
+    {
+      "code": "0348",
+      "kind": "country",
+      "iso2": "HU"
+    },
+    {
+      "code": "0352",
+      "kind": "country",
+      "iso2": "IS"
+    },
+    {
+      "code": "0356",
+      "kind": "country",
+      "iso2": "IN"
+    },
+    {
+      "code": "0360",
+      "kind": "country",
+      "iso2": "ID"
+    },
+    {
+      "code": "0364",
+      "kind": "country",
+      "iso2": "IR"
+    },
+    {
+      "code": "0368",
+      "kind": "country",
+      "iso2": "IQ"
+    },
+    {
+      "code": "0372",
+      "kind": "country",
+      "iso2": "IE"
+    },
+    {
+      "code": "0376",
+      "kind": "country",
+      "iso2": "IL"
+    },
+    {
+      "code": "0380",
+      "kind": "country",
+      "iso2": "IT"
+    },
+    {
+      "code": "0384",
+      "kind": "country",
+      "iso2": "CI"
+    },
+    {
+      "code": "0388",
+      "kind": "country",
+      "iso2": "JM"
+    },
+    {
+      "code": "0392",
+      "kind": "country",
+      "iso2": "JP"
+    },
+    {
+      "code": "0398",
+      "kind": "country",
+      "iso2": "KZ"
+    },
+    {
+      "code": "0400",
+      "kind": "country",
+      "iso2": "JO"
+    },
+    {
+      "code": "0404",
+      "kind": "country",
+      "iso2": "KE"
+    },
+    {
+      "code": "0408",
+      "kind": "country",
+      "iso2": "KP"
+    },
+    {
+      "code": "0410",
+      "kind": "country",
+      "iso2": "KR"
+    },
+    {
+      "code": "0414",
+      "kind": "country",
+      "iso2": "KW"
+    },
+    {
+      "code": "0417",
+      "kind": "country",
+      "iso2": "KG"
+    },
+    {
+      "code": "0418",
+      "kind": "country",
+      "iso2": "LA"
+    },
+    {
+      "code": "0422",
+      "kind": "country",
+      "iso2": "LB"
+    },
+    {
+      "code": "0426",
+      "kind": "country",
+      "iso2": "LS"
+    },
+    {
+      "code": "0428",
+      "kind": "country",
+      "iso2": "LV"
+    },
+    {
+      "code": "0430",
+      "kind": "country",
+      "iso2": "LR"
+    },
+    {
+      "code": "0434",
+      "kind": "country",
+      "iso2": "LY"
+    },
+    {
+      "code": "0438",
+      "kind": "country",
+      "iso2": "LI"
+    },
+    {
+      "code": "0440",
+      "kind": "country",
+      "iso2": "LT"
+    },
+    {
+      "code": "0442",
+      "kind": "country",
+      "iso2": "LU"
+    },
+    {
+      "code": "0446",
+      "kind": "country",
+      "iso2": "MO"
+    },
+    {
+      "code": "0450",
+      "kind": "country",
+      "iso2": "MG"
+    },
+    {
+      "code": "0454",
+      "kind": "country",
+      "iso2": "MW"
+    },
+    {
+      "code": "0458",
+      "kind": "country",
+      "iso2": "MY"
+    },
+    {
+      "code": "0462",
+      "kind": "country",
+      "iso2": "MV"
+    },
+    {
+      "code": "0466",
+      "kind": "country",
+      "iso2": "ML"
+    },
+    {
+      "code": "0470",
+      "kind": "country",
+      "iso2": "MT"
+    },
+    {
+      "code": "0474",
+      "kind": "country",
+      "iso2": "MQ"
+    },
+    {
+      "code": "0478",
+      "kind": "country",
+      "iso2": "MR"
+    },
+    {
+      "code": "0480",
+      "kind": "country",
+      "iso2": "MU"
+    },
+    {
+      "code": "0484",
+      "kind": "country",
+      "iso2": "MX"
+    },
+    {
+      "code": "0492",
+      "kind": "country",
+      "iso2": "MC"
+    },
+    {
+      "code": "0496",
+      "kind": "country",
+      "iso2": "MN"
+    },
+    {
+      "code": "0498",
+      "kind": "country",
+      "iso2": "MD"
+    },
+    {
+      "code": "0499",
+      "kind": "country",
+      "iso2": "ME"
+    },
+    {
+      "code": "0500",
+      "kind": "country",
+      "iso2": "MS"
+    },
+    {
+      "code": "0504",
+      "kind": "country",
+      "iso2": "MA"
+    },
+    {
+      "code": "0508",
+      "kind": "country",
+      "iso2": "MZ"
+    },
+    {
+      "code": "0512",
+      "kind": "country",
+      "iso2": "OM"
+    },
+    {
+      "code": "0516",
+      "kind": "country",
+      "iso2": "NA"
+    },
+    {
+      "code": "0520",
+      "kind": "country",
+      "iso2": "NR"
+    },
+    {
+      "code": "0524",
+      "kind": "country",
+      "iso2": "NP"
+    },
+    {
+      "code": "0528",
+      "kind": "country",
+      "iso2": "NL"
+    },
+    {
+      "code": "0531",
+      "kind": "country",
+      "iso2": "CW"
+    },
+    {
+      "code": "0533",
+      "kind": "country",
+      "iso2": "AW"
+    },
+    {
+      "code": "0534",
+      "kind": "country",
+      "iso2": "SX"
+    },
+    {
+      "code": "0535",
+      "kind": "country",
+      "iso2": "BQ"
+    },
+    {
+      "code": "0540",
+      "kind": "country",
+      "iso2": "NC"
+    },
+    {
+      "code": "0548",
+      "kind": "country",
+      "iso2": "VU"
+    },
+    {
+      "code": "0554",
+      "kind": "country",
+      "iso2": "NZ"
+    },
+    {
+      "code": "0558",
+      "kind": "country",
+      "iso2": "NI"
+    },
+    {
+      "code": "0562",
+      "kind": "country",
+      "iso2": "NE"
+    },
+    {
+      "code": "0566",
+      "kind": "country",
+      "iso2": "NG"
+    },
+    {
+      "code": "0570",
+      "kind": "country",
+      "iso2": "NU"
+    },
+    {
+      "code": "0574",
+      "kind": "country",
+      "iso2": "NF"
+    },
+    {
+      "code": "0578",
+      "kind": "country",
+      "iso2": "NO"
+    },
+    {
+      "code": "0580",
+      "kind": "country",
+      "iso2": "MP"
+    },
+    {
+      "code": "0581",
+      "kind": "country",
+      "iso2": "UM"
+    },
+    {
+      "code": "0583",
+      "kind": "country",
+      "iso2": "FM"
+    },
+    {
+      "code": "0584",
+      "kind": "country",
+      "iso2": "MH"
+    },
+    {
+      "code": "0585",
+      "kind": "country",
+      "iso2": "PW"
+    },
+    {
+      "code": "0586",
+      "kind": "country",
+      "iso2": "PK"
+    },
+    {
+      "code": "0591",
+      "kind": "country",
+      "iso2": "PA"
+    },
+    {
+      "code": "0598",
+      "kind": "country",
+      "iso2": "PG"
+    },
+    {
+      "code": "0600",
+      "kind": "country",
+      "iso2": "PY"
+    },
+    {
+      "code": "0604",
+      "kind": "country",
+      "iso2": "PE"
+    },
+    {
+      "code": "0608",
+      "kind": "country",
+      "iso2": "PH"
+    },
+    {
+      "code": "0612",
+      "kind": "country",
+      "iso2": "PN"
+    },
+    {
+      "code": "0616",
+      "kind": "country",
+      "iso2": "PL"
+    },
+    {
+      "code": "0620",
+      "kind": "country",
+      "iso2": "PT"
+    },
+    {
+      "code": "0624",
+      "kind": "country",
+      "iso2": "GW"
+    },
+    {
+      "code": "0626",
+      "kind": "country",
+      "iso2": "TL"
+    },
+    {
+      "code": "0630",
+      "kind": "country",
+      "iso2": "PR"
+    },
+    {
+      "code": "0634",
+      "kind": "country",
+      "iso2": "QA"
+    },
+    {
+      "code": "0638",
+      "kind": "country",
+      "iso2": "RE"
+    },
+    {
+      "code": "0642",
+      "kind": "country",
+      "iso2": "RO"
+    },
+    {
+      "code": "0643",
+      "kind": "country",
+      "iso2": "RU"
+    },
+    {
+      "code": "0646",
+      "kind": "country",
+      "iso2": "RW"
+    },
+    {
+      "code": "0652",
+      "kind": "country",
+      "iso2": "BL"
+    },
+    {
+      "code": "0654",
+      "kind": "country",
+      "iso2": "SH"
+    },
+    {
+      "code": "0659",
+      "kind": "country",
+      "iso2": "KN"
+    },
+    {
+      "code": "0660",
+      "kind": "country",
+      "iso2": "AI"
+    },
+    {
+      "code": "0662",
+      "kind": "country",
+      "iso2": "LC"
+    },
+    {
+      "code": "0663",
+      "kind": "country",
+      "iso2": "MF"
+    },
+    {
+      "code": "0666",
+      "kind": "country",
+      "iso2": "PM"
+    },
+    {
+      "code": "0670",
+      "kind": "country",
+      "iso2": "VC"
+    },
+    {
+      "code": "0674",
+      "kind": "country",
+      "iso2": "SM"
+    },
+    {
+      "code": "0678",
+      "kind": "country",
+      "iso2": "ST"
+    },
+    {
+      "code": "0682",
+      "kind": "country",
+      "iso2": "SA"
+    },
+    {
+      "code": "0686",
+      "kind": "country",
+      "iso2": "SN"
+    },
+    {
+      "code": "0688",
+      "kind": "country",
+      "iso2": "RS"
+    },
+    {
+      "code": "0690",
+      "kind": "country",
+      "iso2": "SC"
+    },
+    {
+      "code": "0694",
+      "kind": "country",
+      "iso2": "SL"
+    },
+    {
+      "code": "0702",
+      "kind": "country",
+      "iso2": "SG"
+    },
+    {
+      "code": "0703",
+      "kind": "country",
+      "iso2": "SK"
+    },
+    {
+      "code": "0704",
+      "kind": "country",
+      "iso2": "VN"
+    },
+    {
+      "code": "0705",
+      "kind": "country",
+      "iso2": "SI"
+    },
+    {
+      "code": "0706",
+      "kind": "country",
+      "iso2": "SO"
+    },
+    {
+      "code": "0710",
+      "kind": "country",
+      "iso2": "ZA"
+    },
+    {
+      "code": "0716",
+      "kind": "country",
+      "iso2": "ZW"
+    },
+    {
+      "code": "0724",
+      "kind": "country",
+      "iso2": "ES"
+    },
+    {
+      "code": "0728",
+      "kind": "country",
+      "iso2": "SS"
+    },
+    {
+      "code": "0729",
+      "kind": "country",
+      "iso2": "SD"
+    },
+    {
+      "code": "0732",
+      "kind": "country",
+      "iso2": "EH"
+    },
+    {
+      "code": "0740",
+      "kind": "country",
+      "iso2": "SR"
+    },
+    {
+      "code": "0744",
+      "kind": "country",
+      "iso2": "SJ"
+    },
+    {
+      "code": "0748",
+      "kind": "country",
+      "iso2": "SZ"
+    },
+    {
+      "code": "0752",
+      "kind": "country",
+      "iso2": "SE"
+    },
+    {
+      "code": "0756",
+      "kind": "country",
+      "iso2": "CH"
+    },
+    {
+      "code": "0760",
+      "kind": "country",
+      "iso2": "SY"
+    },
+    {
+      "code": "0762",
+      "kind": "country",
+      "iso2": "TJ"
+    },
+    {
+      "code": "0764",
+      "kind": "country",
+      "iso2": "TH"
+    },
+    {
+      "code": "0768",
+      "kind": "country",
+      "iso2": "TG"
+    },
+    {
+      "code": "0772",
+      "kind": "country",
+      "iso2": "TK"
+    },
+    {
+      "code": "0776",
+      "kind": "country",
+      "iso2": "TO"
+    },
+    {
+      "code": "0780",
+      "kind": "country",
+      "iso2": "TT"
+    },
+    {
+      "code": "0784",
+      "kind": "country",
+      "iso2": "AE"
+    },
+    {
+      "code": "0788",
+      "kind": "country",
+      "iso2": "TN"
+    },
+    {
+      "code": "0792",
+      "kind": "country",
+      "iso2": "TR"
+    },
+    {
+      "code": "0795",
+      "kind": "country",
+      "iso2": "TM"
+    },
+    {
+      "code": "0796",
+      "kind": "country",
+      "iso2": "TC"
+    },
+    {
+      "code": "0798",
+      "kind": "country",
+      "iso2": "TV"
+    },
+    {
+      "code": "0800",
+      "kind": "country",
+      "iso2": "UG"
+    },
+    {
+      "code": "0804",
+      "kind": "country",
+      "iso2": "UA"
+    },
+    {
+      "code": "0807",
+      "kind": "country",
+      "iso2": "MK"
+    },
+    {
+      "code": "0818",
+      "kind": "country",
+      "iso2": "EG"
+    },
+    {
+      "code": "0826",
+      "kind": "country",
+      "iso2": "GB"
+    },
+    {
+      "code": "0831",
+      "kind": "country",
+      "iso2": "GG"
+    },
+    {
+      "code": "0832",
+      "kind": "country",
+      "iso2": "JE"
+    },
+    {
+      "code": "0833",
+      "kind": "country",
+      "iso2": "IM"
+    },
+    {
+      "code": "0834",
+      "kind": "country",
+      "iso2": "TZ"
+    },
+    {
+      "code": "0840",
+      "kind": "country",
+      "iso2": "US"
+    },
+    {
+      "code": "0850",
+      "kind": "country",
+      "iso2": "VI"
+    },
+    {
+      "code": "0854",
+      "kind": "country",
+      "iso2": "BF"
+    },
+    {
+      "code": "0858",
+      "kind": "country",
+      "iso2": "UY"
+    },
+    {
+      "code": "0860",
+      "kind": "country",
+      "iso2": "UZ"
+    },
+    {
+      "code": "0862",
+      "kind": "country",
+      "iso2": "VE"
+    },
+    {
+      "code": "0876",
+      "kind": "country",
+      "iso2": "WF"
+    },
+    {
+      "code": "0882",
+      "kind": "country",
+      "iso2": "WS"
+    },
+    {
+      "code": "0887",
+      "kind": "country",
+      "iso2": "YE"
+    },
+    {
+      "code": "0894",
+      "kind": "country",
+      "iso2": "ZM"
+    },
+    {
+      "code": "2136",
+      "kind": "group",
+      "members": [
+        "AD",
+        "AE",
+        "AF",
+        "AG",
+        "AI",
+        "AL",
+        "AM",
+        "AO",
+        "AQ",
+        "AR",
+        "AS",
+        "AT",
+        "AU",
+        "AW",
+        "AX",
+        "AZ",
+        "BA",
+        "BB",
+        "BD",
+        "BE",
+        "BF",
+        "BG",
+        "BH",
+        "BI",
+        "BJ",
+        "BL",
+        "BM",
+        "BN",
+        "BO",
+        "BQ",
+        "BR",
+        "BS",
+        "BT",
+        "BV",
+        "BW",
+        "BY",
+        "BZ",
+        "CA",
+        "CC",
+        "CD",
+        "CF",
+        "CG",
+        "CH",
+        "CI",
+        "CK",
+        "CL",
+        "CM",
+        "CN",
+        "CO",
+        "CR",
+        "CU",
+        "CV",
+        "CW",
+        "CX",
+        "CY",
+        "CZ",
+        "DE",
+        "DJ",
+        "DK",
+        "DM",
+        "DO",
+        "DZ",
+        "EC",
+        "EE",
+        "EG",
+        "EH",
+        "ER",
+        "ES",
+        "ET",
+        "FI",
+        "FJ",
+        "FK",
+        "FM",
+        "FO",
+        "FR",
+        "GA",
+        "GB",
+        "GD",
+        "GE",
+        "GF",
+        "GG",
+        "GH",
+        "GI",
+        "GL",
+        "GM",
+        "GN",
+        "GP",
+        "GQ",
+        "GR",
+        "GS",
+        "GT",
+        "GU",
+        "GW",
+        "GY",
+        "HK",
+        "HM",
+        "HN",
+        "HR",
+        "HT",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IM",
+        "IN",
+        "IO",
+        "IQ",
+        "IR",
+        "IS",
+        "IT",
+        "JE",
+        "JM",
+        "JO",
+        "JP",
+        "KE",
+        "KG",
+        "KH",
+        "KI",
+        "KM",
+        "KN",
+        "KP",
+        "KR",
+        "KW",
+        "KY",
+        "KZ",
+        "LA",
+        "LB",
+        "LC",
+        "LI",
+        "LK",
+        "LR",
+        "LS",
+        "LT",
+        "LU",
+        "LV",
+        "LY",
+        "MA",
+        "MC",
+        "MD",
+        "ME",
+        "MF",
+        "MG",
+        "MH",
+        "MK",
+        "ML",
+        "MM",
+        "MN",
+        "MO",
+        "MP",
+        "MQ",
+        "MR",
+        "MS",
+        "MT",
+        "MU",
+        "MV",
+        "MW",
+        "MX",
+        "MY",
+        "MZ",
+        "NA",
+        "NC",
+        "NE",
+        "NF",
+        "NG",
+        "NI",
+        "NL",
+        "NO",
+        "NP",
+        "NR",
+        "NU",
+        "NZ",
+        "OM",
+        "PA",
+        "PE",
+        "PF",
+        "PG",
+        "PH",
+        "PK",
+        "PL",
+        "PM",
+        "PN",
+        "PR",
+        "PS",
+        "PT",
+        "PW",
+        "PY",
+        "QA",
+        "RE",
+        "RO",
+        "RS",
+        "RU",
+        "RW",
+        "SA",
+        "SB",
+        "SC",
+        "SD",
+        "SE",
+        "SG",
+        "SH",
+        "SI",
+        "SJ",
+        "SK",
+        "SL",
+        "SM",
+        "SN",
+        "SO",
+        "SR",
+        "SS",
+        "ST",
+        "SV",
+        "SX",
+        "SY",
+        "SZ",
+        "TC",
+        "TD",
+        "TF",
+        "TG",
+        "TH",
+        "TJ",
+        "TK",
+        "TL",
+        "TM",
+        "TN",
+        "TO",
+        "TR",
+        "TT",
+        "TV",
+        "TW",
+        "TZ",
+        "UA",
+        "UG",
+        "UM",
+        "US",
+        "UY",
+        "UZ",
+        "VA",
+        "VC",
+        "VE",
+        "VG",
+        "VI",
+        "VN",
+        "VU",
+        "WF",
+        "WS",
+        "YE",
+        "YT",
+        "ZA",
+        "ZM",
+        "ZW"
+      ]
+    }
+  ]
+}

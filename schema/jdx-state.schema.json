@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/jdx-state.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Estado del receptor: state.json",
+  "type": "object",
+  "properties": {
+    "stateVersion": { "type": "integer", "const": 1 },
+    "env": { "type": "string", "enum": ["production", "sandbox"] },
+    "trust": {
+      "type": "object",
+      "properties": { "maxSeq": { "type": "integer", "minimum": 0 } },
+      "required": ["maxSeq"],
+      "additionalProperties": false
+    },
+    "declarations": {
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+      "additionalProperties": { "$ref": "#/$defs/Declaration" }
+    }
+  },
+  "required": ["stateVersion", "env", "trust", "declarations"],
+  "additionalProperties": false,
+  "$defs": {
+    "Declaration": {
+      "type": "object",
+      "properties": {
+        "owner": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+        "lastIngestedRevision": { "type": "integer", "minimum": 1 },
+        "receipts": { "type": "array", "items": { "$ref": "#/$defs/Receipt" } },
+        "media": { "type": "array", "items": { "$ref": "#/$defs/MediaRecord" } }
+      },
+      "required": ["receipts", "media"],
+      "additionalProperties": false
+    },
+    "Receipt": {
+      "type": "object",
+      "properties": {
+        "revision": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "receivedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|[+-]\\d{2}:\\d{2})$" },
+        "kid": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+        "ackStatus": { "type": "string", "enum": ["ingested", "ignored", "rejected"] }
+      },
+      "required": ["revision", "sha256", "receivedAt", "ackStatus"],
+      "additionalProperties": false
+    },
+    "MediaRecord": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string" },
+        "delivery": { "type": "integer", "minimum": 1 },
+        "size": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "required": ["path", "delivery", "size", "sha256"],
+      "additionalProperties": false
+    }
+  }
+}

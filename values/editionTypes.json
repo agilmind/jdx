@@ -1,0 +1,15 @@
+{
+  "list": "editionTypes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "single"
+    },
+    {
+      "code": "album"
+    },
+    {
+      "code": "integral"
+    }
+  ]
+}

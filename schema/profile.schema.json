@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/profile.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Perfil de validación de JDX",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "pattern": "^https://jdx\\.jupiter\\.ar/profiles/[a-z][a-z0-9-]*/\\d+\\.\\d+$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "jdx": { "type": "string", "pattern": "^1\\.(x|\\d+)$" },
+    "catalog": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+    "requiresValidator": { "type": "string", "minLength": 1 },
+    "society": { "type": "string", "pattern": "^(\\d{3}|X_JDX_[A-Z0-9_]+)$" },
+    "signature": { "type": "string", "enum": ["optional", "required"] },
+    "defaultLevel": { "type": "string", "enum": ["warning", "error"] },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/RuleRef" } }
+  },
+  "required": ["id", "version", "jdx", "catalog", "requiresValidator", "society", "signature", "defaultLevel", "rules"],
+  "additionalProperties": false,
+  "$defs": {
+    "RuleRef": {
+      "type": "object",
+      "properties": {
+        "ruleId": { "type": "string", "pattern": "^JDX-[A-Z]{3}-\\d{3}$" },
+        "level": { "type": "string", "enum": ["error", "warning", "info"] },
+        "params": { "type": "object" }
+      },
+      "required": ["ruleId"],
+      "additionalProperties": false
+    }
+  }
+}

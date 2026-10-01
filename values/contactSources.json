@@ -1,0 +1,12 @@
+{
+  "list": "contactSources",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "declarant"
+    },
+    {
+      "code": "signer"
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "list": "identifierTypes",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "CUIT",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "CUIL",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "CDI",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "CPF",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "CNPJ",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "RFC",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "RUT",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "NIT",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "RUC",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "RIF",
+      "schemes": [
+        "TAX_ID"
+      ]
+    },
+    {
+      "code": "DNI",
+      "schemes": [
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "code": "CI",
+      "schemes": [
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "code": "CURP",
+      "schemes": [
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "code": "CEDULA",
+      "schemes": [
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "code": "RG",
+      "schemes": [
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "code": "RUN",
+      "schemes": [
+        "NATIONAL_ID"
+      ]
+    },
+    {
+      "code": "PASSPORT",
+      "schemes": [
+        "NATIONAL_ID"
+      ]
+    }
+  ]
+}

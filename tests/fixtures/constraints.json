@@ -1,0 +1,307 @@
+{
+  "name-full-or-family": {
+    "positive": [
+      { "name": "legal name with given and family", "set": { "/parties/0/names/0": { "type": "legal", "given": "Ana María", "family": "Pérez" } } },
+      { "name": "pseudonym with full", "set": { "/parties/0/names/0": { "type": "pseudonym", "full": "La Negra Pérez" } } }
+    ],
+    "negative": [
+      {
+        "name": "Name without full and family",
+        "at": "/parties/0/names/0",
+        "set": { "/parties/0/names/0": { "type": "legal", "given": "Ana María" } },
+        "errors": ["/parties/0/names/0"]
+      }
+    ]
+  },
+  "external-titles-or-identifiers": {
+    "positive": [
+      { "name": "External with titles", "set": { "/works/0/excerptOf": { "external": { "titles": [{ "text": "Otra obra" }] } } } },
+      {
+        "name": "External with identifiers",
+        "set": { "/works/0/excerptOf": { "external": { "identifiers": [{ "scheme": "ISWC", "value": "T0345246801" }] } } }
+      }
+    ],
+    "negative": [
+      {
+        "name": "External without titles and identifiers",
+        "at": "/works/0/excerptOf/external",
+        "set": { "/works/0/excerptOf": { "external": { "writers": [{ "names": [{ "type": "legal", "full": "Autor Externo" }] }] } } },
+        "errors": ["/works/0/excerptOf/external"]
+      }
+    ]
+  },
+  "external-recording-title-or-identifiers": {
+    "positive": [
+      { "name": "ExternalRecording with title", "set": { "/recordings/0/samples": [{ "external": { "title": "Grabación sampleada" } }] } },
+      {
+        "name": "ExternalRecording with identifiers",
+        "set": { "/recordings/0/samples": [{ "external": { "identifiers": [{ "scheme": "ISRC", "value": "ARXY12600002" }] } }] }
+      }
+    ],
+    "negative": [
+      {
+        "name": "ExternalRecording without title and identifiers",
+        "at": "/recordings/0/samples/0/external",
+        "set": { "/recordings/0/samples": [{ "external": { "displayArtist": "Alguien" } }] },
+        "errors": ["/recordings/0/samples/0/external"]
+      }
+    ]
+  },
+  "work-ref-work-or-external": {
+    "positive": [
+      { "name": "WorkRef with work", "set": { "/works/0/excerptOf": { "work": "w2" } } },
+      { "name": "WorkRef with external", "set": { "/works/0/excerptOf": { "external": { "titles": [{ "text": "Otra obra" }] } } } }
+    ],
+    "negative": [
+      {
+        "name": "WorkRef with both",
+        "at": "/works/0/excerptOf",
+        "set": { "/works/0/excerptOf": { "work": "w2", "external": { "titles": [{ "text": "Otra obra" }] } } },
+        "errors": ["/works/0/excerptOf"]
+      },
+      { "name": "WorkRef with neither", "at": "/works/0/excerptOf", "set": { "/works/0/excerptOf": {} }, "errors": ["/works/0/excerptOf"] }
+    ]
+  },
+  "component-work-or-external": {
+    "positive": [
+      { "name": "Component with work", "set": { "/works/0/composite": { "type": "medley", "components": [{ "work": "w2", "duration": "PT1M" }] } } },
+      {
+        "name": "Component with external",
+        "set": { "/works/0/composite": { "type": "medley", "components": [{ "external": { "titles": [{ "text": "Otra obra" }] } }] } }
+      }
+    ],
+    "negative": [
+      {
+        "name": "Component with both",
+        "at": "/works/0/composite/components/0",
+        "set": {
+          "/works/0/composite": { "type": "medley", "components": [{ "work": "w2", "external": { "titles": [{ "text": "Otra obra" }] } }] }
+        },
+        "errors": ["/works/0/composite/components/0"]
+      },
+      {
+        "name": "Component with neither",
+        "at": "/works/0/composite/components/0",
+        "set": { "/works/0/composite": { "type": "medley", "components": [{ "duration": "PT1M" }] } },
+        "errors": ["/works/0/composite/components/0"]
+      }
+    ]
+  },
+  "sample-recording-or-external": {
+    "positive": [
+      { "name": "Sample with recording", "set": { "/recordings/0/samples": [{ "recording": "r1" }] } },
+      { "name": "Sample with external", "set": { "/recordings/0/samples": [{ "external": { "title": "Grabación sampleada" } }] } }
+    ],
+    "negative": [
+      {
+        "name": "Sample with both",
+        "at": "/recordings/0/samples/0",
+        "set": { "/recordings/0/samples": [{ "recording": "r1", "external": { "title": "Grabación sampleada" } }] },
+        "errors": ["/recordings/0/samples/0"]
+      },
+      {
+        "name": "Sample with neither",
+        "at": "/recordings/0/samples/0",
+        "set": { "/recordings/0/samples": [{ "producer": "p5" }] },
+        "errors": ["/recordings/0/samples/0"]
+      }
+    ]
+  },
+  "agreement-parent-agreement-or-uid": {
+    "positive": [
+      { "name": "AgreementParent with agreement", "set": { "/agreements/0/parent": { "agreement": "a1" } } },
+      { "name": "AgreementParent with uid", "set": { "/agreements/0/parent": { "uid": "7d1e0c52-2f4b-4e0a-9a7b-3c5d8e1f2a40" } } }
+    ],
+    "negative": [
+      {
+        "name": "AgreementParent with both",
+        "at": "/agreements/0/parent",
+        "set": { "/agreements/0/parent": { "agreement": "a1", "uid": "7d1e0c52-2f4b-4e0a-9a7b-3c5d8e1f2a40" } },
+        "errors": ["/agreements/0/parent"]
+      },
+      {
+        "name": "AgreementParent with neither",
+        "at": "/agreements/0/parent",
+        "set": { "/agreements/0/parent": { "identifiers": [{ "scheme": "ISSUER", "value": "00033-001" }] } },
+        "errors": ["/agreements/0/parent"]
+      }
+    ]
+  },
+  "identifier-tax-or-national-id-fields": {
+    "positive": [
+      {
+        "name": "Identifier TAX_ID with country and type",
+        "set": { "/parties/0/identifiers/1": { "scheme": "TAX_ID", "country": "AR", "type": "CUIT", "value": "27123456789" } }
+      },
+      {
+        "name": "Identifier NATIONAL_ID with country and type",
+        "set": { "/parties/0/identifiers/1": { "scheme": "NATIONAL_ID", "country": "AR", "type": "DNI", "value": "12345678" } }
+      }
+    ],
+    "negative": [
+      {
+        "name": "Identifier TAX_ID without type",
+        "at": "/parties/0/identifiers/1",
+        "set": { "/parties/0/identifiers/1": { "scheme": "TAX_ID", "country": "AR", "value": "27123456789" } },
+        "errors": ["/parties/0/identifiers/1"]
+      },
+      {
+        "name": "Identifier NATIONAL_ID without country and type",
+        "at": "/parties/0/identifiers/1",
+        "set": { "/parties/0/identifiers/1": { "scheme": "NATIONAL_ID", "value": "12345678" } },
+        "errors": ["/parties/0/identifiers/1", "/parties/0/identifiers/1"]
+      }
+    ]
+  },
+  "identifier-society-fields": {
+    "positive": [
+      { "name": "Identifier SOCIETY_WORK with society", "set": { "/works/0/identifiers/0": { "scheme": "SOCIETY_WORK", "society": "061", "value": "123456" } } }
+    ],
+    "negative": [
+      {
+        "name": "Identifier SOCIETY_WORK without society",
+        "at": "/works/0/identifiers/0",
+        "set": { "/works/0/identifiers/0": { "scheme": "SOCIETY_WORK", "value": "123456" } },
+        "errors": ["/works/0/identifiers/0"]
+      },
+      {
+        "name": "Identifier SOCIETY_RECORDING without society",
+        "at": "/recordings/0/identifiers/0",
+        "set": { "/recordings/0/identifiers/0": { "scheme": "SOCIETY_RECORDING", "value": "R-7788" } },
+        "errors": ["/recordings/0/identifiers/0"]
+      }
+    ]
+  },
+  "identifier-catalog-number-issuer": {
+    "positive": [
+      {
+        "name": "CATALOG_NUMBER with issuer",
+        "set": { "/recordings/0/release": { "identifiers": [{ "scheme": "CATALOG_NUMBER", "value": "ES-0042", "issuer": "Editorial Sur" }] } }
+      }
+    ],
+    "negative": [
+      {
+        "name": "CATALOG_NUMBER without issuer",
+        "at": "/recordings/0/release/identifiers/0",
+        "set": { "/recordings/0/release": { "identifiers": [{ "scheme": "CATALOG_NUMBER", "value": "ES-0042" }] } },
+        "errors": ["/recordings/0/release/identifiers/0"]
+      }
+    ]
+  },
+  "term-fixed-duration": {
+    "positive": [{ "name": "Term fixed with duration", "set": { "/agreements/0/term": { "basis": "fixed", "duration": "P10Y" } } }],
+    "negative": [
+      {
+        "name": "Term fixed without duration",
+        "at": "/agreements/0/term",
+        "set": { "/agreements/0/term": { "basis": "fixed" } },
+        "errors": ["/agreements/0/term"]
+      }
+    ]
+  },
+  "invested-amount-determined": {
+    "positive": [
+      {
+        "name": "InvestedAmount determined with amount and currency",
+        "set": { "/agreements/0/terms/values/investedAmount": { "status": "determined", "amount": "1500.00", "currency": "ARS" } }
+      }
+    ],
+    "negative": [
+      {
+        "name": "InvestedAmount determined without currency",
+        "at": "/agreements/0/terms/values/investedAmount",
+        "set": { "/agreements/0/terms/values/investedAmount": { "status": "determined", "amount": "1500.00" } },
+        "errors": ["/agreements/0/terms/values/investedAmount"]
+      }
+    ]
+  },
+  "term-protection-period-without-duration": {
+    "positive": [{ "name": "Term protectionPeriod without duration", "set": { "/agreements/0/term": { "basis": "protectionPeriod" } } }],
+    "negative": [
+      {
+        "name": "Term protectionPeriod with duration",
+        "at": "/agreements/0/term",
+        "set": { "/agreements/0/term": { "basis": "protectionPeriod", "duration": "P10Y" } },
+        "errors": ["/agreements/0/term/duration"]
+      }
+    ]
+  },
+  "invested-amount-undetermined-without-amount": {
+    "positive": [
+      { "name": "InvestedAmount undetermined alone", "set": { "/agreements/0/terms/values/investedAmount": { "status": "undetermined" } } }
+    ],
+    "negative": [
+      {
+        "name": "InvestedAmount undetermined with amount",
+        "at": "/agreements/0/terms/values/investedAmount",
+        "set": { "/agreements/0/terms/values/investedAmount": { "status": "undetermined", "amount": "1500.00" } },
+        "errors": ["/agreements/0/terms/values/investedAmount/amount"]
+      }
+    ]
+  },
+  "media-not-delivered-without-path": {
+    "positive": [
+      { "name": "Media delivered false without path", "set": { "/media/1": { "id": "m2", "kind": "audio", "delivered": false } } },
+      { "name": "Media delivered true with path", "set": { "/media/1/delivered": true } }
+    ],
+    "negative": [
+      { "name": "Media delivered false with path", "at": "/media/1", "set": { "/media/1/delivered": false }, "errors": ["/media/1/path"] }
+    ]
+  },
+  "agreement-protection-period-without-end-date": {
+    "positive": [
+      {
+        "name": "Agreement fixed with endDate",
+        "set": { "/agreements/0/term": { "basis": "fixed", "duration": "P10Y" }, "/agreements/0/endDate": "2036-09-12" }
+      }
+    ],
+    "negative": [
+      {
+        "name": "Agreement protectionPeriod with endDate",
+        "at": "/agreements/0",
+        "set": { "/agreements/0/endDate": "2096-09-12" },
+        "errors": ["/agreements/0/endDate"]
+      }
+    ]
+  },
+  "post-term-collection-end-date-iff-date": {
+    "positive": [
+      { "name": "PostTermCollection date with endDate", "set": { "/agreements/0/postTermCollection": { "status": "date", "endDate": "2030-12-31" } } },
+      { "name": "PostTermCollection none without endDate", "set": { "/agreements/0/postTermCollection": { "status": "none" } } }
+    ],
+    "negative": [
+      {
+        "name": "PostTermCollection date without endDate",
+        "at": "/agreements/0/postTermCollection",
+        "set": { "/agreements/0/postTermCollection": { "status": "date" } },
+        "errors": ["/agreements/0/postTermCollection"]
+      },
+      {
+        "name": "PostTermCollection openEnded with endDate",
+        "at": "/agreements/0/postTermCollection",
+        "set": { "/agreements/0/postTermCollection": { "status": "openEnded", "endDate": "2030-12-31" } },
+        "errors": ["/agreements/0/postTermCollection/endDate"]
+      }
+    ]
+  },
+  "party-organization-names-full": {
+    "positive": [
+      { "name": "organization name with full", "set": { "/parties/2/names/0": { "type": "legal", "full": "Editorial Sur SRL" } } },
+      { "name": "person name with given and family", "set": { "/parties/0/names/0": { "type": "legal", "given": "Ana María", "family": "Pérez" } } }
+    ],
+    "negative": [
+      {
+        "name": "organization name with given",
+        "at": "/parties/2",
+        "set": { "/parties/2/names/0": { "type": "legal", "full": "Editorial Sur SRL", "given": "Editorial" } },
+        "errors": ["/parties/2/names/0/given"]
+      },
+      {
+        "name": "organization name with family and without full",
+        "at": "/parties/2",
+        "set": { "/parties/2/names/1": { "type": "trade", "family": "Sur" } },
+        "errors": ["/parties/2/names/1", "/parties/2/names/1/family"]
+      }
+    ]
+  }
+}

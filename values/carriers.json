@@ -1,0 +1,18 @@
+{
+  "list": "carriers",
+  "version": "2026-10",
+  "values": [
+    {
+      "code": "digital"
+    },
+    {
+      "code": "cd"
+    },
+    {
+      "code": "vinyl"
+    },
+    {
+      "code": "cassette"
+    }
+  ]
+}

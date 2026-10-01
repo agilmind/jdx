@@ -401,10 +401,12 @@ describe('fileStateStore', () => {
       expect(stateBytes(dir)).toBe(text);
       return errors.map((e) => [e.reason, e.details]);
     };
-    expect(await unreadable('{ "stateVersion": 1,')).toEqual([['unreadable', { cause: 'syntax' }], ['unreadable', { cause: 'syntax' }]]);
-    expect(await unreadable('﻿{}')).toEqual([['unreadable', { cause: 'bom' }], ['unreadable', { cause: 'bom' }]]);
+    // No es I-JSON: la causa json, con la razón del parser.
+    const json = (reason: string) => ['unreadable', { cause: 'json', reason }];
+    expect(await unreadable('{ "stateVersion": 1,')).toEqual([json('syntax'), json('syntax')]);
+    expect(await unreadable('﻿{}')).toEqual([json('bom'), json('bom')]);
     const duplicated = '{ "stateVersion": 1, "env": "production", "env": "sandbox", "trust": { "maxSeq": 0 }, "declarations": {} }';
-    expect((await unreadable(duplicated))[0]).toEqual(['unreadable', { cause: 'duplicateKey' }]);
+    expect((await unreadable(duplicated))[0]).toEqual(json('duplicateKey'));
     // Sin env, con una propiedad de más o con un recibo incompleto: no cumple jdx-state.schema.json.
     const { env: _env, ...noEnv } = seeded();
     expect((await unreadable(JSON.stringify(noEnv)))[0]).toEqual(['unreadable', { cause: 'schema', at: '', keyword: 'required' }]);
@@ -425,7 +427,13 @@ describe('fileStateStore', () => {
     // Una carpeta que es un archivo, tampoco.
     mkdirSync(join(dir, 'sub'));
     writeFileSync(join(dir, 'sub', 'state.json'), 'x');
-    expect((await stateError(fileStateStore(join(dir, 'sub', 'state.json')).read(async (state) => state))).reason).toBe('unreadable');
+    const notADir = await stateError(fileStateStore(join(dir, 'sub', 'state.json')).read(async (state) => state));
+    expect([notADir.reason, notADir.details]).toEqual(['unreadable', { cause: 'missingDir' }]);
+    // Un state.json que es una carpeta es otra falla del disco, con su código.
+    const odd = stateDir();
+    mkdirSync(join(odd, 'state.json'));
+    const isDir = await stateError(fileStateStore(odd).read(async (state) => state));
+    expect([isDir.reason, isDir.details]).toEqual(['unreadable', { cause: 'io', code: 'EISDIR' }]);
   });
 
   it('read cannot persist mutations', async () => {

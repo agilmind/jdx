@@ -133,6 +133,36 @@
         "pt": "não é válida",
         "en": "is not valid"
       },
+      "jws": {
+        "es": ": no es un JWS JSON general",
+        "pt": ": não é um JWS JSON geral",
+        "en": ": it is not a general JWS JSON serialization"
+      },
+      "signatures": {
+        "es": ": tiene más de 8 firmas",
+        "pt": ": tem mais de 8 assinaturas",
+        "en": ": it has more than 8 signatures"
+      },
+      "instant": {
+        "es": ": trae un instante que no existe",
+        "pt": ": traz um instante que não existe",
+        "en": ": it has an instant that does not exist"
+      },
+      "listValidity": {
+        "es": ": vence antes de emitirse o más de 90 días después",
+        "pt": ": vence antes de ser emitida ou mais de 90 dias depois",
+        "en": ": it expires before it is issued or more than 90 days later"
+      },
+      "keyValidity": {
+        "es": ": una clave vence antes de activarse o más de 2 años después",
+        "pt": ": uma chave vence antes de ser ativada ou mais de 2 anos depois",
+        "en": ": a key expires before it becomes active or more than 2 years later"
+      },
+      "key": {
+        "es": ": una clave se repite, no es de P-256 en base64url canónico o su kid no es su huella",
+        "pt": ": uma chave se repete, não é P-256 em base64url canônico ou seu kid não é sua impressão digital",
+        "en": ": a key is repeated, is not P-256 in canonical base64url or its kid is not its thumbprint"
+      },
       "unknown": {
         "es": "no existe",
         "pt": "não existe",
@@ -167,6 +197,36 @@
         "es": "está bloqueado desde {lockedSince}",
         "pt": "está bloqueado desde {lockedSince}",
         "en": "has been locked since {lockedSince}"
+      },
+      "missingDir": {
+        "es": ": la carpeta no existe",
+        "pt": ": a pasta não existe",
+        "en": ": the folder does not exist"
+      },
+      "permission": {
+        "es": ": no hay permiso de acceso",
+        "pt": ": não há permissão de acesso",
+        "en": ": access is not permitted"
+      },
+      "json": {
+        "es": ": no es I-JSON",
+        "pt": ": não é I-JSON",
+        "en": ": it is not I-JSON"
+      },
+      "schema": {
+        "es": ": no cumple su schema",
+        "pt": ": não cumpre seu schema",
+        "en": ": it does not conform to its schema"
+      },
+      "lock": {
+        "es": ": no se puede usar su bloqueo (state.lock)",
+        "pt": ": não é possível usar seu bloqueio (state.lock)",
+        "en": ": its lock (state.lock) cannot be used"
+      },
+      "io": {
+        "es": ": falla el acceso al disco",
+        "pt": ": falha o acesso ao disco",
+        "en": ": disk access fails"
       },
       "unknownProfile": {
         "es": "el validador no incluye {profile}",

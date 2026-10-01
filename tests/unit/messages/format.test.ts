@@ -133,6 +133,32 @@ describe('mensajes', () => {
     expect(all.filter((texts) => /\d %|is not enough|must make|\bhas no (via|delivery)\b|fewer than two coWriter\b/u.test(texts.en)).map((texts) => texts.en)).toEqual([]);
   });
 
+  it('ENV-001 and ENV-005 say why the list or the state cannot be read, only when they know', () => {
+    const say = (id: string, lang: Lang, params: { [k: string]: JsonValue }) => formatMessage(rule(id), lang, params);
+    expect(say('JDX-ENV-001', 'es', { reason: 'invalid', cause: 'listValidity' })).toBe(
+      'Hay firma y no es válida la lista de confianza: vence antes de emitirse o más de 90 días después.',
+    );
+    expect(say('JDX-ENV-001', 'pt', { reason: 'invalid', cause: 'json' })).toBe('Há assinatura e a lista de confiança não é válida: não é I-JSON.');
+    expect(say('JDX-ENV-001', 'en', { reason: 'invalid', cause: 'signatures' })).toBe('There is a signature and the trust list is not valid: it has more than 8 signatures.');
+    expect(say('JDX-ENV-001', 'en', { reason: 'invalid' })).toBe('There is a signature and the trust list is not valid.');
+    expect(say('JDX-ENV-005', 'es', { reason: 'unreadable', cause: 'missingDir' })).toBe('El estado del receptor no se puede leer: la carpeta no existe.');
+    expect(say('JDX-ENV-005', 'pt', { reason: 'unreadable', cause: 'schema' })).toBe('O estado do receptor não pode ser lido: não cumpre seu schema.');
+    expect(say('JDX-ENV-005', 'en', { reason: 'unreadable', cause: 'lock' })).toBe("The receiver's state cannot be read: its lock (state.lock) cannot be used.");
+    expect(say('JDX-ENV-005', 'es', { reason: 'unreadable' })).toBe('El estado del receptor no se puede leer.');
+    // Cada causa del catálogo tiene su texto en los tres idiomas, y solo va con la razón que la admite.
+    const validators = defaultValidators();
+    for (const [id, reason] of [['JDX-ENV-001', 'invalid'], ['JDX-ENV-005', 'unreadable']] as const) {
+      const r = rule(id);
+      const causes = (r.resultParamsSchema as { properties: { cause: { enum: string[] } } }).properties.cause.enum;
+      for (const cause of causes) {
+        expect(validators.validateWith(r.resultParamsSchema, { reason, cause }), `${id} ${cause}`).toEqual([]);
+        for (const lang of LANGS) expect(say(id, lang, { reason, cause }), `${id} ${cause} ${lang}`).toMatch(/: [^:{}]+\.$/u);
+      }
+      const other = id === 'JDX-ENV-001' ? { reason: 'missing', cause: 'jws' } : { reason: 'version', cause: 'json' };
+      expect(validators.validateWith(r.resultParamsSchema, other), id).not.toEqual([]);
+    }
+  });
+
   it('pt and en render', () => {
     expect(formatMessage(rule('JDX-SHR-008'), 'pt', SHR008)).toBe(
       'As linhas de editora do contrato a1 somam 37,5 em execução em ES; o contrato dá 25.',
@@ -222,7 +248,13 @@ describe('mensajes', () => {
     // Un valor de la regla que su formateador no sabe decir.
     const withReason = withRule('JDX-ENV-001', (r) => ({
       ...r,
-      resultParamsSchema: { type: 'object', properties: { reason: { type: 'string', enum: ['missing', 'expiredYesterday'] } }, required: ['reason'], additionalProperties: false },
+      resultParamsSchema: {
+        type: 'object',
+        properties: { reason: { type: 'string', enum: ['missing', 'expiredYesterday'] }, cause: { type: 'string', enum: ['jws'] } },
+        required: ['reason'],
+        additionalProperties: false,
+      },
+      example: { params: { reason: 'missing' } },
     }));
     expect(() => loadCatalog(withReason, validators)).toThrow('JDX-ENV-001: {reason:reason} no tiene término para expiredYesterday');
     // Una frase de razón con un dato que la regla no declara.

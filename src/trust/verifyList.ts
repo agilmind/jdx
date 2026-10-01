@@ -13,7 +13,7 @@
  *   con `activeAt` ≤ `expiresAt` ≤ `activeAt` + 2 años (sumados como java.time,
  *   comparados en nanosegundos), su kid una vez, un punto de P-256 en
  *   base64url canónico y el kid de su huella RFC 7638. Si no: JDX-ENV-001, y
- *   nada más.
+ *   nada más, con `params.cause` (UnreadableListCause).
  * - Después, las firmas: cuenta cada raíz fijada del entorno de la lista, no
  *   revocada en `revokedRoots`, cuya firma verifica con el encabezado
  *   protegido exacto `{ alg: "ES256", kid, typ: "vnd.jupiter.jdx-trust+jws" }`.
@@ -58,7 +58,14 @@ export const TRUST_LIST_MAX_DAYS = 90;
 /** La vigencia máxima de una clave de emisor, en años desde `activeAt`. */
 export const TRUST_KEY_MAX_YEARS = 2;
 
-/** Por qué una lista no se puede leer. */
+/**
+ * Por qué una lista no se puede leer: no es el JWS (`jws`) o tiene más firmas
+ * de las que admite (`signatures`); su payload no es I-JSON (`json`) o no
+ * cumple el schema (`schema`); trae un instante que no existe (`instant`); la
+ * lista o una clave vencen antes de empezar o después de su tope
+ * (`listValidity`, `keyValidity`); una clave se repite, no es de P-256 en
+ * base64url canónico o su kid no es su huella (`key`).
+ */
 export type UnreadableListCause = 'jws' | 'signatures' | 'json' | 'schema' | 'instant' | 'listValidity' | 'keyValidity' | 'key';
 
 export interface VerifyTrustListOptions {
@@ -75,7 +82,7 @@ const NANOS_PER_MILLI = 1_000_000n;
 
 export async function verifyTrustList(jws: Uint8Array, opts: VerifyTrustListOptions): Promise<TrustListOutcome> {
   const read = readTrustList(jws, opts.validators);
-  if (!read.ok) return { ok: false, findings: [finding('JDX-ENV-001', { reason: 'invalid' })] };
+  if (!read.ok) return { ok: false, findings: [finding('JDX-ENV-001', { reason: 'invalid', cause: read.cause })] };
   const { general, list } = read;
   const rootKids = await countedRoots(general, list, opts.roots[list.env]);
   if (rootKids.length < 2) return { ok: false, findings: [{ ruleId: 'JDX-ENV-003', instanceLocation: '' }] };

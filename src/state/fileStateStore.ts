@@ -27,12 +27,13 @@
  * - Un `state.json` que no es I-JSON o no cumple su schema da
  *   `StateError('unreadable')`; uno de otra `stateVersion`,
  *   `StateError('version')`. Una carpeta que no existe no es un estado
- *   vacío: también da `unreadable`.
+ *   vacío: también da `unreadable`. `details.cause` dice por qué
+ *   (src/state/errors.ts).
  * - Los temporales que dejó una escritura interrumpida no se leen nunca.
  */
 import { randomUUID } from 'node:crypto';
 import { open, readFile, rename, stat, unlink } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { parseInstant } from '../conventions/time.js';
 import { parseJson } from '../json/parse.js';
 import { defaultValidators } from '../schema/validators.js';
@@ -46,6 +47,8 @@ const POLL_MS = 25;
 /** Las esperas entre los intentos de renombrar, ante EPERM, EACCES o EBUSY. */
 const RENAME_RETRY_MS: readonly number[] = Object.freeze([10, 20, 40, 80, 160]);
 const BUSY: ReadonlySet<string> = new Set(['EPERM', 'EACCES', 'EBUSY']);
+/** Los códigos de una falla por permisos: también un disco de solo lectura. */
+const DENIED: ReadonlySet<string> = new Set(['EACCES', 'EPERM', 'EROFS']);
 
 export interface FileStateStoreOptions { lockTimeoutMs?: number; validators?: SchemaValidators }
 
@@ -86,10 +89,10 @@ async function load(dir: string, validators: SchemaValidators): Promise<State> {
     bytes = await readFile(join(dir, STATE_FILE));
   } catch (error) {
     if (codeOf(error) === 'ENOENT' && (await isDirectory(dir))) return emptyState();
-    throw new StateError('unreadable', { cause: (await isDirectory(dir)) ? (codeOf(error) ?? 'read') : 'missingDir' });
+    throw await diskError(dir, error, 'io');
   }
   const parsed = parseJson(bytes);
-  if (!parsed.ok) throw new StateError('unreadable', { cause: parsed.failures[0]?.reason ?? 'syntax' });
+  if (!parsed.ok) throw new StateError('unreadable', { cause: 'json', reason: parsed.failures[0]?.reason ?? 'syntax' });
   const value = parsed.json.value;
   if (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.hasOwn(value, 'stateVersion') && value.stateVersion !== 1) {
     throw new StateError('version', { stateVersion: value.stateVersion as JsonValue });
@@ -170,7 +173,7 @@ async function acquire(lockPath: string, timeout: number): Promise<string> {
     try {
       handle = await open(lockPath, 'wx');
     } catch (error) {
-      if (codeOf(error) !== 'EEXIST') throw new StateError('unreadable', { cause: (await isDirectory(join(lockPath, '..'))) ? (codeOf(error) ?? 'lock') : 'missingDir' });
+      if (codeOf(error) !== 'EEXIST') throw await diskError(dirname(lockPath), error, 'lock');
       await waitOrGiveUp(lockPath, started, timeout);
       continue;
     }
@@ -209,7 +212,7 @@ async function waitWhileLocked(lockPath: string, timeout: number): Promise<void>
       await stat(lockPath);
     } catch (error) {
       if (codeOf(error) === 'ENOENT') return;
-      throw new StateError('unreadable', { cause: codeOf(error) ?? 'lock' });
+      throw await diskError(dirname(lockPath), error, 'lock');
     }
     await waitOrGiveUp(lockPath, started, timeout);
   }
@@ -241,6 +244,13 @@ async function lockedSince(lockPath: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/** La falla del disco como StateError unreadable: la carpeta que no existe, un permiso que falta o la de `otherwise`, con su código. */
+async function diskError(dir: string, error: unknown, otherwise: 'lock' | 'io'): Promise<StateError> {
+  const code = codeOf(error) ?? 'unknown';
+  if (!(await isDirectory(dir))) return new StateError('unreadable', { cause: 'missingDir' });
+  return new StateError('unreadable', { cause: DENIED.has(code) ? 'permission' : otherwise, code });
 }
 
 async function isDirectory(path: string): Promise<boolean> {

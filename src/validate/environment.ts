@@ -13,8 +13,8 @@
  *   en sandbox) y el piso; una explícita más débil que el piso da JDX-ENV-008.
  *   Sin perfil no hay piso con qué comparar.
  * - El estado, con la lectura compartida: un StateError da JDX-ENV-005 con su
- *   razón (y, bloqueado, desde cuándo); un estado de otro entorno, JDX-ENV-005
- *   `env`. Un estado nunca escrito no tiene entorno y pasa: lo fija la
+ *   razón (y, bloqueado, desde cuándo; ilegible, por qué); un estado de otro
+ *   entorno, JDX-ENV-005 `env`. Un estado nunca escrito no tiene entorno y pasa: lo fija la
  *   primera escritura.
  * - Solo si hay .jws, la lista de confianza: sin lista, JDX-ENV-001 `missing`;
  *   con lista, verifyTrustList con el reloj del validador y el maxSeq del
@@ -29,7 +29,7 @@
  */
 import { parseInstant } from '../conventions/time.js';
 import { resolveProfile } from '../profile/resolve.js';
-import { StateError } from '../state/errors.js';
+import { STATE_UNREADABLE_CAUSES, StateError } from '../state/errors.js';
 import { verifyTrustList } from '../trust/verifyList.js';
 import type {
   EnvironmentOutcome,
@@ -102,8 +102,7 @@ export async function evaluateEnvironment(input: ValidateInput, opts: ValidateOp
       state = await opts.state.read(async (snapshot) => snapshot);
     } catch (error) {
       if (!(error instanceof StateError)) throw error;
-      const lockedSince = typeof error.details?.lockedSince === 'string' ? error.details.lockedSince : deps.clock().toISOString();
-      findings.push(finding('JDX-ENV-005', error.reason === 'locked' ? { reason: 'locked', lockedSince } : { reason: error.reason }));
+      findings.push(finding('JDX-ENV-005', stateParams(error, deps.clock)));
     }
     if (state !== null && state.env !== undefined && env !== null && state.env !== env) {
       findings.push(finding('JDX-ENV-005', { reason: 'env' }));
@@ -148,6 +147,18 @@ export async function evaluateEnvironment(input: ValidateInput, opts: ValidateOp
     state,
     trust,
   };
+}
+
+/** Los params de JDX-ENV-005 para un StateError: la razón, desde cuándo está bloqueado (o el reloj) y por qué no se lee. */
+function stateParams(error: StateError, clock: () => Date): { [k: string]: JsonValue } {
+  if (error.reason === 'locked') {
+    return { reason: 'locked', lockedSince: typeof error.details?.lockedSince === 'string' ? error.details.lockedSince : clock().toISOString() };
+  }
+  const cause = error.details?.cause;
+  if (error.reason === 'unreadable' && (STATE_UNREADABLE_CAUSES as readonly JsonValue[]).includes(cause ?? null)) {
+    return { reason: 'unreadable', cause: cause as JsonValue };
+  }
+  return { reason: error.reason };
 }
 
 function finding(ruleId: Finding['ruleId'], params: { [k: string]: JsonValue }): Finding {

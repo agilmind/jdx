@@ -176,7 +176,10 @@ describe('entorno', () => {
     const store = fileStateStore(dir);
     await store.update(async (state) => withReceipt(state, 1));
     writeFileSync(join(dir, 'state.json'), '{ roto');
-    expect(await failed(production({ state: store }))).toEqual([['JDX-ENV-005', { reason: 'unreadable' }]]);
+    expect(await failed(production({ state: store }))).toEqual([['JDX-ENV-005', { reason: 'unreadable', cause: 'json' }]]);
+    // Una carpeta que no existe dice eso; una causa que el catálogo no tiene no sale.
+    expect(await failed(production({ state: fileStateStore(join(dir, 'no-existe')) }))).toEqual([['JDX-ENV-005', { reason: 'unreadable', cause: 'missingDir' }]]);
+    expect(await failed(production({ state: failingState(new StateError('unreadable', { cause: 'ENOSPC' })) }))).toEqual([['JDX-ENV-005', { reason: 'unreadable' }]]);
     // Un bloqueo sin desde cuándo usa el reloj del validador, para que el resultado cumpla su schema.
     expect(await failed(production({ state: failingState(new StateError('locked')) }))).toEqual([['JDX-ENV-005', { reason: 'locked', lockedSince: TEST_NOW.toISOString() }]]);
     // Otra falla del estado no es de entorno: sale como excepción (validate la devuelve como JDX-INT-001).
@@ -221,7 +224,7 @@ describe('entorno', () => {
       return signTestTrustList(l, signers);
     };
     const withList = (trustList: Uint8Array, more: Partial<ValidateOptions> = {}) => failed(production({ trustList, ...more }), SIGNED);
-    expect(await withList(new TextEncoder().encode('no es una lista'))).toEqual([['JDX-ENV-001', { reason: 'invalid' }]]);
+    expect(await withList(new TextEncoder().encode('no es una lista'))).toEqual([['JDX-ENV-001', { reason: 'invalid', cause: 'jws' }]]);
     expect(await withList(list(() => {}, [A!]))).toEqual([['JDX-ENV-003', undefined]]);
     expect(await withList(list((l) => {
       l.expiresAt = '2026-09-30T12:00:00Z';

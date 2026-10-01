@@ -61,7 +61,8 @@ async function refused(jws: Uint8Array, opts?: Opts): Promise<[string, Finding['
   }
   return found.map((f) => [f.ruleId, f.params]);
 }
-const UNREADABLE: [string, Finding['params']][] = [['JDX-ENV-001', { reason: 'invalid' }]];
+/** Una lista que no se puede leer, con su causa. */
+const unreadable = (cause: string): [string, Finding['params']][] => [['JDX-ENV-001', { reason: 'invalid', cause }]];
 const NOT_SIGNED: [string, Finding['params']][] = [['JDX-ENV-003', undefined]];
 
 /** The trust list example con un cambio. */
@@ -131,7 +132,7 @@ describe('lista de confianza', () => {
   it('more than 8 signatures → ENV-001', async () => {
     const nine = [A, B, C, ...Array.from({ length: 6 }, () => OUTSIDER)];
     expect(nine).toHaveLength(MAX_TRUST_LIST_SIGNATURES + 1);
-    expect(await refused(signed(nine))).toEqual(UNREADABLE);
+    expect(await refused(signed(nine))).toEqual(unreadable('signatures'));
     expect(await accepted(signed(nine.slice(0, MAX_TRUST_LIST_SIGNATURES)))).toEqual([kidOf(A), kidOf(B), kidOf(C)]);
   });
 
@@ -150,13 +151,13 @@ describe('lista de confianza', () => {
     const offSchema = listWith((l) => {
       l.keys = Array.from({ length: 20_000 }, () => ({ ...structuredClone(firstKey(l)), alg: 'ES384' as 'ES256' }));
     });
-    expect(await refused(signed([A, B], offSchema))).toEqual(UNREADABLE);
+    expect(await refused(signed([A, B], offSchema))).toEqual(unreadable('schema'));
     expect(firstAuxError).toHaveBeenCalledTimes(2);
     expect(validateAux.mock.calls.filter(([name]) => name === 'trustList')).toEqual([]);
     // 20 000 firmas que dicen ser de A: no se recorren.
     const good = JSON.parse(new TextDecoder().decode(signed([A, B]))) as { payload: string; signatures: unknown[] };
     const many = { payload: good.payload, signatures: Array.from({ length: 20_000 }, () => good.signatures[0]) };
-    expect(await refused(new TextEncoder().encode(JSON.stringify(many)))).toEqual(UNREADABLE);
+    expect(await refused(new TextEncoder().encode(JSON.stringify(many)))).toEqual(unreadable('signatures'));
     expect(verifications).toHaveBeenCalledTimes(3);
     expect(performance.now() - started).toBeLessThan(10_000);
   }, 30_000);
@@ -195,7 +196,7 @@ describe('lista de confianza', () => {
 
   it('duplicate keys in payload → ENV-001', async () => {
     const text = JSON.stringify(trustListExample()).replace('"seq":1,', '"seq":1,"seq":1,');
-    expect(await refused(signed([A, B], new TextEncoder().encode(text)))).toEqual(UNREADABLE);
+    expect(await refused(signed([A, B], new TextEncoder().encode(text)))).toEqual(unreadable('json'));
   });
 
   it('duplicate kid → ENV-001', async () => {
@@ -204,12 +205,12 @@ describe('lista de confianza', () => {
       l.keys.push({ ...structuredClone(firstKey(l)), jdx: { ...structuredClone(firstKey(l).jdx), status: 'pending', activeAt: '2028-09-30T00:00:00-03:00', expiresAt: '2030-09-30T00:00:00-03:00' } });
     });
     expect(validators.validateAux('trustList', list as unknown as JsonValue)).toEqual([]);
-    expect(await refused(signed([A, B], list))).toEqual(UNREADABLE);
+    expect(await refused(signed([A, B], list))).toEqual(unreadable('key'));
     // Un kid que no es la huella de su clave tampoco se puede leer.
     expect(await refused(signed([A, B], listWith((l) => {
       firstKey(l).kid = l.keys[1]?.kid ?? '';
       l.keys.pop();
-    })))).toEqual(UNREADABLE);
+    })))).toEqual(unreadable('key'));
   });
 
   it('a coordinate that is not canonical base64url → ENV-001', async () => {
@@ -222,12 +223,12 @@ describe('lista de confianza', () => {
         l.keys.push({ ...copy, kid: ecThumbprint(copy) });
       });
       expect(validators.validateAux('trustList', twice as unknown as JsonValue)).toEqual([]);
-      expect(await refused(signed([A, B], twice)), coordinate).toEqual(UNREADABLE);
+      expect(await refused(signed([A, B], twice)), coordinate).toEqual(unreadable('key'));
     }
     // Una coordenada de otro largo tampoco: el schema pide 43 caracteres.
     expect(await refused(signed([A, B], listWith((l) => {
       firstKey(l).x = `${firstKey(l).x}A`;
-    })))).toEqual(UNREADABLE);
+    })))).toEqual(unreadable('schema'));
   });
 
   it('not a JSON general serialization → ENV-001', async () => {
@@ -250,16 +251,16 @@ describe('lista de confianza', () => {
       [good],
     ];
     for (const variant of variants) {
-      expect(await refused(new TextEncoder().encode(JSON.stringify(variant))), JSON.stringify(variant).slice(0, 80)).toEqual(UNREADABLE);
+      expect(await refused(new TextEncoder().encode(JSON.stringify(variant))), JSON.stringify(variant).slice(0, 80)).toEqual(unreadable('jws'));
     }
     // Bytes que no son JSON, o I-JSON con claves repetidas.
-    expect(await refused(new TextEncoder().encode('no es json'))).toEqual(UNREADABLE);
-    expect(await refused(new Uint8Array())).toEqual(UNREADABLE);
+    expect(await refused(new TextEncoder().encode('no es json'))).toEqual(unreadable('jws'));
+    expect(await refused(new Uint8Array())).toEqual(unreadable('jws'));
     const repeated = new TextDecoder().decode(signed([A, B])).replace('{"payload":', '{"payload":"x","payload":');
-    expect(await refused(new TextEncoder().encode(repeated))).toEqual(UNREADABLE);
+    expect(await refused(new TextEncoder().encode(repeated))).toEqual(unreadable('jws'));
     // Un payload que no es JSON.
     const noJson = signTestTrustList(new TextEncoder().encode('{ "iss": '), [A, B]);
-    expect(await refused(noJson)).toEqual(UNREADABLE);
+    expect(await refused(noJson)).toEqual(unreadable('json'));
   });
 
   it('payload failing schema → ENV-001', async () => {
@@ -280,17 +281,17 @@ describe('lista de confianza', () => {
         Object.assign(l, { extra: 1 });
       },
     ]) {
-      expect(await refused(signed([A, B], listWith(change)))).toEqual(UNREADABLE);
+      expect(await refused(signed([A, B], listWith(change)))).toEqual(unreadable('schema'));
     }
   });
 
   it('an instant that does not exist in the calendar → ENV-001', async () => {
     expect(await refused(signed([A, B], listWith((l) => {
       l.expiresAt = '2026-12-32T00:00:00-03:00';
-    })))).toEqual(UNREADABLE);
+    })))).toEqual(unreadable('instant'));
     expect(await refused(signed([A, B], listWith((l) => {
       firstKey(l).jdx.activeAt = '2026-02-29T00:00:00-03:00';
-    })))).toEqual(UNREADABLE);
+    })))).toEqual(unreadable('instant'));
   });
 
   it('key with expiresAt > activeAt + 2 years → ENV-001', async () => {
@@ -298,12 +299,12 @@ describe('lista de confianza', () => {
     for (const expiresAt of ['2028-09-30T00:00:00.000000001-03:00', '2028-09-30T03:00:00.000000001Z', '2028-10-01T00:00:00-03:00']) {
       expect(await refused(signed([A, B], listWith((l) => {
         firstKey(l).jdx.expiresAt = expiresAt;
-      }))), expiresAt).toEqual(UNREADABLE);
+      }))), expiresAt).toEqual(unreadable('keyValidity'));
     }
     // También la clave de reserva, aunque esté pending.
     expect(await refused(signed([A, B], listWith((l) => {
       (l.keys[1] as TrustList['keys'][number]).jdx.expiresAt = '2030-09-30T00:00:01-03:00';
-    })))).toEqual(UNREADABLE);
+    })))).toEqual(unreadable('keyValidity'));
   });
 
   it('key at exactly activeAt + 2 years is fine', async () => {
@@ -317,7 +318,7 @@ describe('lista de confianza', () => {
       Object.assign(firstKey(l).jdx, { activeAt: '2028-02-29T10:00:00Z', expiresAt });
     }));
     expect(await accepted(leap('2030-02-28T10:00:00Z'))).toHaveLength(2);
-    expect(await refused(leap('2030-02-28T10:00:00.5Z'))).toEqual(UNREADABLE);
+    expect(await refused(leap('2030-02-28T10:00:00.5Z'))).toEqual(unreadable('keyValidity'));
   });
 
   it('a list issued after it expires, or valid for more than 90 days → ENV-001', async () => {
@@ -329,15 +330,15 @@ describe('lista de confianza', () => {
     expect(await accepted(lasting('2026-09-30T03:00:00Z', '2026-12-29T00:00:00-03:00'))).toHaveLength(2);
     expect(await accepted(lasting('2026-12-29T00:00:00-03:00', '2026-12-29T03:00:00Z'))).toHaveLength(2);
     // Un nanosegundo de más, o al revés.
-    expect(await refused(lasting('2026-09-30T00:00:00-03:00', '2026-12-29T00:00:00.000000001-03:00'))).toEqual(UNREADABLE);
-    expect(await refused(lasting('2026-12-29T00:00:00-03:00', '2026-12-29T02:59:59.999999999Z'))).toEqual(UNREADABLE);
+    expect(await refused(lasting('2026-09-30T00:00:00-03:00', '2026-12-29T00:00:00.000000001-03:00'))).toEqual(unreadable('listValidity'));
+    expect(await refused(lasting('2026-12-29T00:00:00-03:00', '2026-12-29T02:59:59.999999999Z'))).toEqual(unreadable('listValidity'));
   });
 
   it('a key that expires before it becomes active → ENV-001', async () => {
     const key = (activeAt: string, expiresAt: string) => signed([A, B], listWith((l) => {
       Object.assign(firstKey(l).jdx, { activeAt, expiresAt });
     }));
-    expect(await refused(key('2026-09-30T00:00:00-03:00', '2026-09-30T02:59:59Z'))).toEqual(UNREADABLE);
+    expect(await refused(key('2026-09-30T00:00:00-03:00', '2026-09-30T02:59:59Z'))).toEqual(unreadable('keyValidity'));
     expect(await accepted(key('2026-09-30T00:00:00-03:00', '2026-09-30T03:00:00Z'))).toHaveLength(2);
   });
 
@@ -376,7 +377,7 @@ describe('lista de confianza', () => {
     }));
     // Ceros a la izquierda, una versión previa o de build, o un número que no entra en un entero seguro.
     for (const minVersion of ['01.0.0', '1.00.0', '1.0.0-rc.1', '1.0.0+b', 'v1.0.0', '1.0', '99999999999999999.0.0']) {
-      expect(await refused(needs(minVersion)), minVersion).toEqual(UNREADABLE);
+      expect(await refused(needs(minVersion)), minVersion).toEqual(unreadable('schema'));
     }
     expect(await accepted(needs('0.0.0'))).toHaveLength(2);
     expect(await accepted(needs('1.0.0'))).toHaveLength(2);

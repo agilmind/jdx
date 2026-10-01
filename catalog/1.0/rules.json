@@ -1212,14 +1212,14 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "Hay .jws y la lista de confianza falta o no se puede leer: no es un JWS JSON general, su contenido no cumple su schema, repite un kid o trae una clave que vence más de 2 años después de su activeAt.",
-        "pt": "Há .jws e a lista de confiança falta ou não pode ser lida: não é um JWS JSON geral, seu conteúdo não cumpre seu schema, repete um kid ou traz uma chave que vence mais de 2 anos depois do seu activeAt.",
-        "en": "There is a .jws and the trust list is missing or unreadable: it is not a general JWS JSON serialization, its content does not conform to its schema, it repeats a kid or it carries a key that expires more than 2 years after its activeAt."
+        "es": "Hay .jws y la lista de confianza falta o no se puede leer: no es un JWS JSON general o tiene más de 8 firmas, su contenido no es I-JSON o no cumple su schema (con un validator.minVersion que semver lee), trae un instante que no existe, vence antes de emitirse o más de 90 días después, o trae una clave que vence antes de activarse o más de 2 años después, que se repite, que no es de P-256 en base64url canónico o cuyo kid no es su huella RFC 7638. params.cause dice cuál.",
+        "pt": "Há .jws e a lista de confiança falta ou não pode ser lida: não é um JWS JSON geral ou tem mais de 8 assinaturas, seu conteúdo não é I-JSON ou não cumpre seu schema (com um validator.minVersion que o semver lê), traz um instante que não existe, vence antes de ser emitida ou mais de 90 dias depois, ou traz uma chave que vence antes de ser ativada ou mais de 2 anos depois, que se repete, que não é P-256 em base64url canônico ou cujo kid não é sua impressão digital RFC 7638. params.cause diz qual.",
+        "en": "There is a .jws and the trust list is missing or unreadable: it is not a general JWS JSON serialization or has more than 8 signatures, its content is not I-JSON or does not conform to its schema (with a validator.minVersion that semver reads), it has an instant that does not exist, it expires before it is issued or more than 90 days later, or it has a key that expires before it becomes active or more than 2 years later, that is repeated, that is not P-256 in canonical base64url or whose kid is not its RFC 7638 thumbprint. params.cause says which."
       },
       "message": {
-        "es": "Hay firma y {reason:reason} la lista de confianza.",
-        "pt": "Há assinatura e a lista de confiança {reason:reason}.",
-        "en": "There is a signature and the trust list {reason:reason}."
+        "es": "Hay firma y {reason:reason} la lista de confianza{cause:reason}.",
+        "pt": "Há assinatura e a lista de confiança {reason:reason}{cause:reason}.",
+        "en": "There is a signature and the trust list {reason:reason}{cause:reason}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -1234,12 +1234,52 @@
               "missing",
               "invalid"
             ]
+          },
+          "cause": {
+            "type": "string",
+            "enum": [
+              "jws",
+              "signatures",
+              "json",
+              "schema",
+              "instant",
+              "listValidity",
+              "keyValidity",
+              "key"
+            ]
           }
         },
         "required": [
           "reason"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "type": "object",
+            "if": {
+              "type": "object",
+              "properties": {
+                "reason": {
+                  "type": "string",
+                  "enum": [
+                    "missing"
+                  ]
+                }
+              },
+              "required": [
+                "reason"
+              ]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "cause": {
+                  "not": {}
+                }
+              }
+            }
+          }
+        ]
       },
       "contextSchema": {
         "type": "object",
@@ -1247,7 +1287,8 @@
       },
       "example": {
         "params": {
-          "reason": "missing"
+          "reason": "invalid",
+          "cause": "listValidity"
         }
       }
     },
@@ -1388,14 +1429,14 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "El estado del receptor no se puede leer, es de otra stateVersion o de otro entorno, o está bloqueado más de 30 segundos.",
-        "pt": "O estado do receptor não pode ser lido, é de outra stateVersion ou de outro ambiente, ou está bloqueado por mais de 30 segundos.",
-        "en": "The receiver's state cannot be read, has another stateVersion or environment, or has been locked for more than 30 seconds."
+        "es": "El estado del receptor no se puede leer, es de otra stateVersion o de otro entorno, o está bloqueado más de 30 segundos. Si no se puede leer, params.cause dice por qué: la carpeta no existe (missingDir), falta permiso (permission), no es I-JSON (json), no cumple su schema (schema), su bloqueo no se puede usar (lock) u otra falla del disco (io).",
+        "pt": "O estado do receptor não pode ser lido, é de outra stateVersion ou de outro ambiente, ou está bloqueado por mais de 30 segundos. Se não pode ser lido, params.cause diz por quê: a pasta não existe (missingDir), falta permissão (permission), não é I-JSON (json), não cumpre seu schema (schema), seu bloqueio não pode ser usado (lock) ou outra falha do disco (io).",
+        "en": "The receiver's state cannot be read, has another stateVersion or environment, or has been locked for more than 30 seconds. When it cannot be read, params.cause says why: the folder does not exist (missingDir), access is not permitted (permission), it is not I-JSON (json), it does not conform to its schema (schema), its lock cannot be used (lock) or another disk failure (io)."
       },
       "message": {
-        "es": "El estado del receptor {reason:reason}.",
-        "pt": "O estado do receptor {reason:reason}.",
-        "en": "The receiver's state {reason:reason}."
+        "es": "El estado del receptor {reason:reason}{cause:reason}.",
+        "pt": "O estado do receptor {reason:reason}{cause:reason}.",
+        "en": "The receiver's state {reason:reason}{cause:reason}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -1411,6 +1452,17 @@
               "version",
               "env",
               "locked"
+            ]
+          },
+          "cause": {
+            "type": "string",
+            "enum": [
+              "missingDir",
+              "permission",
+              "json",
+              "schema",
+              "lock",
+              "io"
             ]
           },
           "lockedSince": {
@@ -1447,6 +1499,33 @@
               "required": [
                 "lockedSince"
               ]
+            }
+          },
+          {
+            "type": "object",
+            "if": {
+              "type": "object",
+              "properties": {
+                "reason": {
+                  "type": "string",
+                  "enum": [
+                    "version",
+                    "env",
+                    "locked"
+                  ]
+                }
+              },
+              "required": [
+                "reason"
+              ]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "cause": {
+                  "not": {}
+                }
+              }
             }
           }
         ]

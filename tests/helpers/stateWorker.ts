@@ -3,14 +3,20 @@
  * fileStateStore con varios procesos. Se corre con
  * `node --import tsx tests/helpers/stateWorker.ts <modo> <carpeta> [args]`:
  *
- * - `receipts <carpeta> <revisión inicial> <cantidad>`: suma esa cantidad de
- *   recibos, uno por actualización, con revisiones consecutivas.
- * - `maxSeq <carpeta> <seq,seq,…>`: por cada seq, una actualización que guarda
- *   el máximo entre el guardado y el visto; al final escribe en stdout, como
- *   JSON, el maxSeq que encontró en cada una.
+ * - `receipts <carpeta> <revisión inicial> <cantidad> [largada]`: suma esa
+ *   cantidad de recibos, uno por actualización, con revisiones consecutivas.
+ * - `maxSeq <carpeta> <seq,seq,…> [largada]`: por cada seq, una actualización
+ *   que guarda el máximo entre el guardado y el visto; al final escribe en
+ *   stdout, como JSON, el maxSeq que encontró en cada una.
  * - `hold <carpeta>`: toma el bloqueo exclusivo, escribe `locked` en stdout y
- *   se queda adentro de la actualización hasta que lo maten.
+ *   se queda adentro de la función de la actualización, sin terminarla, hasta
+ *   que lo maten.
+ *
+ * Con un archivo de largada, el proceso escribe `ready` en stdout y espera a
+ * que ese archivo exista para empezar: así los procesos de un test arrancan a
+ * la vez, aunque cada uno tarde distinto en cargar.
  */
+import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { fileStateStore } from '../../src/state/fileStateStore.js';
 import type { State } from '../../src/types.js';
@@ -25,6 +31,13 @@ export function withReceipt(state: State, revision: number): State {
   return { ...state, env: state.env ?? 'production', declarations: { ...state.declarations, [DECLARATION]: declaration } };
 }
 
+/** Escribe `ready` y espera a que exista el archivo de largada, si hay uno. */
+async function waitForStart(start: string | undefined): Promise<void> {
+  if (start === undefined) return;
+  process.stdout.write('ready\n');
+  while (!existsSync(start)) await new Promise((resolve) => setTimeout(resolve, 2));
+}
+
 async function main(argv: readonly string[]): Promise<void> {
   const [mode, dir, ...args] = argv;
   if (dir === undefined) throw new Error('falta la carpeta del estado');
@@ -32,10 +45,13 @@ async function main(argv: readonly string[]): Promise<void> {
   if (mode === 'receipts') {
     const first = Number(args[0]);
     const count = Number(args[1]);
+    await waitForStart(args[2]);
     for (let i = 0; i < count; i++) await store.update(async (state) => withReceipt(state, first + i));
   } else if (mode === 'maxSeq') {
+    const seqs = (args[0] ?? '').split(',').map(Number);
+    await waitForStart(args[1]);
     const seen: number[] = [];
-    for (const seq of (args[0] ?? '').split(',').map(Number)) {
+    for (const seq of seqs) {
       await store.update(async (state) => {
         seen.push(state.trust.maxSeq);
         return { ...state, env: state.env ?? 'production', trust: { maxSeq: Math.max(state.trust.maxSeq, seq) } };

@@ -3,11 +3,14 @@
  * `state.lock`.
  *
  * - `update` toma el bloqueo exclusivo: crea `state.lock` solo si no existe
- *   (apertura exclusiva) y anota adentro desde cuándo lo tiene. Con el
- *   bloqueo, relee el estado, aplica la función y escribe el resultado en un
- *   temporal oculto de la misma carpeta, que después renombra sobre
- *   `state.json`; al final borra el bloqueo, también si la función lanza.
- *   Así `state.json` siempre está entero: el de antes o el nuevo.
+ *   (apertura exclusiva) y anota adentro desde cuándo lo tiene, su pid y una
+ *   marca al azar. Con el bloqueo, relee el estado, aplica la función y
+ *   escribe el resultado en un temporal oculto de la misma carpeta, que
+ *   después renombra sobre `state.json` (en Windows, con unos reintentos
+ *   cortos si el archivo está abierto por otro programa); al final suelta el
+ *   bloqueo, también si la función lanza, y solo si todavía tiene su marca: si
+ *   alguien lo borró y otro proceso lo tomó, no es suyo. Así `state.json`
+ *   siempre está entero: el de antes o el nuevo.
  * - `read` espera mientras exista `state.lock` y trabaja sobre lo que leyó,
  *   congelado: no puede escribirlo.
  * - Quien no consigue el bloqueo (o no ve la carpeta libre) en
@@ -17,7 +20,10 @@
  *   receptor lo borra después de ver que no corre ninguna validación.
  * - Sin `state.json` el estado es `emptyState()`, sin entorno: lo fija la
  *   primera escritura. `update` no escribe un estado sin `env` ni uno que no
- *   cumple jdx-state.schema.json, y no pisa uno que no se puede leer.
+ *   se podría volver a leer (el texto que escribe pasa por el mismo parser y
+ *   el mismo schema que la lectura: un entero fuera de ±(2^53 − 1) o un
+ *   surrogate suelto cumplen el tipo pero no se leen), y no pisa uno que no se
+ *   puede leer.
  * - Un `state.json` que no es I-JSON o no cumple su schema da
  *   `StateError('unreadable')`; uno de otra `stateVersion`,
  *   `StateError('version')`. Una carpeta que no existe no es un estado
@@ -37,6 +43,9 @@ export const STATE_FILE = 'state.json';
 export const LOCK_FILE = 'state.lock';
 const DEFAULT_LOCK_TIMEOUT_MS = 30_000;
 const POLL_MS = 25;
+/** Las esperas entre los intentos de renombrar, ante EPERM, EACCES o EBUSY. */
+const RENAME_RETRY_MS: readonly number[] = Object.freeze([10, 20, 40, 80, 160]);
+const BUSY: ReadonlySet<string> = new Set(['EPERM', 'EACCES', 'EBUSY']);
 
 export interface FileStateStoreOptions { lockTimeoutMs?: number; validators?: SchemaValidators }
 
@@ -57,14 +66,14 @@ export function fileStateStore(dir: string, opts: FileStateStoreOptions = {}): S
       return fn(deepFreeze(await load(dir, validators())));
     },
     async update(fn: (state: State) => Promise<State>): Promise<State> {
-      await acquire(lockPath, timeout);
+      const token = await acquire(lockPath, timeout);
       try {
         const next = await fn(await load(dir, validators()));
-        const text = checked(next, validators());
+        const { text, state } = checked(next, validators());
         await writeAtomically(dir, text);
-        return deepFreeze(JSON.parse(text) as State);
+        return deepFreeze(state);
       } finally {
-        await unlink(lockPath).catch(() => {});
+        await release(lockPath, token);
       }
     },
   };
@@ -91,16 +100,23 @@ async function load(dir: string, validators: SchemaValidators): Promise<State> {
   return value as unknown as State;
 }
 
-/** El texto del estado a escribir; lanza si no tiene env o no cumple su schema (un error de quien llama). */
-function checked(next: State, validators: SchemaValidators): string {
+/**
+ * El texto del estado a escribir y lo que se leerá de él; lanza si no tiene
+ * env o si su texto no se podría leer (un error de quien llama): pasa por el
+ * mismo parser y el mismo schema que `read`.
+ */
+function checked(next: State, validators: SchemaValidators): { text: string; state: State } {
   if (typeof next !== 'object' || next === null || next.env === undefined) {
     throw new Error('el estado a escribir no tiene env: lo fija quien escribe (validate con su env, ack con el del reporte)');
   }
-  const errors = validators.validateAux('state', next as unknown as JsonValue);
+  const text = `${JSON.stringify(next, null, 2)}\n`;
+  const back = parseJson(new TextEncoder().encode(text));
+  if (!back.ok) throw new Error(`el estado a escribir no se podría leer: ${[...new Set(back.failures.map((f) => f.reason))].join(', ')}`);
+  const errors = validators.validateAux('state', back.json.value);
   if (errors.length > 0) {
     throw new Error(`el estado a escribir no cumple jdx-state.schema.json: ${errors.map((e) => `${e.instanceLocation || '/'} ${e.keyword}`).join('; ')}`);
   }
-  return `${JSON.stringify(next, null, 2)}\n`;
+  return { text, state: back.json.value as unknown as State };
 }
 
 /** Temporal oculto en la misma carpeta, a disco, y renombre sobre state.json. */
@@ -114,7 +130,7 @@ async function writeAtomically(dir: string, text: string): Promise<void> {
     } finally {
       await handle.close();
     }
-    await rename(temp, join(dir, STATE_FILE));
+    await renameRetrying(temp, join(dir, STATE_FILE));
   } catch (error) {
     await unlink(temp).catch(() => {});
     throw error;
@@ -128,8 +144,26 @@ async function writeAtomically(dir: string, text: string): Promise<void> {
   }
 }
 
-/** Toma el bloqueo exclusivo: crea state.lock con desde cuándo, o espera a que lo suelten. */
-async function acquire(lockPath: string, timeout: number): Promise<void> {
+/**
+ * Renombra el temporal sobre state.json. En Windows otro programa (un antivirus,
+ * un indexador) puede tener abierto state.json un instante y el renombre da
+ * EPERM, EACCES o EBUSY: se reintenta unas veces, en menos de medio segundo.
+ */
+async function renameRetrying(from: string, to: string): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await rename(from, to);
+      return;
+    } catch (error) {
+      const wait = RENAME_RETRY_MS[attempt];
+      if (wait === undefined || !BUSY.has(codeOf(error) ?? '')) throw error;
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+  }
+}
+
+/** Toma el bloqueo exclusivo: crea state.lock con desde cuándo, su pid y una marca al azar, o espera a que lo suelten. Devuelve la marca. */
+async function acquire(lockPath: string, timeout: number): Promise<string> {
   const started = Date.now();
   for (;;) {
     let handle;
@@ -140,12 +174,30 @@ async function acquire(lockPath: string, timeout: number): Promise<void> {
       await waitOrGiveUp(lockPath, started, timeout);
       continue;
     }
+    const token = randomUUID();
     try {
-      await handle.writeFile(`${JSON.stringify({ since: new Date().toISOString(), pid: process.pid })}\n`, 'utf8');
-    } finally {
+      await handle.writeFile(`${JSON.stringify({ since: new Date().toISOString(), pid: process.pid, token })}\n`, 'utf8');
       await handle.close();
+    } catch (error) {
+      // El bloqueo recién creado es de este proceso: si no se pudo anotar, no queda huérfano.
+      await handle.close().catch(() => {});
+      await unlink(lockPath).catch(() => {});
+      throw error;
     }
-    return;
+    return token;
+  }
+}
+
+/**
+ * Suelta el bloqueo si todavía lleva la marca de quien lo tomó. Si alguien lo
+ * borró (lo creyó huérfano) y otro proceso tomó uno nuevo, ese no se toca.
+ */
+async function release(lockPath: string, token: string): Promise<void> {
+  try {
+    const held = JSON.parse(await readFile(lockPath, 'utf8')) as { token?: unknown };
+    if (held.token === token) await unlink(lockPath);
+  } catch {
+    // Ya no está, o no se puede leer: no es el suyo.
   }
 }
 

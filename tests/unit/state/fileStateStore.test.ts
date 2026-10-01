@@ -1,12 +1,13 @@
 /**
  * El estado del receptor en una carpeta: state.json y su bloqueo, state.lock.
- * `update` toma el bloqueo exclusivo (crear state.lock solo si no existe),
- * relee el estado, aplica la función y escribe en un temporal que después
- * renombra: state.json siempre está entero, aunque maten al proceso. `read`
- * espera mientras exista el bloqueo y trabaja sobre lo que leyó, sin poder
- * escribirlo. Quien no consigue el bloqueo a tiempo recibe StateError locked,
- * con desde cuándo está. Varios procesos sobre la misma carpeta no pierden
- * escrituras.
+ * `update` toma el bloqueo exclusivo (crear state.lock solo si no existe, con
+ * una marca propia), relee el estado, aplica la función y escribe en un
+ * temporal que después renombra: state.json siempre está entero, aunque maten
+ * al proceso, y nunca queda uno que no se pueda volver a leer. Al terminar
+ * suelta solo su propio bloqueo. `read` espera mientras exista el bloqueo y
+ * trabaja sobre lo que leyó, sin poder escribirlo. Quien no consigue el
+ * bloqueo a tiempo recibe StateError locked, con desde cuándo está. Varios
+ * procesos sobre la misma carpeta, largados a la vez, no pierden escrituras.
  */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs';
@@ -55,17 +56,30 @@ async function stateError(promise: Promise<unknown>): Promise<StateError> {
   throw new Error('no rechazó');
 }
 
-/** Corre stateWorker.ts en otro proceso; termina con su stdout. */
-function worker(args: string[]): Promise<string> {
-  return new Promise((resolve, reject) => {
+/** Corre stateWorker.ts en otro proceso: `ready` cuando escribe que espera la largada, `done` con su stdout al terminar. */
+function worker(args: string[]): { ready: Promise<void>; done: Promise<string> } {
+  let markReady!: () => void;
+  const ready = new Promise<void>((resolve) => (markReady = resolve));
+  const done = new Promise<string>((resolve, reject) => {
     const child = spawn(process.execPath, ['--import', 'tsx', WORKER, ...args], { cwd: ROOT });
     let out = '';
     let err = '';
-    child.stdout.on('data', (chunk: Buffer) => (out += chunk.toString()));
+    child.stdout.on('data', (chunk: Buffer) => {
+      out += chunk.toString();
+      if (out.startsWith('ready\n')) markReady();
+    });
     child.stderr.on('data', (chunk: Buffer) => (err += chunk.toString()));
     child.on('error', reject);
-    child.on('exit', (code) => (code === 0 ? resolve(out) : reject(new Error(`stateWorker ${args.join(' ')} salió con ${String(code)}: ${err}`))));
+    child.on('exit', (code) => (code === 0 ? resolve(out.replace(/^ready\n/u, '')) : reject(new Error(`stateWorker ${args.join(' ')} salió con ${String(code)}: ${err}`))));
   });
+  return { ready, done };
+}
+
+/** Largan juntos: cada proceso espera el archivo de largada, que se crea cuando todos están listos. */
+async function startTogether(runs: { ready: Promise<void>; done: Promise<string> }[], start: string): Promise<string[]> {
+  await Promise.race([Promise.all(runs.map((run) => run.ready)), Promise.all(runs.map((run) => run.done))]);
+  writeFileSync(start, '');
+  return Promise.all(runs.map((run) => run.done));
 }
 
 describe('fileStateStore', () => {
@@ -138,12 +152,12 @@ describe('fileStateStore', () => {
 
   it('two processes updating concurrently lose no receipt', async () => {
     const dir = stateDir();
+    const start = join(stateDir(), 'go');
     const store = fileStateStore(dir);
-    // Tres procesos de 15 recibos cada uno y diez actualizaciones de este, todas a la vez.
+    // Tres procesos de 15 recibos cada uno, largados juntos, y diez actualizaciones de este, todas a la vez.
+    const runs = [worker(['receipts', dir, '1', '15', start]), worker(['receipts', dir, '101', '15', start]), worker(['receipts', dir, '201', '15', start])];
     await Promise.all([
-      worker(['receipts', dir, '1', '15']),
-      worker(['receipts', dir, '101', '15']),
-      worker(['receipts', dir, '201', '15']),
+      startTogether(runs, start),
       ...Array.from({ length: 10 }, (_, i) => store.update(async (state) => withReceipt(state, 1001 + i))),
     ]);
     const revisions = await store.read(async (state) => state.declarations[DECLARATION]?.receipts.map((r) => r.revision) ?? []);
@@ -158,15 +172,112 @@ describe('fileStateStore', () => {
 
   it('concurrent max updates of maxSeq never decrease', async () => {
     const dir = stateDir();
-    const sequences = ['5,3,9,1,2', '7,2,8,4', '4,6,10,0,3'];
-    const outputs = await Promise.all(sequences.map((seqs) => worker(['maxSeq', dir, seqs])));
-    // Cada proceso ve un maxSeq que nunca baja, y al final queda el mayor de todos.
-    for (const out of outputs) {
+    const start = join(stateDir(), 'go');
+    // Tres procesos largados juntos, de 40 actualizaciones cada uno, con seqs que se intercalan: 1, 4, 7… / 2, 5, 8… / 3, 6, 9…
+    const sequences = [0, 1, 2].map((w) => Array.from({ length: 40 }, (_, k) => 3 * k + w + 1));
+    const outputs = await startTogether(sequences.map((seqs) => worker(['maxSeq', dir, seqs.join(','), start])), start);
+    for (const [w, out] of outputs.entries()) {
       const seen = JSON.parse(out) as number[];
-      expect(seen).toEqual([...seen].sort((a, b) => a - b));
+      const seqs = sequences[w] as number[];
+      expect(seen).toHaveLength(40);
+      // Cada actualización ve al menos lo que vio y escribió la anterior del mismo proceso: el máximo nunca baja.
+      for (let k = 1; k < seen.length; k++) {
+        expect(seen[k], `proceso ${w}, actualización ${k}`).toBeGreaterThanOrEqual(Math.max(seen[k - 1] as number, seqs[k - 1] as number));
+      }
     }
-    expect(await fileStateStore(dir).read(async (state) => state.trust.maxSeq)).toBe(10);
+    expect(await fileStateStore(dir).read(async (state) => state.trust.maxSeq)).toBe(120);
   }, 60_000);
+
+  it('a second update does not start its function until the first releases the lock', async () => {
+    const dir = stateDir();
+    const store = fileStateStore(dir);
+    const events: string[] = [];
+    let finish!: () => void;
+    const holding = new Promise<void>((resolve) => (finish = resolve));
+    let entered!: () => void;
+    const inside = new Promise<void>((resolve) => (entered = resolve));
+    const first = store.update(async (state) => {
+      events.push('first');
+      entered();
+      await holding;
+      return withReceipt(state, 1);
+    }).then((written) => {
+      events.push('first released');
+      return written;
+    });
+    await inside;
+    const second = store.update(async (state) => {
+      events.push('second');
+      return withReceipt(state, 2);
+    });
+    // Mientras la primera tiene el bloqueo, la segunda espera sin entrar a su función.
+    await sleep(300);
+    expect(events).toEqual(['first']);
+    finish();
+    const [, written] = await Promise.all([first, second]);
+    expect(events).toEqual(['first', 'first released', 'second']);
+    expect(written.declarations[DECLARATION]?.receipts.map((r) => r.revision)).toEqual([1, 2]);
+  });
+
+  it('update releases only the lock it took', async () => {
+    const dir = stateDir();
+    writeState(dir, seeded());
+    const store = fileStateStore(dir);
+    const other = `${JSON.stringify({ since: '2026-09-30T12:11:00.250Z', pid: 4242, token: 'b1e0c5a2-7d3f-4e8a-9c61-2f4d8b7a3e10' })}\n`;
+    let mark: unknown;
+    await store.update(async (state) => {
+      // El bloqueo anota desde cuándo, el pid y una marca al azar.
+      const lock = JSON.parse(readFileSync(join(dir, 'state.lock'), 'utf8')) as { since: string; pid: number; token: string };
+      expect(Object.keys(lock)).toEqual(['since', 'pid', 'token']);
+      expect([parseInstant(lock.since) !== null, lock.pid]).toEqual([true, process.pid]);
+      mark = lock.token;
+      // Alguien lo borra, creyéndolo huérfano, y otro proceso toma uno nuevo.
+      unlinkSync(join(dir, 'state.lock'));
+      writeFileSync(join(dir, 'state.lock'), other);
+      return withReceipt(state, 2);
+    });
+    expect(mark).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
+    // El que termina no borra el bloqueo del otro, ni uno vacío o a medio escribir, que no son el suyo.
+    expect(readFileSync(join(dir, 'state.lock'), 'utf8')).toBe(other);
+    for (const text of ['', '{ "since": ']) {
+      unlinkSync(join(dir, 'state.lock'));
+      await store.update(async (state) => {
+        writeFileSync(join(dir, 'state.lock'), text);
+        return state;
+      });
+      expect(readFileSync(join(dir, 'state.lock'), 'utf8')).toBe(text);
+    }
+    // Ese bloqueo queda, y hasta que lo borren leer da locked; el estado quedó escrito.
+    expect(await fileStateStore(dir, { lockTimeoutMs: 50 }).read(async (state) => state).catch((error: StateError) => error.reason)).toBe('locked');
+    unlinkSync(join(dir, 'state.lock'));
+    expect((await store.read(async (state) => state)).declarations[DECLARATION]?.receipts).toHaveLength(2);
+  });
+
+  it('update never writes a state that could not be read back', async () => {
+    const dir = stateDir();
+    writeState(dir, seeded());
+    const before = stateBytes(dir);
+    const store = fileStateStore(dir);
+    // Un entero fuera de ±(2^53 − 1) cumple el schema, pero el parser no lo lee.
+    await expect(store.update(async (state) => ({ ...state, trust: { maxSeq: 2 ** 60 } }))).rejects.toThrow(
+      'el estado a escribir no se podría leer: integerRange',
+    );
+    // Un surrogate suelto: JSON.stringify lo escribe como \ud800, y el parser no lo lee.
+    await expect(store.update(async (state) => {
+      const declaration = state.declarations[DECLARATION];
+      declaration?.media.push({ path: 'obra-\ud800.pdf', delivery: 1, size: 1, sha256: SHA256 });
+      return state;
+    })).rejects.toThrow('el estado a escribir no se podría leer: loneSurrogate');
+    // Lo que no cumple el schema una vez escrito tampoco: NaN se escribe como null.
+    await expect(store.update(async (state) => ({ ...state, trust: { maxSeq: Number.NaN } }))).rejects.toThrow(
+      'el estado a escribir no cumple jdx-state.schema.json: /trust/maxSeq type',
+    );
+    // Nada cambió: ni state.json, ni temporales, ni el bloqueo.
+    expect(stateBytes(dir)).toBe(before);
+    expect(readdirSync(dir)).toEqual(['state.json']);
+    expect((await store.update(async (state) => ({ ...state, trust: { maxSeq: 2 ** 53 - 1 } }))).trust.maxSeq).toBe(2 ** 53 - 1);
+    expect(await store.read(async (state) => state.trust.maxSeq)).toBe(2 ** 53 - 1);
+  });
 
   it('read waits while the writer lock exists', async () => {
     const dir = stateDir();
@@ -216,12 +327,12 @@ describe('fileStateStore', () => {
     expect(JSON.parse(stateBytes(dir))).toEqual(seeded());
   });
 
-  it('a writer killed with SIGKILL leaves state.json intact and the lock reported as locked', async () => {
+  it('a writer killed with SIGKILL while its update function is pending leaves state.json intact and the lock reported as locked', async () => {
     const dir = stateDir();
     writeState(dir, seeded());
     const before = stateBytes(dir);
     const started = new Date();
-    // Otro proceso toma el bloqueo y lo matan adentro de la actualización.
+    // Otro proceso toma el bloqueo y lo matan con la función de su actualización sin terminar, antes de escribir.
     const child = spawn(process.execPath, ['--import', 'tsx', WORKER, 'hold', dir], { cwd: ROOT });
     await new Promise<void>((resolve, reject) => {
       child.stdout.on('data', (chunk: Buffer) => {

@@ -5,22 +5,22 @@
       "performing": {
         "es": "ejecución",
         "pt": "execução",
-        "en": "performing"
+        "en": "performing rights"
       },
       "mechanical": {
         "es": "reproducción mecánica",
         "pt": "reprodução mecânica",
-        "en": "mechanical"
+        "en": "mechanical rights"
       },
       "synchronization": {
         "es": "sincronización",
         "pt": "sincronização",
-        "en": "synchronization"
+        "en": "synchronization rights"
       },
       "print": {
         "es": "impresión",
         "pt": "impressão",
-        "en": "print"
+        "en": "print rights"
       }
     },
     "part": {
@@ -39,93 +39,93 @@
       "signatureDate": {
         "es": "la fecha de firma (signatureDate)",
         "pt": "a data de assinatura (signatureDate)",
-        "en": "signature date (signatureDate)"
+        "en": "the signature date (signatureDate)"
       },
       "territories": {
         "es": "el territorio (territories)",
         "pt": "o território (territories)",
-        "en": "territories"
+        "en": "the territory (territories)"
       },
       "term": {
         "es": "el plazo (term)",
         "pt": "o prazo (term)",
-        "en": "term"
+        "en": "the term"
       },
       "grantor": {
-        "es": "quien concede los derechos (grantor)",
-        "pt": "quem concede os direitos (grantor)",
-        "en": "grantor"
+        "es": "la parte que concede los derechos (grantor)",
+        "pt": "a parte que concede os direitos (grantor)",
+        "en": "the party granting the rights (grantor)"
       },
       "grantee": {
-        "es": "quien los recibe (grantee)",
-        "pt": "quem os recebe (grantee)",
-        "en": "grantee"
+        "es": "la parte que recibe los derechos (grantee)",
+        "pt": "a parte que recebe os direitos (grantee)",
+        "en": "the party receiving the rights (grantee)"
       },
       "coWriter": {
-        "es": "el segundo coautor (coWriter)",
-        "pt": "o segundo coautor (coWriter)",
-        "en": "second co-writer (coWriter)"
+        "es": "el mínimo de dos coautores (coWriter)",
+        "pt": "o mínimo de dois coautores (coWriter)",
+        "en": "the minimum of two co-writers (coWriter)"
       },
       "via": {
-        "es": "a quién representa (via)",
-        "pt": "quem representa (via)",
-        "en": "via"
+        "es": "el titular representado (via)",
+        "pt": "o titular representado (via)",
+        "en": "the represented rights holder (via)"
       },
       "agreement": {
         "es": "el contrato (agreement)",
         "pt": "o contrato (agreement)",
-        "en": "agreement"
+        "en": "the agreement"
       },
       "size": {
         "es": "el tamaño (size)",
         "pt": "o tamanho (size)",
-        "en": "size"
+        "en": "the size"
       },
       "sha256": {
         "es": "el sha256",
         "pt": "o sha256",
-        "en": "sha256"
+        "en": "the sha256"
       },
       "path": {
         "es": "la ruta (path)",
         "pt": "o caminho (path)",
-        "en": "path"
+        "en": "the path"
       },
       "delivery": {
         "es": "la entrega en que viajó (delivery)",
         "pt": "a entrega em que viajou (delivery)",
-        "en": "delivery"
+        "en": "the delivery it travelled in (delivery)"
       },
       "publicationDate": {
         "es": "la fecha de publicación (publicationDate)",
         "pt": "a data de publicação (publicationDate)",
-        "en": "publication date (publicationDate)"
+        "en": "the publication date (publicationDate)"
       },
       "legalDepositCopy": {
         "es": "el ejemplar del depósito legal (legalDepositCopy)",
         "pt": "o exemplar do depósito legal (legalDepositCopy)",
-        "en": "legal deposit copy (legalDepositCopy)"
+        "en": "the legal deposit copy (legalDepositCopy)"
       },
       "registration": {
-        "es": "la inscripción como obra publicada",
-        "pt": "o registro como obra publicada",
-        "en": "registration as a published work"
+        "es": "la inscripción en {registry} como obra publicada (registrations)",
+        "pt": "o registro em {registry} como obra publicada (registrations)",
+        "en": "the {registry} registration as a published work (registrations)"
       },
       "retailPricePercent": {
-        "es": "regalía sobre el precio de venta",
-        "pt": "royalty sobre o preço de venda",
-        "en": "retail price royalty"
+        "es": "la regalía sobre el precio de venta (retailPricePercent)",
+        "pt": "os direitos sobre o preço de venda (retailPricePercent)",
+        "en": "the retail price royalty (retailPricePercent)"
       },
       "arrangementRetailPricePercent": {
-        "es": "regalía de orquestaciones y transcripciones",
-        "pt": "royalty de orquestrações e transcrições",
-        "en": "arrangement royalty"
+        "es": "la regalía de orquestaciones y transcripciones (arrangementRetailPricePercent)",
+        "pt": "os direitos sobre orquestrações e transcrições (arrangementRetailPricePercent)",
+        "en": "the arrangement royalty (arrangementRetailPricePercent)"
       }
     },
     "reason": {
       "missing": {
         "es": "falta",
-        "pt": "está faltando",
+        "pt": "está ausente",
         "en": "is missing"
       },
       "invalid": {
@@ -139,13 +139,13 @@
         "en": "does not exist"
       },
       "requiresValidator": {
-        "es": "el perfil pide {required}",
-        "pt": "o perfil pede {required}",
+        "es": "el perfil requiere {required}",
+        "pt": "o perfil exige {required}",
         "en": "the profile requires {required}"
       },
       "minVersion": {
-        "es": "la lista de confianza pide {required}",
-        "pt": "a lista de confiança pede {required}",
+        "es": "la lista de confianza requiere {required}",
+        "pt": "a lista de confiança exige {required}",
         "en": "the trust list requires {required}"
       },
       "unreadable": {
@@ -169,8 +169,8 @@
         "en": "has been locked since {lockedSince}"
       },
       "unknownProfile": {
-        "es": "el validador no trae {profile}",
-        "pt": "o validador não traz {profile}",
+        "es": "el validador no incluye {profile}",
+        "pt": "o validador não inclui {profile}",
         "en": "the validator does not bundle {profile}"
       },
       "invalidProfile": {
@@ -179,9 +179,9 @@
         "en": "it does not conform to the profile schema"
       },
       "unknownCatalog": {
-        "es": "pide el catálogo {catalog}, que el validador no trae",
-        "pt": "pede o catálogo {catalog}, que o validador não traz",
-        "en": "it asks for catalog {catalog}, which the validator does not bundle"
+        "es": "requiere el catálogo {catalog}, que el validador no incluye",
+        "pt": "exige o catálogo {catalog}, que o validador não inclui",
+        "en": "it requires catalog {catalog}, which the validator does not bundle"
       },
       "unknownRule": {
         "es": "la regla {ruleId} no está en el catálogo",
@@ -299,9 +299,9 @@
         "en": "does not verify"
       },
       "header": {
-        "es": "tiene un encabezado que no cumple con JDX",
-        "pt": "tem um cabeçalho que não cumpre o JDX",
-        "en": "has a header that does not meet JDX"
+        "es": "tiene un encabezado que no cumple lo que exige JDX",
+        "pt": "tem um cabeçalho que não cumpre o que o JDX exige",
+        "en": "has a header that does not meet the JDX requirements"
       },
       "alg": {
         "es": "no usa ES256",
@@ -369,14 +369,21 @@
         "en": "is more than 5 minutes after receipt"
       },
       "reciprocal": {
-        "es": "no tiene su referencia de vuelta",
-        "pt": "não tem sua referência de volta",
-        "en": "has no reference back"
+        "es": "no tiene su referencia recíproca",
+        "pt": "não tem sua referência recíproca",
+        "en": "has no reciprocal reference"
       },
       "agreementWorks": {
-        "es": "es a un contrato que no incluye la obra",
-        "pt": "é a um contrato que não inclui a obra",
+        "es": "apunta a un contrato que no incluye la obra",
+        "pt": "aponta para um contrato que não inclui a obra",
         "en": "points to an agreement that does not cover the work"
+      }
+    },
+    "flag": {
+      "writer": {
+        "es": " y, con filas de autor, tienen que sumar exactamente 100",
+        "pt": " e, com linhas de autor, devem somar exatamente 100",
+        "en": " and, with writer rows, they must total exactly 100"
       }
     }
   },

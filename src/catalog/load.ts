@@ -71,6 +71,14 @@ function check(validators: SchemaValidators, rule: CatalogRule, name: RuleSchema
 function checkMessages(rule: CatalogRule): void {
   const declared = new Set([...propertiesOf(rule.resultParamsSchema), ...propertiesOf(rule.contextSchema)]);
   const undeclared = (name: string) => !declared.has(name);
+  const checkTerm = (formatter: TermFormatter, name: string, key: string, lang: Lang): void => {
+    const term = termOf(formatter, key, lang);
+    if (term === undefined) throw new Error(`${rule.id}: {${name}:${formatter}} no tiene término para ${key}`);
+    const inner = messagePlaceholders(term).find((p) => undeclared(p.name));
+    if (inner !== undefined) {
+      throw new Error(`${rule.id}: el término ${key} de ${formatter} usa {${inner.name}}, que no está en params ni en context`);
+    }
+  };
   for (const lang of LANGS) {
     for (const { name, formatter } of messagePlaceholders(rule.message[lang])) {
       if (undeclared(name)) throw new Error(`${rule.id}: el mensaje ${lang} usa {${name}}, que no está en params ni en context`);
@@ -79,14 +87,12 @@ function checkMessages(rule: CatalogRule): void {
         throw new Error(`${rule.id}: el mensaje ${lang} usa el formateador ${formatter}, que no existe`);
       }
       if (formatter === 'others' || formatter === 'paren') continue;
-      for (const value of enumOf(rule.resultParamsSchema, name)) {
-        const term = termOf(formatter as TermFormatter, value, lang);
-        if (term === undefined) throw new Error(`${rule.id}: {${name}:${formatter}} no tiene término para ${value}`);
-        const inner = messagePlaceholders(term).find((p) => undeclared(p.name));
-        if (inner !== undefined) {
-          throw new Error(`${rule.id}: el término ${value} de ${formatter} usa {${inner.name}}, que no está en params ni en context`);
-        }
+      if (formatter === 'flag') {
+        if (propertyOf(rule.resultParamsSchema, name)?.type !== 'boolean') throw new Error(`${rule.id}: {${name}:flag} pide un dato booleano de params`);
+        checkTerm('flag', name, name, lang);
+        continue;
       }
+      for (const value of enumOf(rule.resultParamsSchema, name)) checkTerm(formatter as TermFormatter, name, value, lang);
     }
   }
   const used = (lang: Lang): string =>
@@ -100,9 +106,15 @@ function propertiesOf(schema: object): string[] {
   return typeof properties === 'object' && properties !== null ? Object.keys(properties) : [];
 }
 
+/** El schema de una propiedad de un schema de objeto, o undefined. */
+function propertyOf(schema: object, name: string): { type?: unknown; enum?: unknown } | undefined {
+  const properties = (schema as { properties?: Record<string, { type?: unknown; enum?: unknown }> }).properties;
+  return typeof properties === 'object' && properties !== null && Object.hasOwn(properties, name) ? properties[name] : undefined;
+}
+
 /** Los valores de una propiedad con `enum` (un texto cerrado), o ninguno. */
 function enumOf(schema: object, name: string): string[] {
-  const property = (schema as { properties?: Record<string, { enum?: unknown }> }).properties?.[name];
+  const property = propertyOf(schema, name);
   return Array.isArray(property?.enum) ? property.enum.filter((v): v is string => typeof v === 'string') : [];
 }
 

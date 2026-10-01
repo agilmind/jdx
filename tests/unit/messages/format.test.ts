@@ -51,7 +51,7 @@ describe('mensajes', () => {
     const shr002 = rule('JDX-SHR-002');
     const cell = (countries: number) => ({ right: 'mechanical', country: 'AR', countries, sum: 110, cap: 100 });
     expect(formatMessage(shr002, 'es', cell(1))).toBe(
-      'Las filas de cobro suman 110 en reproducción mecánica en AR; el máximo es 100, y con filas de autor tienen que dar 100.',
+      'Las filas de cobro suman 110 en reproducción mecánica en AR; el máximo es 100.',
     );
     expect(formatMessage(shr002, 'es', cell(1))).not.toContain('y otro');
     expect(formatMessage(shr002, 'es', cell(2))).toContain('en AR y otro país;');
@@ -64,15 +64,84 @@ describe('mensajes', () => {
     expect(formatMessage(shr002, 'en', cell(249))).toContain('in AR and 248 other countries;');
   });
 
+  it('SHR-002 asks for exactly 100 only when the cell has writer rows', () => {
+    const shr002 = rule('JDX-SHR-002');
+    const cell = { right: 'performing', country: 'AR', countries: 1, sum: 90, cap: 100 };
+    expect(formatMessage(shr002, 'es', { ...cell, writer: true })).toBe(
+      'Las filas de cobro suman 90 en ejecución en AR; el máximo es 100 y, con filas de autor, tienen que sumar exactamente 100.',
+    );
+    expect(formatMessage(shr002, 'pt', { ...cell, writer: true })).toBe(
+      'As linhas de recebimento somam 90 em execução em AR; o máximo é 100 e, com linhas de autor, devem somar exatamente 100.',
+    );
+    expect(formatMessage(shr002, 'en', { ...cell, writer: true })).toBe(
+      'The collection rows add up to 90 for performing rights in AR; the maximum is 100 and, with writer rows, they must total exactly 100.',
+    );
+    // Sin filas de autor (writer ausente o distinto de true), solo el máximo.
+    for (const writer of [undefined, false, 'true']) {
+      const params = writer === undefined ? { ...cell, sum: 110 } : { ...cell, sum: 110, writer };
+      expect(formatMessage(shr002, 'en', params), String(writer)).toBe('The collection rows add up to 110 for performing rights in AR; the maximum is 100.');
+    }
+  });
+
+  it('a term at the start of a message takes a capital letter', () => {
+    expect(formatMessage(rule('JDX-ENV-010'), 'es', { option: '--received-at', reason: 'missing' })).toBe('Falta la opción --received-at.');
+    expect(formatMessage(rule('JDX-ENV-010'), 'es', { option: '--env', reason: 'invalid' })).toBe('No es válida la opción --env.');
+    expect(formatMessage(rule('JDX-ENV-010'), 'pt', { option: '--received-at', reason: 'missing' })).toBe('A opção --received-at está ausente.');
+    const med002 = { path: 'contrato.pdf', field: 'size' };
+    expect(formatMessage(rule('JDX-MED-002'), 'es', med002)).toBe('El tamaño (size) del archivo contrato.pdf no coincide con lo declarado.');
+    expect(formatMessage(rule('JDX-MED-002'), 'pt', med002)).toBe('O tamanho (size) do arquivo contrato.pdf não confere com o declarado.');
+    expect(formatMessage(rule('JDX-MED-002'), 'en', med002)).toBe('The size of file contrato.pdf does not match the declaration.');
+    // En medio de la frase, el término va como está; un valor sin término, también al comienzo.
+    expect(formatMessage(rule('JDX-ENV-001'), 'es', { reason: 'missing' })).toBe('Hay firma y falta la lista de confianza.');
+    expect(formatMessage(rule('JDX-ENV-010'), 'es', { option: '--x', reason: 'x_new' })).toBe('x_new la opción --x.');
+  });
+
+  it('field terms carry their article and end with the field name, unless they are just the name', () => {
+    const articles: Record<Lang, RegExp> = { es: /^(el|la|los|las) /u, pt: /^(o|a|os|as) /u, en: /^the /u };
+    for (const [key, texts] of Object.entries(MESSAGE_TERMS.field)) {
+      for (const lang of LANGS) {
+        const term = texts[lang];
+        expect(term, `${key} ${lang}`).toMatch(articles[lang]);
+        const justTheName = term.replace(articles[lang], '') === key;
+        expect(/ \([A-Za-z0-9]+\)$/u.test(term), `${key} ${lang}: ${term}`).toBe(!justTheName);
+      }
+    }
+  });
+
+  it('the wording of the review: neutral Spanish, Portuguese and English', () => {
+    const say = (id: string, lang: Lang, params: { [k: string]: JsonValue }, context?: { [k: string]: string }) => formatMessage(rule(id), lang, params, context);
+    expect(say('JDX-REF-003', 'es', { value: 'm2', found: 'audio', expected: ['registrationFiling'] })).toBe('La referencia m2 es de tipo audio; se esperaba registrationFiling.');
+    expect(say('JDX-REF-003', 'pt', { value: 'm2', found: 'audio', expected: ['registrationFiling'] })).toBe('A referência m2 é do tipo audio; esperado: registrationFiling.');
+    expect(say('JDX-REF-004', 'es', { value: 'a2', reason: 'agreementWorks' })).toBe('La referencia a a2 apunta a un contrato que no incluye la obra.');
+    expect(say('JDX-REF-004', 'pt', { value: 'a2', reason: 'agreementWorks' })).toBe('A referência a a2 aponta para um contrato que não inclui a obra.');
+    const env007 = { reason: 'requiresValidator', required: '>=2.0.0', version: '1.0.0' };
+    expect(say('JDX-ENV-007', 'es', env007)).toBe('El validador 1.0.0 es demasiado antiguo: el perfil requiere >=2.0.0.');
+    expect(say('JDX-ENV-007', 'pt', env007)).toBe('O validador 1.0.0 não é suficiente: o perfil exige >=2.0.0.');
+    expect(say('JDX-ENV-007', 'en', env007)).toBe('Validator 1.0.0 is too old: the profile requires >=2.0.0.');
+    const agr006 = { field: 'retailPricePercent', percent: 15, min: 20 };
+    expect(say('JDX-AGR-006', 'es', agr006, { agreement: 'a1' })).toBe('El contrato a1 fija la regalía sobre el precio de venta (retailPricePercent) en el 15 %; el mínimo es 20 %.');
+    expect(say('JDX-AGR-006', 'pt', agr006, { agreement: 'a1' })).toBe('O contrato a1 fixa os direitos sobre o preço de venda (retailPricePercent) em 15 %; o mínimo é 20 %.');
+    expect(say('JDX-AGR-006', 'en', agr006, { agreement: 'a1' })).toBe('Agreement a1 sets the retail price royalty (retailPricePercent) at 15%; the minimum is 20%.');
+    expect(say('JDX-SHR-004', 'en', { missing: 'via' }, { party: 'p5' })).toBe('The publisher row of p5 lacks the represented rights holder (via).');
+    expect(say('JDX-MED-010', 'en', { missing: 'delivery' }, { media: 'm4' })).toBe('Media m4 lacks the delivery it travelled in (delivery).');
+    expect(say('JDX-CMP-003', 'en', { registry: 'DNDA_AR', part: 'lyrics' }, { work: 'w2' })).toBe('Work w2 has no DNDA_AR registration for its lyrics.');
+    expect(say('JDX-EDN-001', 'es', { missing: 'registration', registry: 'DNDA_AR' })).toBe('A la edición le falta la inscripción en DNDA_AR como obra publicada (registrations).');
+    // Ninguna forma regional del español ni las que se corrigieron en portugués e inglés.
+    const all = catalog.rules.flatMap((r) => [r.message, r.predicate]).concat(Object.values(MESSAGE_TERMS).flatMap((terms) => Object.values(terms)));
+    expect(all.filter((texts) => /\bacá\b|no alcanza|\bpiso\b/u.test(texts.es)).map((texts) => texts.es)).toEqual([]);
+    expect(all.filter((texts) => /aqui vai|está faltando|não basta|\broyalty\b|\bpiso\b/u.test(texts.pt)).map((texts) => texts.pt)).toEqual([]);
+    expect(all.filter((texts) => /\d %|is not enough|must make|\bhas no (via|delivery)\b|fewer than two coWriter\b/u.test(texts.en)).map((texts) => texts.en)).toEqual([]);
+  });
+
   it('pt and en render', () => {
     expect(formatMessage(rule('JDX-SHR-008'), 'pt', SHR008)).toBe(
       'As linhas de editora do contrato a1 somam 37,5 em execução em ES; o contrato dá 25.',
     );
     expect(formatMessage(rule('JDX-SHR-008'), 'en', SHR008)).toBe(
-      'The publisher rows of agreement a1 add up to 37.5 for performing in ES; the agreement gives 25.',
+      'The publisher rows of agreement a1 add up to 37.5 for performing rights in ES; the agreement gives 25.',
     );
     expect(formatMessage(rule('JDX-AGR-003'), 'pt', { percent: 30, cap: 25 })).toBe('O contrato dá à editora 30 %; o teto é 25 %.');
-    expect(formatMessage(rule('JDX-AGR-003'), 'en', { percent: 30, cap: 25 })).toBe('The agreement gives the publisher 30 %; the cap is 25 %.');
+    expect(formatMessage(rule('JDX-AGR-003'), 'en', { percent: 30, cap: 25 })).toBe('The agreement gives the publisher 30%; the cap is 25%.');
     // Las razones, los datos que faltan y las partes también se traducen.
     expect(formatMessage(rule('JDX-ENV-006'), 'pt', { reason: 'retiredRule', ruleId: 'JDX-SHR-001' })).toBe(
       'O perfil não pode ser aplicado: a regra JDX-SHR-001 está retirada.',
@@ -80,7 +149,9 @@ describe('mensajes', () => {
     expect(formatMessage(rule('JDX-ENV-005'), 'en', { reason: 'locked', lockedSince: '2026-09-30T09:12:00-03:00' })).toBe(
       "The receiver's state has been locked since 2026-09-30T09:12:00-03:00.",
     );
-    expect(formatMessage(rule('JDX-AGR-002'), 'en', { missing: 'coWriter' }, { agreement: 'a3' })).toBe('Agreement a3 has no second co-writer (coWriter).');
+    // Con cero o con un coautor, el mismo texto: falta el mínimo de dos.
+    expect(formatMessage(rule('JDX-AGR-002'), 'es', { missing: 'coWriter' }, { agreement: 'a3' })).toBe('Al contrato a3 le falta el mínimo de dos coautores (coWriter).');
+    expect(formatMessage(rule('JDX-AGR-002'), 'en', { missing: 'coWriter' }, { agreement: 'a3' })).toBe('Agreement a3 lacks the minimum of two co-writers (coWriter).');
     expect(formatMessage(rule('JDX-CMP-003'), 'pt', { registry: 'DNDA_AR', part: 'lyrics' }, { work: 'w2' })).toBe(
       'Falta o registro DNDA_AR da letra da obra w2.',
     );
@@ -89,10 +160,10 @@ describe('mensajes', () => {
   it('rights are translated', () => {
     const shr002 = rule('JDX-SHR-002');
     const expected: Record<string, Record<Lang, string>> = {
-      performing: { es: 'ejecución', pt: 'execução', en: 'performing' },
-      mechanical: { es: 'reproducción mecánica', pt: 'reprodução mecânica', en: 'mechanical' },
-      synchronization: { es: 'sincronización', pt: 'sincronização', en: 'synchronization' },
-      print: { es: 'impresión', pt: 'impressão', en: 'print' },
+      performing: { es: 'ejecución', pt: 'execução', en: 'performing rights' },
+      mechanical: { es: 'reproducción mecánica', pt: 'reprodução mecânica', en: 'mechanical rights' },
+      synchronization: { es: 'sincronización', pt: 'sincronização', en: 'synchronization rights' },
+      print: { es: 'impresión', pt: 'impressão', en: 'print rights' },
     };
     expect(MESSAGE_TERMS.right).toEqual(expected);
     const at = { es: ' en ', pt: ' em ', en: ' for ' };
@@ -122,7 +193,7 @@ describe('mensajes', () => {
     // Cada razón de ENV-006 se lee completa, con el dato que la acompaña.
     const env006 = rule('JDX-ENV-006');
     expect(formatMessage(env006, 'es', { reason: 'unknownProfile', profile: 'sadaic/9.9' })).toBe(
-      'El perfil no se puede aplicar: el validador no trae sadaic/9.9.',
+      'El perfil no se puede aplicar: el validador no incluye sadaic/9.9.',
     );
     expect(formatMessage(env006, 'es', { reason: 'notImplemented', ruleId: 'JDX-IDN-004' })).toBe(
       'El perfil no se puede aplicar: el validador no implementa la regla JDX-IDN-004.',
@@ -161,6 +232,16 @@ describe('mensajes', () => {
       example: { params: { reason: 'retiredRule' } },
     }));
     expect(() => loadCatalog(withoutRuleId, validators)).toThrow('JDX-ENV-006: el término retiredRule de reason usa {ruleId}, que no está en params ni en context');
+    // flag pide un dato booleano de params y un término con su nombre.
+    const flagOn = (name: string) =>
+      withRule('JDX-SHR-002', (r) => {
+        const texts = r.message as Record<Lang, string>;
+        const message = Object.fromEntries(LANGS.map((lang) => [lang, texts[lang].replace('{writer:flag}', `{${name}:flag}`)]));
+        const schema = r.resultParamsSchema as { properties: object };
+        return { ...r, message, resultParamsSchema: { ...schema, properties: { ...schema.properties, shared: { type: 'boolean', const: true } } } };
+      });
+    expect(() => loadCatalog(flagOn('cap'), validators)).toThrow('JDX-SHR-002: {cap:flag} pide un dato booleano de params');
+    expect(() => loadCatalog(flagOn('shared'), validators)).toThrow('JDX-SHR-002: {shared:flag} no tiene término para shared');
   });
 
   it('an optional value renders in parentheses only when present', () => {

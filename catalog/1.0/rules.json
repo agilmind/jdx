@@ -53,14 +53,14 @@
       "since": "1.0",
       "implemented": true,
       "predicate": {
-        "es": "Contrato sin signatureDate, territories o term; si no es writerSplit, sin grantor o sin grantee; si es writerSplit, con menos de dos coWriter. Un resultado por dato que falta.",
-        "pt": "Contrato sem signatureDate, territories ou term; se não for writerSplit, sem grantor ou sem grantee; se for writerSplit, com menos de dois coWriter. Um resultado por dado que falta.",
-        "en": "Agreement without signatureDate, territories or term; if it is not writerSplit, without grantor or grantee; if it is writerSplit, with fewer than two coWriter. One result per missing datum."
+        "es": "Contrato sin signatureDate, territories o term; si no es writerSplit, sin grantor o sin grantee; si es writerSplit, con menos de dos coautores (coWriter). Un resultado por dato que falta.",
+        "pt": "Contrato sem signatureDate, territories ou term; se não for writerSplit, sem grantor ou sem grantee; se for writerSplit, com menos de dois coautores (coWriter). Um resultado por dado que falta.",
+        "en": "Agreement without signatureDate, territories or term; if it is not writerSplit, without grantor or grantee; if it is writerSplit, with fewer than two co-writers (coWriter). One result per missing datum."
       },
       "message": {
         "es": "Al contrato {agreement} le falta {missing:field}.",
         "pt": "Falta {missing:field} no contrato {agreement}.",
-        "en": "Agreement {agreement} has no {missing:field}."
+        "en": "Agreement {agreement} lacks {missing:field}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -123,7 +123,7 @@
       "message": {
         "es": "El contrato da a la editora el {percent} %; el tope es {cap} %.",
         "pt": "O contrato dá à editora {percent} %; o teto é {cap} %.",
-        "en": "The agreement gives the publisher {percent} %; the cap is {cap} %."
+        "en": "The agreement gives the publisher {percent}%; the cap is {cap}%."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -359,9 +359,9 @@
         "en": "terms.values.retailPricePercent or arrangementRetailPricePercent below its minimum (retailMin, arrangementRetailMin)."
       },
       "message": {
-        "es": "El contrato {agreement} da {percent} % de {field:field}; el mínimo es {min} %.",
-        "pt": "O contrato {agreement} dá {percent} % de {field:field}; o mínimo é {min} %.",
-        "en": "Agreement {agreement} gives {percent} % {field:field}; the minimum is {min} %."
+        "es": "El contrato {agreement} fija {field:field} en el {percent} %; el mínimo es {min} %.",
+        "pt": "O contrato {agreement} fixa {field:field} em {percent} %; o mínimo é {min} %.",
+        "en": "Agreement {agreement} sets {field:field} at {percent}%; the minimum is {min}%."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -625,7 +625,7 @@
       "message": {
         "es": "Falta el registro {registry} de la {part:part} de la obra {work}.",
         "pt": "Falta o registro {registry} da {part:part} da obra {work}.",
-        "en": "The {part:part} of work {work} has no {registry} registration."
+        "en": "Work {work} has no {registry} registration for its {part:part}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -1154,7 +1154,7 @@
       "message": {
         "es": "A la edición le falta {missing:field}.",
         "pt": "Falta {missing:field} na edição.",
-        "en": "The edition has no {missing:field}."
+        "en": "The edition lacks {missing:field}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -1216,7 +1216,7 @@
         "en": "There is a .jws and the trust list is missing or unreadable: it is not a general JWS JSON serialization, its content does not conform to its schema, it repeats a kid or it carries a key that expires more than 2 years after its activeAt."
       },
       "message": {
-        "es": "Hay firma y la lista de confianza {reason:reason}.",
+        "es": "Hay firma y {reason:reason} la lista de confianza.",
         "pt": "Há assinatura e a lista de confiança {reason:reason}.",
         "en": "There is a signature and the trust list {reason:reason}."
       },
@@ -1341,9 +1341,9 @@
         "en": "The trust list's seq is lower than trust.maxSeq in the receiver's state."
       },
       "message": {
-        "es": "La lista de confianza es la {seq}, más vieja que la {maxSeq}, que ya se vio.",
-        "pt": "A lista de confiança é a {seq}, mais antiga que a {maxSeq}, que já foi vista.",
-        "en": "The trust list is number {seq}, older than number {maxSeq}, already seen."
+        "es": "La lista de confianza es la número {seq}, anterior a la número {maxSeq}, que ya se recibió.",
+        "pt": "A lista de confiança é a número {seq}, anterior à número {maxSeq}, que já foi recebida.",
+        "en": "The trust list is number {seq}, older than number {maxSeq}, which was already received."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -1656,9 +1656,9 @@
         "en": "The profile's requiresValidator or the trust list's validator.minVersion require a newer validator."
       },
       "message": {
-        "es": "El validador {version} no alcanza: {reason:reason}.",
-        "pt": "O validador {version} não basta: {reason:reason}.",
-        "en": "Validator {version} is not enough: {reason:reason}."
+        "es": "El validador {version} es demasiado antiguo: {reason:reason}.",
+        "pt": "O validador {version} não é suficiente: {reason:reason}.",
+        "en": "Validator {version} is too old: {reason:reason}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -1709,13 +1709,13 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "La firma pedida explícitamente es más débil que el piso de firma del perfil. Sin pedirla no aplica: vale la más fuerte entre la del entorno y el piso.",
-        "pt": "A assinatura pedida explicitamente é mais fraca que o piso de assinatura do perfil. Sem pedi-la não se aplica: vale a mais forte entre a do ambiente e o piso.",
+        "es": "La firma pedida explícitamente es más débil que la firma mínima del perfil. Sin pedirla no aplica: vale la más fuerte entre la del entorno y la mínima.",
+        "pt": "A assinatura pedida explicitamente é mais fraca que a assinatura mínima do perfil. Sem pedi-la não se aplica: vale a mais forte entre a do ambiente e a mínima.",
         "en": "The explicitly requested signature policy is weaker than the profile's signature floor. Without the option it does not apply: the stronger of the environment default and the floor is used."
       },
       "message": {
-        "es": "La firma pedida ({signature}) es más débil que el piso del perfil ({floor}).",
-        "pt": "A assinatura pedida ({signature}) é mais fraca que o piso do perfil ({floor}).",
+        "es": "La firma pedida ({signature}) es más débil que la mínima del perfil ({floor}).",
+        "pt": "A assinatura pedida ({signature}) é mais fraca que a mínima do perfil ({floor}).",
         "en": "The requested signature policy ({signature}) is weaker than the profile's floor ({floor})."
       },
       "profileParamsSchema": {
@@ -1828,7 +1828,7 @@
         "en": "Invalid, unknown or missing options. In production, the time of receipt and the receiver's state are required."
       },
       "message": {
-        "es": "La opción {option} {reason:reason}.",
+        "es": "{reason:reason} la opción {option}.",
         "pt": "A opção {option} {reason:reason}.",
         "en": "Option {option} {reason:reason}."
       },
@@ -1940,9 +1940,9 @@
       "since": "1.0",
       "implemented": true,
       "predicate": {
-        "es": "IPI Name Number que no son 11 dígitos.",
-        "pt": "IPI Name Number que não são 11 dígitos.",
-        "en": "IPI Name Number that is not 11 digits."
+        "es": "IPI Name Number con formato inválido: 11 dígitos, sin separadores.",
+        "pt": "IPI Name Number com formato inválido: 11 dígitos, sem separadores.",
+        "en": "IPI Name Number with an invalid format: 11 digits, without separators."
       },
       "message": {
         "es": "El IPI Name Number {value} no tiene 11 dígitos.",
@@ -2435,9 +2435,9 @@
         "en": "With the delivery folder: the size or sha256 of the delivered file is not the declared one."
       },
       "message": {
-        "es": "No coincide {field:field} del archivo {path} con lo declarado.",
-        "pt": "Não confere {field:field} do arquivo {path} com o declarado.",
-        "en": "The {field:field} of file {path} does not match the declaration."
+        "es": "{field:field} del archivo {path} no coincide con lo declarado.",
+        "pt": "{field:field} do arquivo {path} não confere com o declarado.",
+        "en": "{field:field} of file {path} does not match the declaration."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -2873,7 +2873,7 @@
       "message": {
         "es": "Al archivo {media} le falta {missing:field}.",
         "pt": "Falta {missing:field} no arquivo {media}.",
-        "en": "Media {media} has no {missing:field}."
+        "en": "Media {media} lacks {missing:field}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -3347,8 +3347,8 @@
         "en": "Reference to an agreement or media of a type or kind other than those of its x-jdx-ref-type annotation."
       },
       "message": {
-        "es": "La referencia {value} es de tipo {found}; acá va {expected}.",
-        "pt": "A referência {value} é do tipo {found}; aqui vai {expected}.",
+        "es": "La referencia {value} es de tipo {found}; se esperaba {expected}.",
+        "pt": "A referência {value} é do tipo {found}; esperado: {expected}.",
         "en": "Reference {value} is of type {found}; expected {expected}."
       },
       "profileParamsSchema": {
@@ -3633,9 +3633,9 @@
         "en": "A shares cell (right by country) adds up to more than 100, or other than 100 if it has a writer row, with a tolerance of 0.01. One result per work and right, with the first failing country and how many fail."
       },
       "message": {
-        "es": "Las filas de cobro suman {sum} en {right:right} en {country}{countries:others}; el máximo es {cap}, y con filas de autor tienen que dar 100.",
-        "pt": "As linhas de recebimento somam {sum} em {right:right} em {country}{countries:others}; o máximo é {cap} e, com linhas de autor, devem dar 100.",
-        "en": "The collection rows add up to {sum} for {right:right} in {country}{countries:others}; the maximum is {cap}, and with writer rows they must make 100."
+        "es": "Las filas de cobro suman {sum} en {right:right} en {country}{countries:others}; el máximo es {cap}{writer:flag}.",
+        "pt": "As linhas de recebimento somam {sum} em {right:right} em {country}{countries:others}; o máximo é {cap}{writer:flag}.",
+        "en": "The collection rows add up to {sum} for {right:right} in {country}{countries:others}; the maximum is {cap}{writer:flag}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -3769,7 +3769,7 @@
       "message": {
         "es": "A la fila de editora de {party} le falta {missing:field}.",
         "pt": "Falta {missing:field} na linha de editora de {party}.",
-        "en": "The publisher row of {party} has no {missing:field}."
+        "en": "The publisher row of {party} lacks {missing:field}."
       },
       "profileParamsSchema": {
         "type": "object",
@@ -4096,8 +4096,8 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "Falta el .jws. Es un aviso si la firma es opcional (solo si el piso del perfil lo permite) y un error si es obligatoria.",
-        "pt": "Falta o .jws. É um aviso se a assinatura for opcional (só se o piso do perfil permitir) e um erro se for obrigatória.",
+        "es": "Falta el .jws. Es un aviso si la firma es opcional (solo si la firma mínima del perfil lo permite) y un error si es obligatoria.",
+        "pt": "Falta o .jws. É um aviso se a assinatura for opcional (só se a assinatura mínima do perfil permitir) e um erro se for obrigatória.",
         "en": "The .jws is missing. It is a warning when the signature is optional (only if the profile's floor allows it) and an error when it is required."
       },
       "message": {

@@ -8,15 +8,16 @@
   "properties": {
     "catalog": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
     "terms": {
-      "$comment": "El término de cada valor, por formateador: {nombre:right}, {nombre:part}, {nombre:field} y {nombre:reason}.",
+      "$comment": "El término de cada valor, por formateador: {nombre:right}, {nombre:part}, {nombre:field} y {nombre:reason}; en flag, el del nombre de un dato que vale true ({nombre:flag}).",
       "type": "object",
       "properties": {
         "right": { "$ref": "#/$defs/Terms" },
         "part": { "$ref": "#/$defs/Terms" },
         "field": { "$ref": "#/$defs/Terms" },
-        "reason": { "$ref": "#/$defs/Terms" }
+        "reason": { "$ref": "#/$defs/Terms" },
+        "flag": { "$ref": "#/$defs/Terms" }
       },
-      "required": ["right", "part", "field", "reason"],
+      "required": ["right", "part", "field", "reason", "flag"],
       "additionalProperties": false
     },
     "others": {

@@ -97,6 +97,8 @@ resultado:
   lo que falta queda vacío.
 - `{x:right}`, `{x:part}`, `{x:field}` y `{x:reason}`: el término del valor en
   `terms`, que se llena con los mismos datos; un valor sin término va tal cual.
+  Un término al comienzo del mensaje va con mayúscula inicial.
+- `{x:flag}`: el término `terms.flag.x` si `x` es `true`; si no, nada.
 - `{x:others}`: nada si `x` es 1, `others.one` si es 2 y `others.many` si es
   más, con `{count}` igual a `x` − 1.
 - `{x:paren}`: el valor entre paréntesis, con un espacio delante, o nada.

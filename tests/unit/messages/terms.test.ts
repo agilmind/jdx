@@ -29,7 +29,7 @@ function render(template: string, lang: Lang, data: Data, words: Vocabulary, ter
     if (Array.isArray(value)) return value.map(show).join(', ');
     return typeof value === 'object' ? JSON.stringify(value) : String(value);
   };
-  return template.replace(/\{([A-Za-z][A-Za-z0-9]*)(?::([a-z][A-Za-z0-9]*))?\}/gu, (_match, name: string, formatter?: string) => {
+  return template.replace(/\{([A-Za-z][A-Za-z0-9]*)(?::([a-z][A-Za-z0-9]*))?\}/gu, (_match, name: string, formatter: string | undefined, at: number) => {
     const value = data(name);
     if (formatter === undefined || !terms) return show(value);
     if (formatter === 'paren') return show(value) === '' ? '' : ` (${show(value)})`;
@@ -37,8 +37,10 @@ function render(template: string, lang: Lang, data: Data, words: Vocabulary, ter
       if (typeof value !== 'number' || value <= 1) return '';
       return render(value === 2 ? words.others.one[lang] : words.others.many[lang], lang, (n) => (n === 'count' ? value - 1 : undefined), words, false);
     }
-    const term = words.terms[formatter]?.[String(value)]?.[lang];
-    return term === undefined ? show(value) : render(term, lang, data, words, false);
+    const term = formatter === 'flag' ? (value === true ? words.terms.flag?.[name]?.[lang] : undefined) : words.terms[formatter]?.[String(value)]?.[lang];
+    if (term === undefined) return formatter === 'flag' ? '' : show(value);
+    const phrase = render(term, lang, data, words, false);
+    return at === 0 ? phrase.charAt(0).toUpperCase() + phrase.slice(1) : phrase;
   });
 }
 
@@ -80,8 +82,9 @@ describe('vocabulario de los mensajes', () => {
     const shr002 = rules.find((r) => r.id === 'JDX-SHR-002') as CatalogRule;
     const cases: [CatalogRule, CatalogRule['example']][] = [
       ...rules.map((r): [CatalogRule, CatalogRule['example']] => [r, r.example]),
-      // El recuento de países con dos y con más.
+      // El recuento de países con dos, y una celda con filas de autor.
       [shr002, { ...shr002.example, params: { ...shr002.example.params, countries: 2 } }],
+      [shr002, { ...shr002.example, params: { ...shr002.example.params, writer: true } }],
     ];
     for (const [r, example] of cases) {
       const data: Data = (name) => example.params?.[name] ?? (example.context as Record<string, JsonValue> | undefined)?.[name];

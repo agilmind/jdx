@@ -74,7 +74,7 @@ describe('src/types.ts', () => {
                    "activeAt": "2028-09-30T00:00:00-03:00", "expiresAt": "2030-09-30T00:00:00-03:00",
                    "scope": { "recipients": ["061"],
                               "profiles": ["https://jdx.jupiter.ar/profiles/sadaic"], "jdxMajor": 1 } } } ],
-      "trustAnchors": { "agilsignRootSha256": "4a4d23ddfbfedeca930078ec30fc71b418351230864a925872f87bd85ed08584" } };
+      "trustAnchors": { "esignatureRoots": ["4a4d23ddfbfedeca930078ec30fc71b418351230864a925872f87bd85ed08584"] } };
     expectTypeOf<TrustList>().not.toBeAny();
     expectTypeOf(example).toEqualTypeOf<TrustList>();
   });

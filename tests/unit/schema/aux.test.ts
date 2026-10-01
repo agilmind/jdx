@@ -33,7 +33,7 @@ const TRUST: Obj = {
              activeAt: '2028-09-30T00:00:00-03:00', expiresAt: '2030-09-30T00:00:00-03:00',
              scope: { recipients: ['061'], profiles: ['https://jdx.jupiter.ar/profiles/sadaic'], jdxMajor: 1 } } },
   ],
-  trustAnchors: { agilsignRootSha256: '4a4d23ddfbfedeca930078ec30fc71b418351230864a925872f87bd85ed08584' },
+  trustAnchors: { esignatureRoots: ['4a4d23ddfbfedeca930078ec30fc71b418351230864a925872f87bd85ed08584'] },
 };
 
 /** Un reporte de ejemplo, sin signature.reason ni document.media ni document.issuer. */
@@ -159,6 +159,16 @@ describe('schemas auxiliares', () => {
       Object.assign(meta, { status: 'revoked', ...marks });
     });
     expect(errors('trustList', revoked)).toEqual([]);
+  });
+
+  it('trustAnchors.esignatureRoots lists SHA-256 fingerprints and admits nothing else', () => {
+    const root = '4a4d23ddfbfedeca930078ec30fc71b418351230864a925872f87bd85ed08584';
+    expect(errors('trustList', { ...TRUST, trustAnchors: { esignatureRoots: [root, root.replace('4a', '5b')] } })).toEqual([]);
+    expect(at(errors('trustList', { ...TRUST, trustAnchors: { esignatureRoots: [root.toUpperCase()] } }))).toEqual([
+      ['/trustAnchors/esignatureRoots/0', 'pattern'],
+    ]);
+    expect(at(errors('trustList', { ...TRUST, trustAnchors: { esignatureRoots: root } }))).toEqual([['/trustAnchors/esignatureRoots', 'type']]);
+    expect(at(errors('trustList', { ...TRUST, trustAnchors: { rootSha256: root } }))).toEqual([['/trustAnchors/rootSha256', 'additionalProperties']]);
   });
 
   it('iss is const', () => {

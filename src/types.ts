@@ -313,7 +313,7 @@ export interface TrustList {
   validator: { minVersion: string };
   revokedRoots: string[];
   keys: TrustKey[];
-  trustAnchors?: { agilsignRootSha256?: string };
+  trustAnchors?: { esignatureRoots?: string[] };   // huellas SHA-256 de las raíces de firma electrónica
 }
 export interface GeneralJws { payload: string; signatures: { protected: string; signature: string }[] }
 export interface VerifiedTrustList { list: TrustList; rootKids: string[] }

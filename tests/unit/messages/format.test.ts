@@ -169,6 +169,32 @@ describe('mensajes', () => {
       'El código 311 (ZAMBA) no está en la lista de SADAIC_GENRE.',
     );
     expect(formatMessage(cls001, 'en', { scheme: 'SADAIC_ART8', code: 'promotionalDiscs' })).toBe('Code promotionalDiscs is not in the SADAIC_ART8 list.');
+    // Un null o un texto vacío no dejan paréntesis vacíos.
+    for (const name of [null, '']) {
+      expect(formatMessage(cls001, 'es', { scheme: 'SADAIC_GENRE', code: '311', name })).toBe('El código 311 no está en la lista de SADAIC_GENRE.');
+    }
+  });
+
+  it('formatMessage never throws: a language without a template renders in Spanish, and odd data renders empty', () => {
+    for (const r of catalog.rules) {
+      const es = formatMessage(r, 'es', r.example.params, r.example.context);
+      for (const lang of ['fr', '', 'ES', 'toString', '__proto__'] as unknown as Lang[]) {
+        const text = formatMessage(r, lang, r.example.params, r.example.context);
+        expect(text, `${r.id} ${String(lang)}`).toBe(es);
+        expect(text, `${r.id} ${String(lang)}`).not.toContain('undefined');
+      }
+    }
+    const agr003 = rule('JDX-AGR-003');
+    // Params y context que no son objetos cuentan como ausentes.
+    expect(formatMessage(agr003, 'es', null as never, 'a1' as never)).toBe('El contrato da a la editora el  %; el tope es  %.');
+    // Un valor circular, una regla sin mensajes o ninguna regla no lanzan.
+    const cyclic: JsonValue[] = [];
+    cyclic.push(cyclic);
+    const ref003 = rule('JDX-REF-003');
+    expect(() => formatMessage(ref003, 'en', { value: 'm2', found: 'audio', expected: cyclic })).not.toThrow();
+    expect(formatMessage(ref003, 'en', { value: 'm2', found: 'audio', expected: cyclic })).not.toMatch(/[{}]|undefined/u);
+    expect(formatMessage({ ...agr003, message: undefined } as unknown as CatalogRule, 'es')).toBe('');
+    expect(formatMessage(null as unknown as CatalogRule, 'pt')).toBe('');
   });
 
   it('messagePlaceholders lists names and formatters in order', () => {

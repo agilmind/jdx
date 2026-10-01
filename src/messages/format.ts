@@ -14,7 +14,7 @@
  * - `{name:others}`: un recuento de países, como el resto de los que fallan:
  *   nada con uno, "y otro país" con dos, "y otros N países" con más.
  * - `{name:paren}`: un dato opcional entre paréntesis, precedido de un espacio;
- *   nada si falta.
+ *   nada si falta, es null o queda vacío.
  *
  * El texto de un resultado sirve para leerlo; se decide por `ruleId` y
  * `params`, nunca por el mensaje. loadCatalog controla al cargar que cada
@@ -27,6 +27,7 @@ export type Formatter = TermFormatter | 'others' | 'paren';
 export const FORMATTERS: readonly Formatter[] = Object.freeze(['right', 'part', 'field', 'reason', 'others', 'paren']);
 
 type Terms = Readonly<Record<string, Readonly<Record<Lang, string>>>>;
+const LANGS: readonly Lang[] = Object.freeze(['es', 'pt', 'en']);
 const t = (es: string, pt: string, en: string): Readonly<Record<Lang, string>> => Object.freeze({ es, pt, en });
 
 /**
@@ -133,14 +134,24 @@ export function messagePlaceholders(template: string): { name: string; formatter
   return [...template.matchAll(PLACEHOLDER)].map(([, name = '', formatter]) => (formatter === undefined ? { name } : { name, formatter }));
 }
 
-/** El mensaje de la regla en `lang`, con los params y el context de un resultado. */
+/**
+ * El mensaje de la regla en `lang`, con los params y el context de un resultado. Nunca lanza:
+ * un idioma sin plantilla usa la de español, y un dato que no se puede mostrar queda vacío.
+ */
 export function formatMessage(rule: CatalogRule, lang: Lang, params?: { [k: string]: JsonValue }, context?: FindingContext): string {
+  const messages = isRecord(rule) && isRecord(rule.message) ? (rule.message as Record<string, unknown>) : {};
+  const use: Lang = (LANGS as readonly string[]).includes(lang) && typeof messages[lang] === 'string' ? lang : 'es';
+  const template = typeof messages[use] === 'string' ? (messages[use] as string) : '';
   const valueOf = (name: string): JsonValue | undefined => {
-    if (params !== undefined && Object.hasOwn(params, name)) return params[name];
-    if (context !== undefined && Object.hasOwn(context, name)) return context[name as keyof FindingContext];
+    if (isRecord(params) && Object.hasOwn(params, name)) return params[name];
+    if (isRecord(context) && Object.hasOwn(context, name)) return (context as Record<string, JsonValue>)[name];
     return undefined;
   };
-  return fill(rule.message[lang], lang, valueOf, true);
+  try {
+    return fill(template, use, valueOf, true);
+  } catch {
+    return template.replace(PLACEHOLDER, '');
+  }
 }
 
 function fill(template: string, lang: Lang, valueOf: (name: string) => JsonValue | undefined, terms: boolean): string {
@@ -148,8 +159,11 @@ function fill(template: string, lang: Lang, valueOf: (name: string) => JsonValue
     const value = valueOf(name);
     if (formatter === undefined || !terms) return text(value, lang);
     if (formatter === 'others') return others(value, lang);
-    if (formatter === 'paren') return value === undefined ? '' : ` (${text(value, lang)})`;
-    const term = value === undefined ? undefined : termOf(formatter as TermFormatter, String(value), lang);
+    if (formatter === 'paren') {
+      const shown = text(value, lang);
+      return shown === '' ? '' : ` (${shown})`;
+    }
+    const term = typeof value === 'string' || typeof value === 'number' ? termOf(formatter as TermFormatter, String(value), lang) : undefined;
     // La frase de un término se llena con los mismos datos, sin otro nivel de términos.
     return term === undefined ? text(value, lang) : fill(term, lang, valueOf, false);
   });
@@ -165,8 +179,18 @@ function text(value: JsonValue | undefined, lang: Lang): string {
   if (value === undefined || value === null) return '';
   if (typeof value === 'number') return lang === 'en' ? String(value) : String(value).replace('.', ',');
   if (Array.isArray(value)) return value.map((item) => text(item, lang)).join(', ');
-  if (typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value) ?? '';
+    } catch {
+      return '';
+    }
+  }
   return String(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function others(value: JsonValue | undefined, lang: Lang): string {

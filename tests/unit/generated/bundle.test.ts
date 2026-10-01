@@ -3,7 +3,7 @@
  * funciona sin conexión y sin disco, con todo lo que necesita
  * como texto en data.ts, las raíces aparte en roots.ts y la versión en version.ts.
  */
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +17,7 @@ import { AUX_SCHEMA_FILES, BUNDLE_MANIFEST, inBundle, schemaBundle } from '../..
 import { TS_RENAMES } from '../../../src/schema/generate.js';
 import { defaultValidators } from '../../../src/schema/validators.js';
 import type { JsonValue } from '../../../src/types.js';
+import { TEST_ROOTS } from '../../helpers/trustFixtures.js';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const read = (rel: string): string => readFileSync(join(ROOT, rel), 'utf8');
@@ -180,9 +181,8 @@ describe('tipos TS y bundle', () => {
     expect(checkGenerated(root)).toEqual([]);
     // Un archivo de datos cambiado sin regenerar, raíces nuevas y otra versión del paquete.
     writeFileSync(join(root, 'values/titleTypes.json'), '{ "list": "titleTypes" }\n');
-    mkdirSync(join(root, 'trust'));
-    const key = { kty: 'EC', crv: 'P-256', x: 'x', y: 'y', kid: 'k' };
-    writeFileSync(join(root, 'trust/roots.json'), `${JSON.stringify({ production: [key], sandbox: [] })}\n`);
+    // trust/roots.json existe en el repositorio; gen lo controla con parseRootsFile, así que la raíz es una de prueba.
+    writeFileSync(join(root, 'trust/roots.json'), `${JSON.stringify({ production: [TEST_ROOTS.production[0]], sandbox: [] })}\n`);
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
     writeFileSync(join(root, 'package.json'), `${JSON.stringify({ ...pkg, version: '1.0.1' }, null, 2)}\n`);
     expect(checkGenerated(root)).toEqual(['src/generated/data.ts', 'src/generated/roots.ts', 'src/generated/version.ts']);

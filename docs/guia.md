@@ -215,7 +215,8 @@ La lista de confianza (schema en
 las claves de los emisores, firmado por al menos dos raíces fijadas en el
 validador y no revocadas. Vence a los 90 días y su `seq` nunca baja. Cada
 clave está `pending` (no se acepta), `active` (entre `activeAt` y
-`expiresAt`), `retired` o `revoked`.
+`expiresAt`), `retired` o `revoked`. Las raíces viajan con el validador, en
+[`trust/roots.json`](../trust/roots.json): la lista no agrega raíces.
 
 ## 8. Reglas propias de cada SGC: el perfil `sadaic/0.1`
 

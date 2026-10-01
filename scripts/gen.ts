@@ -10,8 +10,8 @@
  *   values/sadaic-genres.json.
  * - src/generated/data.ts: cada archivo de BUNDLE_MANIFEST como texto, con los
  *   generados acá tal como quedan; src/generated/roots.ts, desde
- *   trust/roots.json (vacío si no existe); src/generated/version.ts, desde
- *   package.json.
+ *   trust/roots.json, controlado con parseRootsFile (vacío si no existe);
+ *   src/generated/version.ts, desde package.json.
  *
  * - `gen` escribe solo los archivos que cambian y los lista.
  * - `gen:check` regenera en memoria y sale con 1 si algún archivo quedó viejo
@@ -29,6 +29,7 @@ import { inBundle } from '../src/schema/bundle.js';
 import { FIELD_REFERENCE_PATHS, generateFieldReference } from '../src/schema/fieldReference.js';
 import { generateIndex, generateSchema, generateTypesTs } from '../src/schema/generate.js';
 import { loadModel, TYPES_OVERLAY_SCHEMA, TYPES_SOURCE_SCHEMA } from '../src/schema/model.js';
+import { parseRootsFile } from '../src/trust/roots.js';
 import type { JsonValue, PinnedRoots } from '../src/types.js';
 import { generateValues } from './gen-values.mjs';
 
@@ -103,8 +104,9 @@ export function generateAll(root: string): Map<string, string> {
   ];
   const bundle = bundledOnDisk(root);
   for (const [path, text] of generated) if (inBundle(path)) bundle.set(path, text);
+  // Las raíces, controladas: un kid que no es la huella de su clave no llega al validador.
   const roots: PinnedRoots = existsSync(join(root, 'trust/roots.json'))
-    ? (read('trust/roots.json') as unknown as PinnedRoots)
+    ? parseRootsFile(read('trust/roots.json'))
     : { production: [], sandbox: [] };
   const version = (read('package.json') as { version: string }).version;
   const outputs: [string, string][] = [

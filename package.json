@@ -18,6 +18,19 @@
   "engines": {
     "node": ">=20.19"
   },
+  "files": [
+    "dist",
+    "schema",
+    "values",
+    "catalog",
+    "profiles",
+    "trust",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD-PARTY-NOTICES"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "gen": "tsx scripts/gen.ts",

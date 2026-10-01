@@ -46,6 +46,19 @@ describe('raíces fijadas', () => {
     expect(Object.isFrozen(pinnedRoots()) && Object.isFrozen(pinnedRoots().production)).toBe(true);
   });
 
+  it('no test root is ever pinned', () => {
+    // Las raíces de prueba tienen su clave privada en el repositorio: ninguna puede llegar a trust/roots.json, ni con
+    // otro kid. Se compara la clave misma, en los bytes de sus coordenadas.
+    const pointOf = ({ x, y }: { x: string; y: string }) => `${Buffer.from(x, 'base64url').toString('hex')}:${Buffer.from(y, 'base64url').toString('hex')}`;
+    const testPoints = new Set([...TEST_ROOT_KEYS.production, ...TEST_ROOT_KEYS.sandbox, ...TEST_ROOT_KEYS.unpinned].map(pointOf));
+    expect(testPoints.size).toBe(7);
+    for (const roots of [parseRootsFile(JSON.parse(read('trust/roots.json')) as JsonValue), pinnedRoots()]) {
+      expect([...roots.production, ...roots.sandbox].filter((root) => testPoints.has(pointOf(root)))).toEqual([]);
+    }
+    // Ninguna clave privada en el archivo: parseRootsFile no admite d.
+    expect(read('trust/roots.json')).not.toMatch(/"d"\s*:/u);
+  });
+
   it('filterRoots keeps only the given envs', () => {
     expect(filterRoots(TEST_ROOTS, ['production'])).toEqual({ production: TEST_ROOTS.production, sandbox: [] });
     expect(filterRoots(TEST_ROOTS, ['sandbox'])).toEqual({ production: [], sandbox: TEST_ROOTS.sandbox });

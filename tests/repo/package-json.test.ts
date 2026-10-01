@@ -1,7 +1,8 @@
 /**
  * package.json: versión 1.0.0, ESM, librería desde Node 20.19, privado hasta
- * su publicación, sus scripts y los datos del repositorio público
- * agilmind/jdx.
+ * su publicación, sus scripts, los datos del repositorio público agilmind/jdx
+ * y la lista de lo que lleva el paquete: los tests, sus claves de prueba, los
+ * scripts y la documentación no viajan.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -31,5 +32,10 @@ describe('package.json', () => {
     expect(pkg.author).toBe('Agilmind SRL');
     expect(pkg.license).toBe('SEE LICENSE IN LICENSE');
     expect(pkg.description).toContain('Un estándar creado por Agilmind SRL para ser implementado por las Sociedades de Gestión.');
+  });
+
+  it('package.json files lists what the package carries, and never tests, scripts or docs', () => {
+    expect(pkg.files).toEqual(['dist', 'schema', 'values', 'catalog', 'profiles', 'trust', 'README.md', 'CHANGELOG.md', 'LICENSE', 'NOTICE', 'THIRD-PARTY-NOTICES']);
+    for (const entry of pkg.files as string[]) expect(entry, entry).not.toMatch(/^(tests|scripts|docs|src|node_modules)\b|[*!]/u);
   });
 });

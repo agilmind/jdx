@@ -22,14 +22,15 @@ JDX (Jupiter Data eXchange) es un archivo JSON para declarar obras musicales, su
     "titles": [{ "type": "original", "text": "Chacarera del Rancho" }],
     "contributors": [{ "party": "p1", "roles": ["composer", "lyricist"] }],
     "authorship": [
-      { "party": "p1", "part": "music", "percent": 100 },
-      { "party": "p1", "part": "lyrics", "percent": 100 }
+      { "party": "p1", "part": "music", "percent": 50 },
+      { "party": "p1", "part": "lyrics", "percent": 50 }
     ],
     "shares": [{ "party": "p5", "role": "originalPublisher", "via": ["p1"], "agreement": "a1", "percent": 25 }]
   }],
   "agreements": [{
     "id": "a1", "type": "publishing", "works": ["w1"], "signatureDate": "2026-09-12",
-    "parties": [{ "party": "p1", "role": "grantor" }, { "party": "p5", "role": "grantee" }]
+    "parties": [{ "party": "p1", "role": "grantor" }, { "party": "p5", "role": "grantee" }],
+    "publisherShare": { "percent": 25 }
   }]
 }
 ```

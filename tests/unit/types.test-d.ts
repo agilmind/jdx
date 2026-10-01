@@ -40,11 +40,10 @@ describe('src/types.ts', () => {
                      "issuer": { "id": "jupiter", "name": "Jupiter" }, "env": "production" },
       "trustList": { "seq": 1, "expiresAt": "2026-12-29T00:00:00-03:00" },
       "summary": { "error": 0, "warning": 1, "info": 0 },
-      "results": [ { "ruleId": "JDX-SHR-003", "level": "warning", "source": "profile:sadaic/0.1@0.1.0",
-                     "instanceLocation": "/works/0", "context": { "work": "w1" },
-                     "message": "Las editoras suman 30 en ejecución en AR y otros 248 países; el tope es 25.",
-                     "params": { "right": "performing", "country": "AR", "countries": 249,
-                                 "sum": 30, "cap": 25 } } ] };
+      "results": [ { "ruleId": "JDX-AGR-003", "level": "warning", "source": "profile:sadaic/0.1@0.1.0",
+                     "instanceLocation": "/agreements/0/publisherShare/percent", "context": { "agreement": "a1" },
+                     "message": "El contrato da a la editora el 30 %; el tope es 25 %.",
+                     "params": { "percent": 30, "cap": 25 } } ] };
     expectTypeOf<Report>().not.toBeAny();
     expectTypeOf(example).toEqualTypeOf<Report>();
   });

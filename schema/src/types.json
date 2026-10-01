@@ -1442,7 +1442,7 @@
             }
           },
           "required": false,
-          "description": "Titularidad original por parte (música y letra). Cada parte suma 100."
+          "description": "Titularidad original, por parte (música y letra), en porcentajes de la obra entera. Las filas de una obra suman a lo sumo 100."
         },
         "shares": {
           "type": {
@@ -1451,7 +1451,7 @@
             }
           },
           "required": false,
-          "description": "Quién cobra: filas por derecho y territorio, con porcentajes sobre la obra entera."
+          "description": "Quién cobra: filas por derecho y territorio, cada una con el porcentaje de la obra entera que cobra."
         },
         "recordings": {
           "type": {
@@ -2055,7 +2055,7 @@
     },
     "Authorship": {
       "group": "Derechos",
-      "description": "La titularidad original de una parte de la obra.",
+      "description": "La parte de la obra entera que tiene un autor por la música o por la letra.",
       "extensions": false,
       "props": {
         "party": {
@@ -2080,7 +2080,7 @@
             "scalar": "percent"
           },
           "required": true,
-          "description": "Porcentaje de esa parte. Cada parte suma 100 en cada obra."
+          "description": "Porcentaje de la obra entera. Si Ana escribió toda la música y Beto toda la letra, cada uno tiene 50; un autor de las dos partes tiene 50 por la música y 50 por la letra. Las filas de una obra suman a lo sumo 100."
         },
         "agreement": {
           "type": {
@@ -2096,7 +2096,7 @@
     },
     "Share": {
       "group": "Derechos",
-      "description": "Una fila de cobro: quién cobra qué porcentaje de la obra, por derecho y territorio.",
+      "description": "Una fila de cobro: quién cobra qué porcentaje de la obra entera, por derecho y territorio.",
       "extensions": false,
       "props": {
         "party": {
@@ -2128,7 +2128,7 @@
             }
           },
           "required": false,
-          "description": "De dónde sale lo que cobra: para una editora original, los autores que representa; para una subeditora, la editora original."
+          "description": "De dónde sale lo que cobra: para una editora original, el autor que representa (una fila por autor; varios en una fila solo si el contrato les da el mismo porcentaje); para una subeditora, la editora original."
         },
         "agreement": {
           "type": {
@@ -2170,7 +2170,7 @@
             "scalar": "percent"
           },
           "required": true,
-          "description": "Porcentaje sobre la obra entera."
+          "description": "Porcentaje de la obra entera, ya calculado. Para una editora, el `publisherShare.percent` de su contrato por la autoría de los autores de `via`, sobre 100: el 25 % de un autor que tiene 50 es 12,5."
         }
       }
     },
@@ -3003,7 +3003,7 @@
             "type": "PublisherShare"
           },
           "required": false,
-          "description": "Total de las editoras sobre la obra bajo este contrato, con la condición que sube el tope, si la hay."
+          "description": "Lo que el contrato da a la editora sobre la parte de quienes lo conceden, con la condición que sube el tope, si la hay."
         },
         "terms": {
           "type": {
@@ -3212,7 +3212,7 @@
     },
     "PublisherShare": {
       "group": "Contratos",
-      "description": "El porcentaje total de las editoras bajo un contrato.",
+      "description": "El porcentaje que un contrato da a la editora sobre la parte de quienes lo conceden.",
       "extensions": false,
       "props": {
         "percent": {
@@ -3220,7 +3220,7 @@
             "scalar": "percent"
           },
           "required": true,
-          "description": "Porcentaje sobre la obra entera."
+          "description": "Porcentaje del contrato sobre la parte de cada `grantor` en la obra, no sobre la obra entera: con 25 y un autor que tiene 50, la editora cobra 12,5 de la obra. Los topes editoriales se comparan con este valor."
         },
         "condition": {
           "type": {

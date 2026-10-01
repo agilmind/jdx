@@ -358,9 +358,9 @@ export interface Work {
   readonly origin?: Origin;
   /** Quiénes la crearon y con qué rol. */
   readonly contributors?: readonly Contributor[];
-  /** Titularidad original por parte (música y letra). Cada parte suma 100. */
+  /** Titularidad original, por parte (música y letra), en porcentajes de la obra entera. Las filas de una obra suman a lo sumo 100. */
   readonly authorship?: readonly Authorship[];
-  /** Quién cobra: filas por derecho y territorio, con porcentajes sobre la obra entera. */
+  /** Quién cobra: filas por derecho y territorio, cada una con el porcentaje de la obra entera que cobra. */
   readonly shares?: readonly Share[];
   /** Grabaciones de la obra. Tiene que coincidir con `works` de cada grabación. Id local de `recordings`. */
   readonly recordings?: readonly string[];
@@ -553,25 +553,25 @@ export interface Contributor {
   readonly creditedAs?: string;
 }
 
-/** La titularidad original de una parte de la obra. */
+/** La parte de la obra entera que tiene un autor por la música o por la letra. */
 export interface Authorship {
   /** El autor. Id local de `parties`. */
   readonly party: string;
   /** Parte: música o letra. */
   readonly part: 'music' | 'lyrics';
-  /** Porcentaje de esa parte. Cada parte suma 100 en cada obra. */
+  /** Porcentaje de la obra entera. Si Ana escribió toda la música y Beto toda la letra, cada uno tiene 50; un autor de las dos partes tiene 50 por la música y 50 por la letra. Las filas de una obra suman a lo sumo 100. */
   readonly percent: number;
   /** La carta de reparto entre coautores, si la hay. Id local de `agreements` (writerSplit). */
   readonly agreement?: string;
 }
 
-/** Una fila de cobro: quién cobra qué porcentaje de la obra, por derecho y territorio. */
+/** Una fila de cobro: quién cobra qué porcentaje de la obra entera, por derecho y territorio. */
 export interface Share {
   /** Quién cobra. Id local de `parties`. */
   readonly party: string;
   /** Rol: autor, editora original, subeditora, subeditora sustituta, administradora, partícipe de ingresos o adquirente. */
   readonly role: 'writer' | 'originalPublisher' | 'subPublisher' | 'substitutedPublisher' | 'administrator' | 'incomeParticipant' | 'acquirer';
-  /** De dónde sale lo que cobra: para una editora original, los autores que representa; para una subeditora, la editora original. Id local de `parties`. */
+  /** De dónde sale lo que cobra: para una editora original, el autor que representa (una fila por autor; varios en una fila solo si el contrato les da el mismo porcentaje); para una subeditora, la editora original. Id local de `parties`. */
   readonly via?: readonly string[];
   /** El contrato que da ese derecho. Id local de `agreements` (publishing, subPublishing, administration, assignment, writerSplit). */
   readonly agreement?: string;
@@ -579,7 +579,7 @@ export interface Share {
   readonly rights?: readonly ('performing' | 'mechanical' | 'synchronization' | 'print')[];
   /** Territorios. Si falta, los del contrato; si el contrato no los dice, el mundo (`2136`). */
   readonly territories?: Territories;
-  /** Porcentaje sobre la obra entera. */
+  /** Porcentaje de la obra entera, ya calculado. Para una editora, el `publisherShare.percent` de su contrato por la autoría de los autores de `via`, sobre 100: el 25 % de un autor que tiene 50 es 12,5. */
   readonly percent: number;
 }
 
@@ -828,7 +828,7 @@ export interface Agreement {
   readonly renewal?: Renewal;
   /** Cobro posterior al fin del contrato. */
   readonly postTermCollection?: PostTermCollection;
-  /** Total de las editoras sobre la obra bajo este contrato, con la condición que sube el tope, si la hay. */
+  /** Lo que el contrato da a la editora sobre la parte de quienes lo conceden, con la condición que sube el tope, si la hay. */
   readonly publisherShare?: PublisherShare;
   /** Plantilla, contrato tipo y valores pactados. */
   readonly terms?: Terms;
@@ -895,9 +895,9 @@ export interface PostTermCollection {
   readonly endDate?: string;
 }
 
-/** El porcentaje total de las editoras bajo un contrato. */
+/** El porcentaje que un contrato da a la editora sobre la parte de quienes lo conceden. */
 export interface PublisherShare {
-  /** Porcentaje sobre la obra entera. */
+  /** Porcentaje del contrato sobre la parte de cada `grantor` en la obra, no sobre la obra entera: con 25 y un autor que tiene 50, la editora cobra 12,5 de la obra. Los topes editoriales se comparan con este valor. */
   readonly percent: number;
   /** Condición que permite superar el tope, por ejemplo una del art. 8 del contrato tipo (`SADAIC_ART8`). */
   readonly condition?: AgreementCondition;

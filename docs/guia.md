@@ -85,8 +85,8 @@ jdx validate entrega/3f2c9a1e-….r1.jdx.json --env production --profile sadaic/
 | Política | Firma ausente, perfil no declarado, lista por vencer | Lo gradúa la sociedad |
 
 Las reglas tienen códigos `JDX-<ÁREA>-<NNN>` que nunca se reutilizan (por
-ejemplo, `JDX-SHR-003`: las editoras superan el tope). El catálogo con todas
-las reglas va en `catalog/1.0/rules.json`.
+ejemplo, `JDX-AGR-003`: un contrato da a la editora más que el tope). El
+catálogo con todas las reglas va en `catalog/1.0/rules.json`.
 
 ## 4. Cómo se lee el resultado
 
@@ -105,8 +105,9 @@ por qué. Un extracto:
 { "jdxReport": "1.0", "valid": true, "disposition": "ingest", "exitCode": 0,
   "signature": { "status": "verified", "kid": "3ifADueZaLjFGBgto_xCbTohNZKhf7ziQ8gS_yx6r6E" },
   "summary": { "error": 0, "warning": 1, "info": 0 },
-  "results": [ { "ruleId": "JDX-SHR-003", "level": "warning", "instanceLocation": "/works/0",
-                 "params": { "right": "performing", "country": "AR", "sum": 30, "cap": 25 } } ] }
+  "results": [ { "ruleId": "JDX-AGR-003", "level": "warning",
+                 "instanceLocation": "/agreements/0/publisherShare/percent",
+                 "params": { "percent": 30, "cap": 25 } } ] }
 ```
 
 - `disposition`: `ingest` (cargar), `ignore` (revisión ya cargada) o `reject`.
@@ -133,28 +134,39 @@ por qué. Un extracto:
 
 ## 6. Los derechos de una obra
 
+Ana escribió toda la música y Beto toda la letra. Editorial Sur representa a
+Ana con el 25 % (contrato `a1`) y Editorial Norte a Beto con el 30 % (`a2`):
+
 ```json
 "contributors": [ { "party": "p1", "roles": ["composer"] }, { "party": "p2", "roles": ["lyricist"] } ],
-"authorship":   [ { "party": "p1", "part": "music", "percent": 100 },
-                  { "party": "p2", "part": "lyrics", "percent": 100 } ],
-"shares":       [ { "party": "p5", "role": "originalPublisher", "via": ["p1", "p2"],
-                    "agreement": "a1", "territories": { "include": ["2136"] }, "percent": 25 } ]
+"authorship":   [ { "party": "p1", "part": "music", "percent": 50 },
+                  { "party": "p2", "part": "lyrics", "percent": 50 } ],
+"shares":       [ { "party": "p5", "role": "originalPublisher", "via": ["p1"], "agreement": "a1",
+                    "territories": { "include": ["2136"] }, "percent": 12.5 },
+                  { "party": "p7", "role": "originalPublisher", "via": ["p2"], "agreement": "a2",
+                    "territories": { "include": ["2136"] }, "percent": 15 } ]
 ```
 
 - **`contributors`:** quién creó la obra y con qué rol.
-- **`authorship`:** de quién es, por parte. La música suma 100 y la letra
-  suma 100.
-- **`shares`:** quién cobra, sobre la obra entera, por derecho (`performing`,
-  `mechanical`, `synchronization`, `print`) y territorio TIS (`2136` es el
-  mundo). `via` dice de quién viene lo que cobra una editora: los autores que
-  representa o la editora original. Lo no asignado a editoras es de los
-  autores, y cada sociedad lo reparte con sus reglas.
-- Una fila sin `rights` o sin `territories` toma los del contrato; si el
-  contrato no los dice, los cuatro derechos y el mundo.
+- **`authorship`:** de quién es la obra entera, por parte: Ana tiene 50 por la
+  música y Beto 50 por la letra; un autor de las dos partes tendría 50 y 50.
+  Las filas de una obra suman a lo sumo 100.
+- **`publisherShare`** (en el contrato): lo que el contrato da a la editora
+  sobre la parte de cada autor que representa: 25 en `a1` y 30 en `a2`.
+- **`shares`:** quién cobra, sobre la obra entera y ya calculado: el porcentaje
+  del contrato por la autoría del autor de `via`, sobre 100. Sur cobra 12,5
+  (el 25 % de 50) y Norte 15 (el 30 % de 50); Ana conserva 37,5 y Beto 35. Va
+  una fila por autor representado, y varios autores en `via` solo si el
+  contrato les da el mismo porcentaje. Para una subeditora, `via` es la
+  editora original. Las filas de los autores son opcionales.
+- Cada fila es por derecho (`performing`, `mechanical`, `synchronization`,
+  `print`) y territorio TIS (`2136` es el mundo). Una fila sin `rights` o sin
+  `territories` toma los del contrato; si el contrato no los dice, los cuatro
+  derechos y el mundo.
 - Las filas son netas y se suman por derecho y país: una editora que cede parte
   a una subeditora en un país declara ahí solo lo que retiene. Las sumas se
-  hacen en diezmilésimos, con tolerancia de 0,01 solo contra 100; los topes
-  editoriales se comparan exactos.
+  hacen en diezmilésimos, con tolerancia de 0,01 contra 100 y contra lo que da
+  el contrato; los topes editoriales se comparan exactos.
 
 ## 7. La firma
 
@@ -190,19 +202,24 @@ validador y no revocadas. Vence a los 90 días y su `seq` nunca baja. Cada
 clave está `pending` (no se acepta), `active` (entre `activeAt` y
 `expiresAt`), `retired` o `revoked`.
 
-## 8. El perfil `sadaic/0.1`
+## 8. Reglas propias de cada SGC: el perfil `sadaic/0.1`
 
 Un perfil es la lista de reglas de una sociedad (schema en
 [`profile.schema.json`](../schema/profile.schema.json)): la elige quien
-recibe, con `--profile`. El primero es el de SADAIC:
+recibe, con `--profile`. El catálogo trae reglas generales, como que la
+autoría de una obra no supere 100, y cada sociedad elige las suyas y sus
+parámetros. El primero es el de SADAIC:
 
 - Sociedad `061`; firma opcional; todas sus reglas son avisos.
+- La autoría de cada obra suma exactamente 100: se declara la obra entera.
+- El `publisherShare.percent` de un contrato de edición no pasa de 25 %, o de
+  33 1/3 % (`33.3333`) con una condición del art. 8 del contrato tipo
+  (`SADAIC_ART8`). El 30 % de Editorial Norte de la sección 6 lo pasa, aunque
+  cobre el 15 % de la obra.
 - Pide duración, género de la lista oficial
   ([`values/sadaic-genres.json`](../values/sadaic-genres.json)), registro en la
   DNDA por parte, estado de publicación, titularidad, identificador fiscal y
   afiliación de autores y editoras, y representante legal de autores menores.
-- Tope editorial de 25 %, o 33,3333 % con una condición del art. 8 del
-  contrato tipo (`SADAIC_ART8`).
 - Expande el territorio `2136` y los códigos TIS de país.
 - `sadaic/1.0` tendrá las mismas reglas como errores, con firma obligatoria.
 

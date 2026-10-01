@@ -55,7 +55,7 @@ describe('parseJson', () => {
     expect(json.value).toEqual(expected);
     expect([...json.numberTexts.keys()].sort()).toEqual(numberPointers(expected).sort());
     expect(json.numberTexts.get('/declaration/revision')).toBe('1');
-    expect(json.numberTexts.get('/works/0/shares/0/percent')).toBe('25');
+    expect(json.numberTexts.get('/works/0/shares/0/percent')).toBe('12.5');
     expect(json.numberTexts.get('/media/1/size')).toBe('5234011');
   });
 

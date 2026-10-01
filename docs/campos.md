@@ -350,8 +350,8 @@ Una obra musical. Se usa en [`Document.works`](#document).
 | `grandRights` | booleano | no | Si es una obra dramático-musical. |
 | `origin` | [`Origin`](#origin) | no | Uso audiovisual o publicitario para el que se creó. |
 | `contributors` | lista de [`Contributor`](#contributor) | no | Quiénes la crearon y con qué rol. |
-| `authorship` | lista de [`Authorship`](#authorship) | no | Titularidad original por parte (música y letra). Cada parte suma 100. |
-| `shares` | lista de [`Share`](#share) | no | Quién cobra: filas por derecho y territorio, con porcentajes sobre la obra entera. |
+| `authorship` | lista de [`Authorship`](#authorship) | no | Titularidad original, por parte (música y letra), en porcentajes de la obra entera. Las filas de una obra suman a lo sumo 100. |
+| `shares` | lista de [`Share`](#share) | no | Quién cobra: filas por derecho y territorio, cada una con el porcentaje de la obra entera que cobra. |
 | `recordings` | lista de ids de `recordings` | no | Grabaciones de la obra. Tiene que coincidir con `works` de cada grabación. |
 | `media` | lista de ids de `media` | no | Archivos de la obra: partitura, letra, boletín. |
 | `notes` | texto | no | Observaciones generales. |
@@ -532,28 +532,28 @@ Quién creó la obra y con qué rol. Se usa en [`Work.contributors`](#work).
 
 ### `Authorship`
 
-La titularidad original de una parte de la obra. Se usa en [`Work.authorship`](#work).
+La parte de la obra entera que tiene un autor por la música o por la letra. Se usa en [`Work.authorship`](#work).
 
 | Campo | Tipo | Requerido | Descripción |
 |---|---|---|---|
 | `party` | id de `parties` | sí | El autor. |
 | `part` | cerrada: `music`, `lyrics` | sí | Parte: música o letra. |
-| `percent` | porcentaje | sí | Porcentaje de esa parte. Cada parte suma 100 en cada obra. |
+| `percent` | porcentaje | sí | Porcentaje de la obra entera. Si Ana escribió toda la música y Beto toda la letra, cada uno tiene 50; un autor de las dos partes tiene 50 por la música y 50 por la letra. Las filas de una obra suman a lo sumo 100. |
 | `agreement` | id de `agreements` (`writerSplit`) | no | La carta de reparto entre coautores, si la hay. |
 
 ### `Share`
 
-Una fila de cobro: quién cobra qué porcentaje de la obra, por derecho y territorio. Se usa en [`Work.shares`](#work).
+Una fila de cobro: quién cobra qué porcentaje de la obra entera, por derecho y territorio. Se usa en [`Work.shares`](#work).
 
 | Campo | Tipo | Requerido | Descripción |
 |---|---|---|---|
 | `party` | id de `parties` | sí | Quién cobra. |
 | `role` | cerrada: `writer`, `originalPublisher`, `subPublisher`, `substitutedPublisher`, `administrator`, `incomeParticipant`, `acquirer` | sí | Rol: autor, editora original, subeditora, subeditora sustituta, administradora, partícipe de ingresos o adquirente. |
-| `via` | lista de ids de `parties` | no | De dónde sale lo que cobra: para una editora original, los autores que representa; para una subeditora, la editora original. |
+| `via` | lista de ids de `parties` | no | De dónde sale lo que cobra: para una editora original, el autor que representa (una fila por autor; varios en una fila solo si el contrato les da el mismo porcentaje); para una subeditora, la editora original. |
 | `agreement` | id de `agreements` (`publishing`, `subPublishing`, `administration`, `assignment`, `writerSplit`) | no | El contrato que da ese derecho. |
 | `rights` | lista, cerrada: `performing`, `mechanical`, `synchronization`, `print` | no | Derechos: ejecución, mecánico, sincronización, impresión. Si falta, los del contrato; si el contrato no los dice, los cuatro. |
 | `territories` | [`Territories`](#territories) | no | Territorios. Si falta, los del contrato; si el contrato no los dice, el mundo (`2136`). |
-| `percent` | porcentaje | sí | Porcentaje sobre la obra entera. |
+| `percent` | porcentaje | sí | Porcentaje de la obra entera, ya calculado. Para una editora, el `publisherShare.percent` de su contrato por la autoría de los autores de `via`, sobre 100: el 25 % de un autor que tiene 50 es 12,5. |
 
 ## Grabaciones
 
@@ -767,7 +767,7 @@ Un contrato firmado. Se usa en [`Document.agreements`](#document).
 | `endDate` | fecha | no; prohibido si `term.basis` es `protectionPeriod` | Fin de la vigencia. Con plazo fijo, es el inicio más la duración. |
 | `renewal` | [`Renewal`](#renewal) | no | Renovación. |
 | `postTermCollection` | [`PostTermCollection`](#posttermcollection) | no | Cobro posterior al fin del contrato. |
-| `publisherShare` | [`PublisherShare`](#publishershare) | no | Total de las editoras sobre la obra bajo este contrato, con la condición que sube el tope, si la hay. |
+| `publisherShare` | [`PublisherShare`](#publishershare) | no | Lo que el contrato da a la editora sobre la parte de quienes lo conceden, con la condición que sube el tope, si la hay. |
 | `terms` | [`Terms`](#terms) | no | Plantilla, contrato tipo y valores pactados. |
 | `observations` | lista de [`Observation`](#observation) | no | Observaciones impresas en el contrato. |
 | `registrations` | lista de [`Registration`](#registration) | no | Inscripción del contrato ante un organismo (`kind`: `contract`). |
@@ -833,11 +833,11 @@ El cobro posterior al fin de un contrato. Se usa en [`Agreement.postTermCollecti
 
 ### `PublisherShare`
 
-El porcentaje total de las editoras bajo un contrato. Se usa en [`Agreement.publisherShare`](#agreement).
+El porcentaje que un contrato da a la editora sobre la parte de quienes lo conceden. Se usa en [`Agreement.publisherShare`](#agreement).
 
 | Campo | Tipo | Requerido | Descripción |
 |---|---|---|---|
-| `percent` | porcentaje | sí | Porcentaje sobre la obra entera. |
+| `percent` | porcentaje | sí | Porcentaje del contrato sobre la parte de cada `grantor` en la obra, no sobre la obra entera: con 25 y un autor que tiene 50, la editora cobra 12,5 de la obra. Los topes editoriales se comparan con este valor. |
 | `condition` | [`Condition`](#condition) | no | Condición que permite superar el tope, por ejemplo una del art. 8 del contrato tipo (`SADAIC_ART8`). |
 
 ### `Terms`

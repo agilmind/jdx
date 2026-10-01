@@ -81,7 +81,7 @@ describe('tipos TS y bundle', () => {
     expect(check(EXAMPLE_TEXT.replace('"kind": "person"', '"kind": "robot"'))).toEqual([
       `Type '"robot"' is not assignable to type '"person" | "organization"'.`,
     ]);
-    expect(check(EXAMPLE_TEXT.replace('"percent": 25 }', '"percnet": 25 }')).join('\n')).toContain(
+    expect(check(EXAMPLE_TEXT.replace('"percent": 12.5 }', '"percnet": 12.5 }')).join('\n')).toContain(
       "Object literal may only specify known properties, and '\"percnet\"' does not exist in type 'Share'.",
     );
   });

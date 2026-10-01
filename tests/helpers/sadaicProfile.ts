@@ -37,7 +37,7 @@ export function sadaicProfile(): Profile {
       { ruleId: 'JDX-CLS-001' },
       { ruleId: 'JDX-REF-003' },
       { ruleId: 'JDX-REF-004' },
-      { ruleId: 'JDX-EDN-001' },
+      { ruleId: 'JDX-EDN-001', params: { registry: 'DNDA_AR' } },
       { ruleId: 'JDX-MED-003' },
       { ruleId: 'JDX-MED-010' },
       { ruleId: 'JDX-CMP-001' },

@@ -103,7 +103,10 @@
       "ruleId": "JDX-REF-004"
     },
     {
-      "ruleId": "JDX-EDN-001"
+      "ruleId": "JDX-EDN-001",
+      "params": {
+        "registry": "DNDA_AR"
+      }
     },
     {
       "ruleId": "JDX-MED-003"

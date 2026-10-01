@@ -1147,9 +1147,9 @@
       "since": "1.0",
       "implemented": true,
       "predicate": {
-        "es": "Con edition: falta publicationDate, un legalDepositCopy en edition.media o un registro DNDA_AR de kind publishedWork en edition.registrations. Un resultado por dato que falta.",
-        "pt": "Com edition: falta publicationDate, um legalDepositCopy em edition.media ou um registro DNDA_AR de kind publishedWork em edition.registrations. Um resultado por dado que falta.",
-        "en": "With edition: publicationDate, a legalDepositCopy in edition.media or a DNDA_AR registration of kind publishedWork in edition.registrations is missing. One result per missing datum."
+        "es": "Con edition: falta publicationDate, un legalDepositCopy en edition.media o, en edition.registrations, un registro de kind publishedWork en el registro indicado (registry). Un resultado por dato que falta.",
+        "pt": "Com edition: falta publicationDate, um legalDepositCopy em edition.media ou, em edition.registrations, um registro de kind publishedWork no registro indicado (registry). Um resultado por dado que falta.",
+        "en": "With edition: publicationDate, a legalDepositCopy in edition.media or, in edition.registrations, a registration of kind publishedWork in the given registry (registry) is missing. One result per missing datum."
       },
       "message": {
         "es": "A la edición le falta {missing:field}.",
@@ -1158,6 +1158,15 @@
       },
       "profileParamsSchema": {
         "type": "object",
+        "properties": {
+          "registry": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+          }
+        },
+        "required": [
+          "registry"
+        ],
         "additionalProperties": false
       },
       "resultParamsSchema": {
@@ -1170,10 +1179,15 @@
               "legalDepositCopy",
               "registration"
             ]
+          },
+          "registry": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
           }
         },
         "required": [
-          "missing"
+          "missing",
+          "registry"
         ],
         "additionalProperties": false
       },
@@ -1183,7 +1197,8 @@
       },
       "example": {
         "params": {
-          "missing": "registration"
+          "missing": "registration",
+          "registry": "DNDA_AR"
         }
       }
     },
@@ -1897,6 +1912,10 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
           "recording": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
@@ -1954,6 +1973,10 @@
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
           "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
@@ -2017,6 +2040,10 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
           "recording": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
@@ -2074,6 +2101,10 @@
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
           "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
@@ -2137,6 +2168,10 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
           "recording": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
@@ -2194,6 +2229,10 @@
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
           "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
@@ -2987,11 +3026,28 @@
       },
       "contextSchema": {
         "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
         "additionalProperties": false
       },
       "example": {
         "params": {
           "text": "33.33333"
+        },
+        "context": {
+          "work": "w1"
         }
       }
     },
@@ -3031,11 +3087,36 @@
       },
       "contextSchema": {
         "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "media": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
         "additionalProperties": false
       },
       "example": {
         "params": {
           "text": "2026-02-30"
+        },
+        "context": {
+          "agreement": "a1"
         }
       }
     },
@@ -3219,12 +3300,37 @@
       },
       "contextSchema": {
         "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "media": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
         "additionalProperties": false
       },
       "example": {
         "params": {
           "value": "p9",
           "list": "parties"
+        },
+        "context": {
+          "work": "w1"
         }
       }
     },
@@ -4218,6 +4324,10 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
           },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
           "recording": {
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]{0,63}$"
@@ -4522,12 +4632,37 @@
       },
       "contextSchema": {
         "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "media": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "recording": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
         "additionalProperties": false
       },
       "example": {
         "params": {
           "list": "titleTypes",
           "value": "workingTitle"
+        },
+        "context": {
+          "work": "w1"
         }
       }
     },

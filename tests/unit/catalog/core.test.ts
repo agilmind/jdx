@@ -124,6 +124,25 @@ describe('catálogo: entorno, núcleo y política', () => {
     expect(validators.validateWith(rule('JDX-JSN-001').resultParamsSchema, { reason: 'comment' }).map((e) => e.keyword)).toEqual(['enum']);
   });
 
+  it('place-dependent core rules (REF-002, VER-004, NUM-001 and NUM-002) carry an optional context', () => {
+    const validators = defaultValidators();
+    const keys = (id: string) => Object.keys((rule(id).contextSchema as { properties?: object }).properties ?? {});
+    const all = ['work', 'party', 'agreement', 'media', 'recording'];
+    expect([keys('JDX-REF-002'), keys('JDX-VER-004'), keys('JDX-NUM-001'), keys('JDX-NUM-002')]).toEqual([
+      all,
+      all,
+      ['work', 'agreement', 'recording'],
+      all,
+    ]);
+    for (const id of ['JDX-REF-002', 'JDX-VER-004', 'JDX-NUM-001', 'JDX-NUM-002']) {
+      expect((rule(id).contextSchema as { required?: string[] }).required, id).toBeUndefined();
+      // Sin context vale: un dato de la declaración no es de ninguna lista.
+      expect(validators.validateWith(rule(id).contextSchema, {}), id).toEqual([]);
+    }
+    // Un porcentaje solo está en obras, grabaciones y contratos.
+    expect(validators.validateWith(rule('JDX-NUM-001').contextSchema, { party: 'p1' }).map((e) => e.keyword)).toEqual(['additionalProperties']);
+  });
+
   it('merge-catalog keeps ids sorted and refuses duplicates', () => {
     const first = mergeCatalog(null, { catalog: '1.0', rules: [{ id: 'JDX-ENV-002' }, { id: 'JDX-ENV-001' }] });
     expect(first).toEqual({ catalog: '1.0', rules: [{ id: 'JDX-ENV-001' }, { id: 'JDX-ENV-002' }] });

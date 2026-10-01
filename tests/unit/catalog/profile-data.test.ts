@@ -81,11 +81,12 @@ describe('catálogo: perfil II (datos)', () => {
     expect(active.filter((r) => !r.implemented).map((r) => r.id)).toEqual(['JDX-IDN-004']);
   });
 
-  it('CMP-002, CMP-003 and CMP-006 params schemas accept sadaic/0.1', () => {
-    expect([sadaicParams('JDX-CMP-002'), sadaicParams('JDX-CMP-003'), sadaicParams('JDX-CMP-006')]).toEqual([
+  it('CMP-002, CMP-003, CMP-006 and EDN-001 params schemas accept sadaic/0.1', () => {
+    expect([sadaicParams('JDX-CMP-002'), sadaicParams('JDX-CMP-003'), sadaicParams('JDX-CMP-006'), sadaicParams('JDX-EDN-001')]).toEqual([
       { scheme: 'SADAIC_GENRE' },
       { registry: 'DNDA_AR' },
       { country: 'AR' },
+      { registry: 'DNDA_AR' },
     ]);
     // IDN-004 no está en sadaic/0.1: sin params, como las demás.
     for (const id of DATA) expect(errorsOf(rule(id).profileParamsSchema, sadaicParams(id)), id).toEqual([]);
@@ -95,6 +96,23 @@ describe('catálogo: perfil II (datos)', () => {
     expect(errorsOf(rule('JDX-CMP-006').profileParamsSchema, { country: 'ARG' })).toEqual([['/country', 'pattern']]);
     // CMP-003 da un resultado por parte: params.part es music o lyrics.
     expect(errorsOf(rule('JDX-CMP-003').resultParamsSchema, { registry: 'DNDA_AR', part: 'both' })).toEqual([['/part', 'enum']]);
+    // EDN-001 toma el registro del perfil, como CMP-003, y lo devuelve en cada resultado.
+    const edn001 = rule('JDX-EDN-001');
+    expect(errorsOf(edn001.profileParamsSchema, {})).toEqual([['', 'required']]);
+    expect(errorsOf(edn001.profileParamsSchema, { registry: 'dnda' })).toEqual([['/registry', 'pattern']]);
+    expect(errorsOf(edn001.resultParamsSchema, { missing: 'registration', registry: 'DNDA_AR' })).toEqual([]);
+    expect(errorsOf(edn001.resultParamsSchema, { missing: 'publicationDate' })).toEqual([['', 'required']]);
+  });
+
+  it('identifiers and society codes may carry the agreement that contains them', () => {
+    for (const id of ['JDX-IDN-001', 'JDX-IDN-002', 'JDX-IDN-003', 'JDX-IDN-004', 'JDX-IDN-005', 'JDX-IDN-006', 'JDX-SOC-001']) {
+      const schema = rule(id).contextSchema as { properties: object; required?: string[] };
+      expect(Object.keys(schema.properties), id).toEqual(['work', 'party', 'agreement', 'recording']);
+      expect(schema.required, id).toBeUndefined();
+      // Un identificador de un contrato, o de su contrato padre, lleva el contrato.
+      expect(errorsOf(rule(id).contextSchema, { agreement: 'a1' }), id).toEqual([]);
+      expect(errorsOf(rule(id).contextSchema, { agreement: 'A1' }), id).toEqual([['/agreement', 'pattern']]);
+    }
   });
 
   it('the catalog has exactly 75 active codes and JDX-MED-005, JDX-SHR-001, JDX-SHR-003 and JDX-SHR-005 retired', () => {

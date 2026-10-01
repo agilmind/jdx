@@ -108,7 +108,7 @@ describe('mensajes', () => {
     }
   });
 
-  it('the wording of the review: neutral Spanish, Portuguese and English', () => {
+  it('messages read naturally in neutral Spanish, in Portuguese and in English', () => {
     const say = (id: string, lang: Lang, params: { [k: string]: JsonValue }, context?: { [k: string]: string }) => formatMessage(rule(id), lang, params, context);
     expect(say('JDX-REF-003', 'es', { value: 'm2', found: 'audio', expected: ['registrationFiling'] })).toBe('La referencia m2 es de tipo audio; se esperaba registrationFiling.');
     expect(say('JDX-REF-003', 'pt', { value: 'm2', found: 'audio', expected: ['registrationFiling'] })).toBe('A referência m2 é do tipo audio; esperado: registrationFiling.');
@@ -126,7 +126,7 @@ describe('mensajes', () => {
     expect(say('JDX-MED-010', 'en', { missing: 'delivery' }, { media: 'm4' })).toBe('Media m4 lacks the delivery it travelled in (delivery).');
     expect(say('JDX-CMP-003', 'en', { registry: 'DNDA_AR', part: 'lyrics' }, { work: 'w2' })).toBe('Work w2 has no DNDA_AR registration for its lyrics.');
     expect(say('JDX-EDN-001', 'es', { missing: 'registration', registry: 'DNDA_AR' })).toBe('A la edición le falta la inscripción en DNDA_AR como obra publicada (registrations).');
-    // Ninguna forma regional del español ni las que se corrigieron en portugués e inglés.
+    // Sin formas regionales del español, y sin las formas que no se usan en portugués ni en inglés.
     const all = catalog.rules.flatMap((r) => [r.message, r.predicate]).concat(Object.values(MESSAGE_TERMS).flatMap((terms) => Object.values(terms)));
     expect(all.filter((texts) => /\bacá\b|no alcanza|\bpiso\b/u.test(texts.es)).map((texts) => texts.es)).toEqual([]);
     expect(all.filter((texts) => /aqui vai|está faltando|não basta|\broyalty\b|\bpiso\b/u.test(texts.pt)).map((texts) => texts.pt)).toEqual([]);

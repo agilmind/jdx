@@ -60,7 +60,8 @@ export const MESSAGE_VOCABULARY: MessageVocabulary = deepFreeze(parseVocabulary(
 export const MESSAGE_TERMS: Readonly<Record<TermFormatter, Terms>> = MESSAGE_VOCABULARY.terms;
 
 function parseVocabulary(text: string | undefined): MessageVocabulary {
-  const empty: MessageVocabulary = { catalog: '', terms: { right: {}, part: {}, field: {}, reason: {}, flag: {} }, others: { one: { es: '', pt: '', en: '' }, many: { es: '', pt: '', en: '' } } };
+  const none: Texts = { es: '', pt: '', en: '' };
+  const empty: MessageVocabulary = { catalog: '', terms: { right: {}, part: {}, field: {}, reason: {}, flag: {} }, others: { one: none, many: none } };
   try {
     const parsed = JSON.parse(text ?? '') as unknown;
     return isRecord(parsed) && isRecord(parsed.terms) && isRecord(parsed.others) ? (parsed as unknown as MessageVocabulary) : empty;

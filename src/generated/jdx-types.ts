@@ -16,7 +16,7 @@ export type Extensions = { readonly [key: string]: ExtensionValue };
 
 /** La raíz del archivo: la declaración y sus listas de personas, obras, grabaciones, contratos y archivos. */
 export interface JdxDocument {
-  /** URL del schema de la versión menor del archivo, por ejemplo `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. Es un identificador: no se descarga. */
+  /** URL del schema de la versión menor del archivo, por ejemplo `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. El validador no la descarga: usa los schemas que trae. */
   readonly $schema: string;
   /** Versión del formato, `M.m` (hoy `1.0`). */
   readonly jdx: string;

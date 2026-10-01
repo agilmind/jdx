@@ -62,7 +62,7 @@ La raíz del archivo: la declaración y sus listas de personas, obras, grabacion
 
 | Campo | Tipo | Requerido | Descripción |
 |---|---|---|---|
-| `$schema` | uri | sí | URL del schema de la versión menor del archivo, por ejemplo `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. Es un identificador: no se descarga. |
+| `$schema` | uri | sí | URL del schema de la versión menor del archivo, por ejemplo `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. El validador no la descarga: usa los schemas que trae. |
 | `jdx` | versión | sí | Versión del formato, `M.m` (hoy `1.0`). |
 | `profiles` | lista de uris | no | Perfiles que el emisor cree que aplican. Es informativo: el perfil lo elige quien recibe. |
 | `declaration` | [`Declaration`](#declaration) | sí | Qué declaración es, qué revisión y quién la emite. |

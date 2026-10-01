@@ -62,7 +62,7 @@ The root of a JDX document: the declaration and its lists of parties, works, rec
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `$schema` | uri | yes | URI of the schema of the document's minor version, for example `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. It is an identifier and is not dereferenced. |
+| `$schema` | uri | yes | URI of the schema of the document's minor version, for example `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. Validators do not download it: they use their bundled schemas. |
 | `jdx` | version | yes | Format version, `M.m` (`1.0` for this edition). |
 | `profiles` | list of uris | no | Profiles that the issuer believes apply. Informative: the receiver chooses the profile. |
 | `declaration` | [`Declaration`](#declaration) | yes | Which declaration, which revision, and who issues it. |

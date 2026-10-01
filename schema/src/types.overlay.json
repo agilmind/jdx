@@ -87,7 +87,7 @@
   },
   "translations": {
     "Document": { "en": "The root of a JDX document: the declaration and its lists of parties, works, recordings, agreements and media." },
-    "Document.$schema": { "en": "URI of the schema of the document's minor version, for example `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. It is an identifier and is not dereferenced." },
+    "Document.$schema": { "en": "URI of the schema of the document's minor version, for example `https://jdx.jupiter.ar/schema/1.0/jdx.schema.json`. Validators do not download it: they use their bundled schemas." },
     "Document.jdx": { "en": "Format version, `M.m` (`1.0` for this edition)." },
     "Document.profiles": { "en": "Profiles that the issuer believes apply. Informative: the receiver chooses the profile." },
     "Document.declaration": { "en": "Which declaration, which revision, and who issues it." },

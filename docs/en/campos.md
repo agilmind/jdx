@@ -118,7 +118,7 @@ A name of a person or organisation. Used in [`Party.names`](#party) and [`Extern
 | `given` | text | no | Given name or names. Persons only. |
 | `family` | text | at least one of `full` and `family` | Family name or names. Persons only. |
 | `full` | text | at least one of `full` and `family` | Full name without breakdown: pseudonyms, trade names and organisations. |
-| `registrations` | list of [`Registration`](#registration) | no | Registration of the `pseudonym` (`kind` `pseudonym`). |
+| `registrations` | list of [`Registration`](#registration) | no | Registration of the pseudonym (`kind` `pseudonym`). |
 
 ### `Identifier`
 
@@ -203,7 +203,7 @@ A country subdivision (province, state, department). Used in [`Address.subdivisi
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `code` | subdivision | no | ISO 3166-2 code, for example `AR-B`. |
-| `name` | text | yes | Name, for example `Buenos Aires`. |
+| `name` | text | yes | Name, for example Buenos Aires. |
 
 ### `Contact`
 
@@ -298,7 +298,7 @@ The legal representative of a writer who is a minor. Used in [`Party.legalRepres
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `party` | id of `parties` | yes | The representative. |
-| `capacity` | [open](../../values/legalRepresentativeCapacities.json): `parent`, `guardian` | no | Capacity: `parent` (`parent`) or `guardian` (`guardian`). |
+| `capacity` | [open](../../values/legalRepresentativeCapacities.json): `parent`, `guardian` | no | Capacity: parent (`parent`) or guardian (`guardian`). |
 
 ### `Successor`
 
@@ -307,7 +307,7 @@ An heir or successor in title. Used in [`Party.successors`](#party).
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `party` | id of `parties` | yes | The successor. |
-| `capacity` | [open](../../values/successorCapacities.json): `heir`, `unifiedRepresentative` | no | Capacity: `heir` (`heir`) or unified representative of the heirs (`unifiedRepresentative`). |
+| `capacity` | [open](../../values/successorCapacities.json): `heir`, `unifiedRepresentative` | no | Capacity: heir (`heir`) or unified representative of the heirs (`unifiedRepresentative`). |
 
 ### `Representative`
 
@@ -389,7 +389,7 @@ The first public performance of a work. Used in [`Work.firstPerformance`](#work)
 
 ### `WorkRef`
 
-A reference to another `work`: a `work` of the document (`work`) or an `external` `work` (`external`). Used in [`Work.excerptOf`](#work) and [`Version.original`](#version).
+A reference to another work: a work of the document (`work`) or an external work (`external`). Used in [`Work.excerptOf`](#work) and [`Version.original`](#version).
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -439,7 +439,7 @@ A work made of other works. Used in [`Work.composite`](#work).
 
 ### `Component`
 
-A `work` that is part of a composite `work`: a `work` of the document (`work`) or an `external` `work` (`external`), with its duration. Used in [`Composite.components`](#composite).
+A work that is part of a composite work: a work of the document (`work`) or an external work (`external`), with its duration. Used in [`Composite.components`](#composite).
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -626,7 +626,7 @@ The ℗ line of a recording. Used in [`Recording.pLine`](#recording).
 |---|---|---|---|
 | `year` | year | no | Year. |
 | `owner` | id of `parties` | no | Owner. |
-| `text` | text | no | Full text, for example "`℗ 2026 Sello Sur`". |
+| `text` | text | no | Full text, for example "℗ 2026 Sello Sur". |
 
 ### `Release`
 
@@ -691,7 +691,7 @@ A technical or artistic contributor to a recording. Used in [`Recording.contribu
 
 ### `Sample`
 
-A sampled `recording`: a `recording` of the document (`recording`) or an `external` `recording` (`external`). Used in [`Recording.samples`](#recording).
+A sampled recording: a recording of the document (`recording`) or an external recording (`external`). Used in [`Recording.samples`](#recording).
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -781,11 +781,11 @@ A party to an agreement. Used in [`Agreement.parties`](#agreement).
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `party` | id of `parties` | yes | The person or organisation. |
-| `role` | closed: `grantor`, `grantee`, `coWriter` | yes | Role: `grantor` (`grantor`), `grantee` (`grantee`) or co-writer (`coWriter`, in a split agreement). |
+| `role` | closed: `grantor`, `grantee`, `coWriter` | yes | Role: grantor (`grantor`), grantee (`grantee`) or co-writer (`coWriter`, in a split agreement). |
 
 ### `AgreementParent`
 
-The `agreement` on which another `agreement` depends: an `agreement` of the document (`agreement`) or of another declaration (`uid`). Used in [`Agreement.parent`](#agreement).
+The agreement on which another agreement depends: an agreement of the document (`agreement`) or of another declaration (`uid`). Used in [`Agreement.parent`](#agreement).
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -808,7 +808,7 @@ The term of an agreement. Used in [`Agreement.term`](#agreement).
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `basis` | closed: `protectionPeriod`, `fixed` | yes | The copyright protection period (`protectionPeriod`) or a `fixed` term (`fixed`). |
+| `basis` | closed: `protectionPeriod`, `fixed` | yes | The copyright protection period (`protectionPeriod`) or a fixed term (`fixed`). |
 | `duration` | duration | if `basis` is `fixed`; not allowed if `basis` is `protectionPeriod` | Duration of the fixed term, for example `P10Y`. |
 
 ### `Renewal`
@@ -828,7 +828,7 @@ Collection after the end of an agreement. Used in [`Agreement.postTermCollection
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `status` | closed: `none`, `openEnded`, `date` | yes | No post-term collection (`none`), without end `date` (`openEnded`) or until a `date` (`date`). |
+| `status` | closed: `none`, `openEnded`, `date` | yes | No post-term collection (`none`), without end date (`openEnded`) or until a date (`date`). |
 | `endDate` | date | if `status` is `date`; otherwise not allowed | Until when collection continues. |
 
 ### `PublisherShare`
@@ -876,7 +876,7 @@ The amount invested by the publisher. Used in [`TermValues.investedAmount`](#ter
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `status` | closed: `determined`, `undetermined` | yes | Whether the amount is `determined` (`determined`) or not (`undetermined`). |
+| `status` | closed: `determined`, `undetermined` | yes | Whether the amount is determined (`determined`) or not (`undetermined`). |
 | `amount` | amount | if `status` is `determined`; not allowed if `status` is `undetermined` | Amount. |
 | `currency` | currency | if `status` is `determined`; not allowed if `status` is `undetermined` | Currency. |
 
@@ -935,7 +935,7 @@ The legal deposit of an edition. Used in [`Edition.deposit`](#edition).
 |---|---|---|---|
 | `mode` | closed: `physical`, `digital` | yes | Physical or digital. |
 | `sha256` | sha256 | no | Hash of the deposited copy. |
-| `copy` | id of `media` (`legalDepositCopy`) | no | The file of the `copy`. When `sha256` and `copy` are both present, the hashes must match (`JDX-MED-009`). |
+| `copy` | id of `media` (`legalDepositCopy`) | no | The file of the copy. When `sha256` and `copy` are both present, the hashes must match (`JDX-MED-009`). |
 
 ## Media and evidence
 

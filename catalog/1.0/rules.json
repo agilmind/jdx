@@ -2,6 +2,484 @@
   "catalog": "1.0",
   "rules": [
     {
+      "id": "JDX-AGR-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Contrato publishing sin un media signedContract con evidence.esignature.",
+        "pt": "Contrato publishing sem um media signedContract com evidence.esignature.",
+        "en": "Publishing agreement without a signedContract media with evidence.esignature."
+      },
+      "message": {
+        "es": "El contrato {agreement} no tiene un archivo signedContract con firma electrónica.",
+        "pt": "O contrato {agreement} não tem um arquivo signedContract com assinatura eletrônica.",
+        "en": "Agreement {agreement} has no signedContract media with an electronic signature."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "agreement"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "agreement": "a1"
+        }
+      }
+    },
+    {
+      "id": "JDX-AGR-002",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Contrato sin signatureDate, territories o term; si no es writerSplit, sin grantor o sin grantee; si es writerSplit, con menos de dos coWriter. Un resultado por dato que falta.",
+        "pt": "Contrato sem signatureDate, territories ou term; se não for writerSplit, sem grantor ou sem grantee; se for writerSplit, com menos de dois coWriter. Um resultado por dado que falta.",
+        "en": "Agreement without signatureDate, territories or term; if it is not writerSplit, without grantor or grantee; if it is writerSplit, with fewer than two coWriter. One result per missing datum."
+      },
+      "message": {
+        "es": "Al contrato {agreement} le falta {missing:field}.",
+        "pt": "Falta {missing:field} no contrato {agreement}.",
+        "en": "Agreement {agreement} has no {missing:field}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "missing": {
+            "type": "string",
+            "enum": [
+              "signatureDate",
+              "territories",
+              "term",
+              "grantor",
+              "grantee",
+              "coWriter"
+            ]
+          }
+        },
+        "required": [
+          "missing"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "agreement"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "missing": "signatureDate"
+        },
+        "context": {
+          "agreement": "a1"
+        }
+      }
+    },
+    {
+      "id": "JDX-AGR-003",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Tope editorial: contrato publishing con publisherShare.percent mayor que cap sin una condition del esquema capWithCondition.conditionScheme con un código de su lista empaquetada, o mayor que capWithCondition.value con ella. Se compara exacto con el porcentaje del contrato; los otros tipos de contrato no se evalúan.",
+        "pt": "Teto editorial: contrato publishing com publisherShare.percent maior que cap sem uma condition do esquema capWithCondition.conditionScheme com um código da sua lista empacotada, ou maior que capWithCondition.value com ela. Compara-se exato com o percentual do contrato; os outros tipos de contrato não são avaliados.",
+        "en": "Publisher cap: a publishing agreement with publisherShare.percent above cap without a condition of scheme capWithCondition.conditionScheme with a code from its bundled list, or above capWithCondition.value with it. It is compared exactly with the agreement's percentage; other agreement types are not evaluated."
+      },
+      "message": {
+        "es": "El contrato da a la editora el {percent} %; el tope es {cap} %.",
+        "pt": "O contrato dá à editora {percent} %; o teto é {cap} %.",
+        "en": "The agreement gives the publisher {percent} %; the cap is {cap} %."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "properties": {
+          "cap": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "capWithCondition": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "conditionScheme": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"
+              }
+            },
+            "required": [
+              "value",
+              "conditionScheme"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "cap",
+          "capWithCondition"
+        ],
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "cap": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "percent",
+          "cap"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "agreement"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "percent": 30,
+          "cap": 25
+        },
+        "context": {
+          "agreement": "a1"
+        }
+      }
+    },
+    {
+      "id": "JDX-AGR-004",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Dos contratos de los tipos indicados cubren la misma obra con algún derecho de rights (si falta, los cuatro) y algún país de territories (si falta, 2136) en común. grantedRights no cuenta.",
+        "pt": "Dois contratos dos tipos indicados cobrem a mesma obra com algum direito de rights (se faltar, os quatro) e algum país de territories (se faltar, 2136) em comum. grantedRights não conta.",
+        "en": "Two agreements of the given types cover the same work with some right of rights (if missing, all four) and some country of territories (if missing, 2136) in common. grantedRights does not count."
+      },
+      "message": {
+        "es": "Los contratos {agreement} y {other} se superponen en la obra {work}.",
+        "pt": "Os contratos {agreement} e {other} se sobrepõem na obra {work}.",
+        "en": "Agreements {agreement} and {other} overlap on work {work}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "properties": {
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "publishing",
+                "subPublishing",
+                "administration",
+                "assignment",
+                "derivativeAuthorization",
+                "writerSplit"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "types"
+        ],
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "other": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "other"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work",
+          "agreement"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "other": "a2"
+        },
+        "context": {
+          "work": "w1",
+          "agreement": "a1"
+        }
+      }
+    },
+    {
+      "id": "JDX-AGR-005",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Con term.basis fixed y startDate: endDate falta o es distinto de startDate más term.duration. No se evalúa con protectionPeriod, sin startDate ni con una duración en horas, minutos o segundos.",
+        "pt": "Com term.basis fixed e startDate: endDate falta ou é diferente de startDate mais term.duration. Não é avaliada com protectionPeriod, sem startDate nem com uma duração em horas, minutos ou segundos.",
+        "en": "With term.basis fixed and startDate: endDate is missing or differs from startDate plus term.duration. Not evaluated with protectionPeriod, without startDate or with a duration in hours, minutes or seconds."
+      },
+      "message": {
+        "es": "El contrato {agreement} debería terminar el {expected}.",
+        "pt": "O contrato {agreement} deveria terminar em {expected}.",
+        "en": "Agreement {agreement} should end on {expected}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "expected": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "endDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "expected"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "agreement"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "expected": "2036-09-12",
+          "endDate": "2036-09-11"
+        },
+        "context": {
+          "agreement": "a1"
+        }
+      }
+    },
+    {
+      "id": "JDX-AGR-006",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "terms.values.retailPricePercent o arrangementRetailPricePercent debajo de su mínimo (retailMin, arrangementRetailMin).",
+        "pt": "terms.values.retailPricePercent ou arrangementRetailPricePercent abaixo do seu mínimo (retailMin, arrangementRetailMin).",
+        "en": "terms.values.retailPricePercent or arrangementRetailPricePercent below its minimum (retailMin, arrangementRetailMin)."
+      },
+      "message": {
+        "es": "El contrato {agreement} da {percent} % de {field:field}; el mínimo es {min} %.",
+        "pt": "O contrato {agreement} dá {percent} % de {field:field}; o mínimo é {min} %.",
+        "en": "Agreement {agreement} gives {percent} % {field:field}; the minimum is {min} %."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "properties": {
+          "retailMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "arrangementRetailMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "retailMin",
+          "arrangementRetailMin"
+        ],
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "retailPricePercent",
+              "arrangementRetailPricePercent"
+            ]
+          },
+          "percent": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "min": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "field",
+          "percent",
+          "min"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "agreement"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "field": "retailPricePercent",
+          "percent": 15,
+          "min": 20
+        },
+        "context": {
+          "agreement": "a1"
+        }
+      }
+    },
+    {
+      "id": "JDX-DEC-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "declaration.recipients no incluye a la sociedad del perfil (el society de su encabezado), o falta.",
+        "pt": "declaration.recipients não inclui a sociedade do perfil (o society do seu cabeçalho), ou falta.",
+        "en": "declaration.recipients does not include the profile's society (the society in its header), or is missing."
+      },
+      "message": {
+        "es": "La declaración no está dirigida a la sociedad {society}.",
+        "pt": "A declaração não está dirigida à sociedade {society}.",
+        "en": "The declaration is not addressed to society {society}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "society": {
+            "type": "string",
+            "pattern": "^(\\d{3}|X_JDX_[A-Z0-9_]+)$"
+          }
+        },
+        "required": [
+          "society"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "society": "061"
+        }
+      }
+    },
+    {
       "id": "JDX-DEC-002",
       "layer": "core",
       "check": "core",
@@ -1433,6 +1911,77 @@
       }
     },
     {
+      "id": "JDX-MIN-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Autor (party de contributors) menor de edad a la fecha de referencia y sin legalRepresentatives. La fecha de referencia es la signatureDate más temprana de los contratos donde es grantor o coWriter; si no hay, su signers[].signedAt más temprano; si no, declaration.createdAt. Sin birthDate no se evalúa.",
+        "pt": "Autor (party de contributors) menor de idade na data de referência e sem legalRepresentatives. A data de referência é a signatureDate mais antiga dos contratos em que é grantor ou coWriter; se não houver, seu signers[].signedAt mais antigo; senão, declaration.createdAt. Sem birthDate não é avaliada.",
+        "en": "Writer (a contributors party) under age at the reference date and without legalRepresentatives. The reference date is the earliest signatureDate of the agreements where they are grantor or coWriter; failing that, their earliest signers[].signedAt; failing that, declaration.createdAt. Not evaluated without birthDate."
+      },
+      "message": {
+        "es": "El autor {party} tenía {age} años el {referenceDate} y no tiene representante legal.",
+        "pt": "O autor {party} tinha {age} anos em {referenceDate} e não tem representante legal.",
+        "en": "Writer {party} was {age} on {referenceDate} and has no legal representative."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "properties": {
+          "ageOfMajority": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "ageOfMajority"
+        ],
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "age": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "referenceDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "age",
+          "referenceDate"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "party"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "age": 16,
+          "referenceDate": "2026-09-12"
+        },
+        "context": {
+          "party": "p3"
+        }
+      }
+    },
+    {
       "id": "JDX-NUM-001",
       "layer": "core",
       "check": "core",
@@ -1710,6 +2259,56 @@
       }
     },
     {
+      "id": "JDX-ROL-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Rol creator genérico en contributors.",
+        "pt": "Papel creator genérico em contributors.",
+        "en": "Generic creator role in contributors."
+      },
+      "message": {
+        "es": "El colaborador {party} tiene el rol genérico creator; conviene precisarlo (composer, lyricist).",
+        "pt": "O colaborador {party} tem o papel genérico creator; convém precisá-lo (composer, lyricist).",
+        "en": "Contributor {party} has the generic role creator; it should be specific (composer, lyricist)."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work",
+          "party"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "work": "w1",
+          "party": "p1"
+        }
+      }
+    },
+    {
       "id": "JDX-SCH-001",
       "layer": "schema",
       "check": "schema",
@@ -1750,6 +2349,517 @@
         "params": {
           "keyword": "required",
           "missingProperty": "percent"
+        }
+      }
+    },
+    {
+      "id": "JDX-SHR-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "retired",
+      "since": "1.0",
+      "implemented": false,
+      "predicate": {
+        "es": "Una parte de authorship (music o lyrics) no suma 100. Retirada: la autoría se lee sobre la obra entera y la controlan JDX-SHR-006 y JDX-SHR-007.",
+        "pt": "Uma parte de authorship (music ou lyrics) não soma 100. Retirada: a autoria é lida sobre a obra inteira e é controlada pelas JDX-SHR-006 e JDX-SHR-007.",
+        "en": "An authorship part (music or lyrics) does not add up to 100. Retired: authorship is read over the whole work and JDX-SHR-006 and JDX-SHR-007 check it."
+      },
+      "message": {
+        "es": "Una parte de la autoría de la obra {work} no suma 100.",
+        "pt": "Uma parte da autoria da obra {work} não soma 100.",
+        "en": "A part of the authorship of work {work} does not add up to 100."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-SHR-002",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Una celda de shares (derecho por país) suma más de 100, o distinto de 100 si tiene alguna fila writer, con la tolerancia de 0,01. Un resultado por obra y derecho, con el primer país que falla y cuántos fallan.",
+        "pt": "Uma célula de shares (direito por país) soma mais de 100, ou diferente de 100 se tiver alguma linha writer, com a tolerância de 0,01. Um resultado por obra e direito, com o primeiro país que falha e quantos falham.",
+        "en": "A shares cell (right by country) adds up to more than 100, or other than 100 if it has a writer row, with a tolerance of 0.01. One result per work and right, with the first failing country and how many fail."
+      },
+      "message": {
+        "es": "Las filas de cobro suman {sum} en {right:right} en {country}{countries:others}; el máximo es {cap}, y con filas de autor tienen que dar 100.",
+        "pt": "As linhas de recebimento somam {sum} em {right:right} em {country}{countries:others}; o máximo é {cap} e, com linhas de autor, devem dar 100.",
+        "en": "The collection rows add up to {sum} for {right:right} in {country}{countries:others}; the maximum is {cap}, and with writer rows they must make 100."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "right": {
+            "type": "string",
+            "enum": [
+              "performing",
+              "mechanical",
+              "synchronization",
+              "print"
+            ]
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "countries": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sum": {
+            "type": "number",
+            "minimum": 0
+          },
+          "cap": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "writer": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "right",
+          "country",
+          "countries",
+          "sum",
+          "cap"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "right": "performing",
+          "country": "AR",
+          "countries": 249,
+          "sum": 110,
+          "cap": 100
+        },
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-SHR-003",
+      "layer": "profile",
+      "check": "profile",
+      "status": "retired",
+      "since": "1.0",
+      "implemented": false,
+      "predicate": {
+        "es": "Las filas de editora de una celda pasan el tope del perfil. Retirada: el tope se controla sobre el porcentaje del contrato, con JDX-AGR-003.",
+        "pt": "As linhas de editora de uma célula passam o teto do perfil. Retirada: o teto é controlado sobre o percentual do contrato, com a JDX-AGR-003.",
+        "en": "The publisher rows of a cell exceed the profile's cap. Retired: the cap is checked on the agreement's percentage, with JDX-AGR-003."
+      },
+      "message": {
+        "es": "Las filas de editora de la obra {work} pasan el tope.",
+        "pt": "As linhas de editora da obra {work} passam o teto.",
+        "en": "The publisher rows of work {work} exceed the cap."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-SHR-004",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Fila de editora (cualquier role que no es writer) sin via o sin agreement. Un resultado por dato que falta.",
+        "pt": "Linha de editora (qualquer role que não é writer) sem via ou sem agreement. Um resultado por dado que falta.",
+        "en": "Publisher row (any role other than writer) without via or without agreement. One result per missing datum."
+      },
+      "message": {
+        "es": "A la fila de editora de {party} le falta {missing:field}.",
+        "pt": "Falta {missing:field} na linha de editora de {party}.",
+        "en": "The publisher row of {party} has no {missing:field}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "missing": {
+            "type": "string",
+            "enum": [
+              "via",
+              "agreement"
+            ]
+          }
+        },
+        "required": [
+          "missing"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "party": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work",
+          "party"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "missing": "via"
+        },
+        "context": {
+          "work": "w1",
+          "party": "p5"
+        }
+      }
+    },
+    {
+      "id": "JDX-SHR-005",
+      "layer": "profile",
+      "check": "profile",
+      "status": "retired",
+      "since": "1.0",
+      "implemented": false,
+      "predicate": {
+        "es": "Las filas de un contrato no suman su publisherShare.percent, sin tolerancia. Retirada: la coherencia de las filas con el contrato la controla JDX-SHR-008.",
+        "pt": "As linhas de um contrato não somam seu publisherShare.percent, sem tolerância. Retirada: a coerência das linhas com o contrato é controlada pela JDX-SHR-008.",
+        "en": "The rows of an agreement do not add up to its publisherShare.percent, without tolerance. Retired: JDX-SHR-008 checks the rows against the agreement."
+      },
+      "message": {
+        "es": "Las filas del contrato {agreement} no suman su publisherShare.",
+        "pt": "As linhas do contrato {agreement} não somam seu publisherShare.",
+        "en": "The rows of agreement {agreement} do not add up to its publisherShare."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work",
+          "agreement"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "work": "w1",
+          "agreement": "a1"
+        }
+      }
+    },
+    {
+      "id": "JDX-SHR-006",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "La autoría de una obra (todas sus filas de authorship) suma más de 100, con la tolerancia de 0,01. Regla general, para cualquier perfil. No se evalúa sin authorship.",
+        "pt": "A autoria de uma obra (todas as suas linhas de authorship) soma mais de 100, com a tolerância de 0,01. Regra geral, para qualquer perfil. Não é avaliada sem authorship.",
+        "en": "A work's authorship (all its authorship rows) adds up to more than 100, with a tolerance of 0.01. A general rule, for any profile. Not evaluated without authorship."
+      },
+      "message": {
+        "es": "La autoría de la obra {work} suma {sum}; no puede pasar de 100.",
+        "pt": "A autoria da obra {work} soma {sum}; não pode passar de 100.",
+        "en": "The authorship of work {work} adds up to {sum}; it cannot exceed 100."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "sum": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "sum"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "sum": 110
+        },
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-SHR-007",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "La autoría de una obra suma menos de 100, con la tolerancia de 0,01: no declara la obra entera. Con JDX-SHR-006, el perfil exige que sume exactamente 100. No se evalúa sin authorship.",
+        "pt": "A autoria de uma obra soma menos de 100, com a tolerância de 0,01: não declara a obra inteira. Com a JDX-SHR-006, o perfil exige que some exatamente 100. Não é avaliada sem authorship.",
+        "en": "A work's authorship adds up to less than 100, with a tolerance of 0.01: it does not declare the whole work. With JDX-SHR-006, the profile requires exactly 100. Not evaluated without authorship."
+      },
+      "message": {
+        "es": "La autoría de la obra {work} suma {sum}: tiene que declarar la obra entera (100).",
+        "pt": "A autoria da obra {work} soma {sum}: deve declarar a obra inteira (100).",
+        "en": "The authorship of work {work} adds up to {sum}: it must declare the whole work (100)."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "sum": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "sum"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "sum": 90
+        },
+        "context": {
+          "work": "w1"
+        }
+      }
+    },
+    {
+      "id": "JDX-SHR-008",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Las filas de editora de un contrato publishing con publisherShare no son su publisherShare.percent por la autoría de los autores de via, sobre 100, con la tolerancia de 0,01; donde el contrato se subedita, se compara el total con sus subediciones. Un resultado por obra, contrato, grupo de via y derecho.",
+        "pt": "As linhas de editora de um contrato publishing com publisherShare não são seu publisherShare.percent pela autoria dos autores de via, sobre 100, com a tolerância de 0,01; onde o contrato é subeditado, compara-se o total com suas subedições. Um resultado por obra, contrato, grupo de via e direito.",
+        "en": "The publisher rows of a publishing agreement with publisherShare are not its publisherShare.percent times the authorship of the via writers, over 100, with a tolerance of 0.01; where the agreement is sub-published, the total with its sub-publishing agreements is compared. One result per work, agreement, via group and right."
+      },
+      "message": {
+        "es": "Las filas de editora del contrato {agreement} suman {sum} en {right:right} en {country}{countries:others}; el contrato da {expected}.",
+        "pt": "As linhas de editora do contrato {agreement} somam {sum} em {right:right} em {country}{countries:others}; o contrato dá {expected}.",
+        "en": "The publisher rows of agreement {agreement} add up to {sum} for {right:right} in {country}{countries:others}; the agreement gives {expected}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "via": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,63}$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "right": {
+            "type": "string",
+            "enum": [
+              "performing",
+              "mechanical",
+              "synchronization",
+              "print"
+            ]
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "countries": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sum": {
+            "type": "number",
+            "minimum": 0
+          },
+          "expected": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "agreement",
+          "right",
+          "country",
+          "countries",
+          "sum",
+          "expected"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "agreement": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work",
+          "agreement"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "agreement": "a1",
+          "right": "performing",
+          "country": "ES",
+          "countries": 1,
+          "sum": 37.5,
+          "expected": 25
+        },
+        "context": {
+          "work": "w1",
+          "agreement": "a1"
         }
       }
     },
@@ -2178,6 +3288,50 @@
         "params": {
           "list": "titleTypes",
           "value": "workingTitle"
+        }
+      }
+    },
+    {
+      "id": "JDX-WRK-001",
+      "layer": "profile",
+      "check": "profile",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "predicate": {
+        "es": "Obra derivada (version.type distinto de original) sin version.authorization, salvo que version.original.external.publicDomain sea verdadero.",
+        "pt": "Obra derivada (version.type diferente de original) sem version.authorization, salvo se version.original.external.publicDomain for verdadeiro.",
+        "en": "Derivative work (version.type other than original) without version.authorization, unless version.original.external.publicDomain is true."
+      },
+      "message": {
+        "es": "La obra {work} es una versión y no declara su autorización.",
+        "pt": "A obra {work} é uma versão e não declara sua autorização.",
+        "en": "Work {work} is a version and declares no authorization."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "required": [
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "example": {
+        "context": {
+          "work": "w2"
         }
       }
     }

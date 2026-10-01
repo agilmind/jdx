@@ -36,6 +36,7 @@ export function inBundle(path: string): boolean {
 export const AUX_SCHEMA_FILES: Readonly<Record<AuxSchemaName, string>> = Object.freeze({
   profile: 'schema/profile.schema.json',
   catalog: 'schema/catalog.schema.json',
+  terms: 'schema/terms.schema.json',
   trustList: 'schema/trust-list.schema.json',
   state: 'schema/jdx-state.schema.json',
   report: 'schema/jdx-report.schema.json',

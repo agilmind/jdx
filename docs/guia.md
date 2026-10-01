@@ -87,7 +87,19 @@ jdx validate entrega/3f2c9a1e-….r1.jdx.json --env production --profile sadaic/
 Las reglas tienen códigos `JDX-<ÁREA>-<NNN>` que nunca se reutilizan (por
 ejemplo, `JDX-AGR-003`: un contrato da a la editora más que el tope). El
 catálogo, con cada regla y su mensaje en español, portugués e inglés, está en
-[`catalog/1.0/rules.json`](../catalog/1.0/rules.json).
+[`catalog/1.0/rules.json`](../catalog/1.0/rules.json), y el vocabulario que
+comparten los mensajes, en [`catalog/1.0/terms.json`](../catalog/1.0/terms.json).
+Cada mensaje es una plantilla que se llena con los `params` y el `context` del
+resultado:
+
+- `{x}`: el valor de `params.x` o, si no está, de `context.x`. Los números van
+  con coma decimal en español y portugués, las listas separadas por comas, y
+  lo que falta queda vacío.
+- `{x:right}`, `{x:part}`, `{x:field}` y `{x:reason}`: el término del valor en
+  `terms`, que se llena con los mismos datos; un valor sin término va tal cual.
+- `{x:others}`: nada si `x` es 1, `others.one` si es 2 y `others.many` si es
+  más, con `{count}` igual a `x` − 1.
+- `{x:paren}`: el valor entre paréntesis, con un espacio delante, o nada.
 
 ## 4. Cómo se lee el resultado
 

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jdx.jupiter.ar/schema/terms.schema.json",
+  "$comment": "JDX 1.0. Creado por Agilmind SRL. Condiciones de uso: ver x-jdx-license.",
+  "x-jdx-license": { "spdx": "LicenseRef-Agilmind-JDX", "url": "https://github.com/agilmind/jdx/blob/HEAD/LICENSE" },
+  "title": "Vocabulario de los mensajes del catálogo de JDX (catalog/<M.m>/terms.json)",
+  "type": "object",
+  "properties": {
+    "catalog": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+    "terms": {
+      "$comment": "El término de cada valor, por formateador: {nombre:right}, {nombre:part}, {nombre:field} y {nombre:reason}.",
+      "type": "object",
+      "properties": {
+        "right": { "$ref": "#/$defs/Terms" },
+        "part": { "$ref": "#/$defs/Terms" },
+        "field": { "$ref": "#/$defs/Terms" },
+        "reason": { "$ref": "#/$defs/Terms" }
+      },
+      "required": ["right", "part", "field", "reason"],
+      "additionalProperties": false
+    },
+    "others": {
+      "$comment": "{nombre:others}: one con dos países, many con más; {count} es la cantidad de los otros.",
+      "type": "object",
+      "properties": {
+        "one": { "$ref": "#/$defs/Texts" },
+        "many": { "$ref": "#/$defs/CountTexts" }
+      },
+      "required": ["one", "many"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["catalog", "terms", "others"],
+  "additionalProperties": false,
+  "$defs": {
+    "Terms": {
+      "type": "object",
+      "propertyNames": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]*$" },
+      "additionalProperties": { "$ref": "#/$defs/Texts" }
+    },
+    "Texts": {
+      "type": "object",
+      "properties": {
+        "es": { "type": "string", "minLength": 1 },
+        "pt": { "type": "string", "minLength": 1 },
+        "en": { "type": "string", "minLength": 1 }
+      },
+      "required": ["es", "pt", "en"],
+      "additionalProperties": false
+    },
+    "CountTexts": {
+      "type": "object",
+      "properties": {
+        "es": { "type": "string", "pattern": "\\{count\\}" },
+        "pt": { "type": "string", "pattern": "\\{count\\}" },
+        "en": { "type": "string", "pattern": "\\{count\\}" }
+      },
+      "required": ["es", "pt", "en"],
+      "additionalProperties": false
+    }
+  }
+}

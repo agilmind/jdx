@@ -7,12 +7,14 @@
  * ejemplo de cada regla los cumpla, y que sus mensajes solo usen datos que la
  * regla declara (src/messages/format.ts): los mismos placeholders en los tres
  * idiomas, formateadores que existen y un término para cada valor posible de
- * lo que se traduce. Devuelve una copia congelada.
+ * lo que se traduce. Controla también el vocabulario de los mensajes
+ * (catalog/<M.m>/terms.json): que cumpla terms.schema.json y sea del mismo
+ * catálogo. Devuelve una copia congelada.
  *
  * Lanza ante un catálogo que no cumple: es un error de empaquetado, que los
  * tests encuentran antes. El catálogo empaquetado siempre carga.
  */
-import { FORMATTERS, messagePlaceholders, termOf, type TermFormatter } from '../messages/format.js';
+import { FORMATTERS, MESSAGE_VOCABULARY, messagePlaceholders, TERMS_FILE, termOf, type TermFormatter } from '../messages/format.js';
 import type { Catalog, CatalogRule, JsonValue, Lang, SchemaValidators } from '../types.js';
 
 type RuleSchema = 'profileParamsSchema' | 'resultParamsSchema' | 'contextSchema';
@@ -25,6 +27,7 @@ export function loadCatalog(json: JsonValue, validators: SchemaValidators): Cata
     throw new Error(`el catálogo no cumple catalog.schema.json: ${where}`);
   }
   const catalog = structuredClone(json) as unknown as Catalog;
+  checkVocabulary(validators, catalog.catalog);
   let previous = '';
   for (const rule of catalog.rules) {
     if (rule.id === previous) throw new Error(`regla repetida en el catálogo: ${rule.id}`);
@@ -36,6 +39,18 @@ export function loadCatalog(json: JsonValue, validators: SchemaValidators): Cata
     checkMessages(rule);
   }
   return deepFreeze(catalog);
+}
+
+/** El vocabulario de los mensajes: cumple su schema y es del mismo catálogo. */
+function checkVocabulary(validators: SchemaValidators, version: string): void {
+  const errors = validators.validateAux('terms', MESSAGE_VOCABULARY as unknown as JsonValue);
+  if (errors.length > 0) {
+    const where = errors.map((e) => `${e.instanceLocation || '/'} ${e.keyword}`).join('; ');
+    throw new Error(`el vocabulario de los mensajes (${TERMS_FILE}) no cumple terms.schema.json: ${where}`);
+  }
+  if (MESSAGE_VOCABULARY.catalog !== version) {
+    throw new Error(`el vocabulario de los mensajes es del catálogo ${MESSAGE_VOCABULARY.catalog} y el catálogo, del ${version}`);
+  }
 }
 
 /** Compila el schema de la regla y, si hay ejemplo, controla que lo cumpla. */

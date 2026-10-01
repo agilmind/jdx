@@ -1,0 +1,395 @@
+{
+  "catalog": "1.0",
+  "terms": {
+    "right": {
+      "performing": {
+        "es": "ejecución",
+        "pt": "execução",
+        "en": "performing"
+      },
+      "mechanical": {
+        "es": "reproducción mecánica",
+        "pt": "reprodução mecânica",
+        "en": "mechanical"
+      },
+      "synchronization": {
+        "es": "sincronización",
+        "pt": "sincronização",
+        "en": "synchronization"
+      },
+      "print": {
+        "es": "impresión",
+        "pt": "impressão",
+        "en": "print"
+      }
+    },
+    "part": {
+      "music": {
+        "es": "música",
+        "pt": "música",
+        "en": "music"
+      },
+      "lyrics": {
+        "es": "letra",
+        "pt": "letra",
+        "en": "lyrics"
+      }
+    },
+    "field": {
+      "signatureDate": {
+        "es": "la fecha de firma (signatureDate)",
+        "pt": "a data de assinatura (signatureDate)",
+        "en": "signature date (signatureDate)"
+      },
+      "territories": {
+        "es": "el territorio (territories)",
+        "pt": "o território (territories)",
+        "en": "territories"
+      },
+      "term": {
+        "es": "el plazo (term)",
+        "pt": "o prazo (term)",
+        "en": "term"
+      },
+      "grantor": {
+        "es": "quien concede los derechos (grantor)",
+        "pt": "quem concede os direitos (grantor)",
+        "en": "grantor"
+      },
+      "grantee": {
+        "es": "quien los recibe (grantee)",
+        "pt": "quem os recebe (grantee)",
+        "en": "grantee"
+      },
+      "coWriter": {
+        "es": "el segundo coautor (coWriter)",
+        "pt": "o segundo coautor (coWriter)",
+        "en": "second co-writer (coWriter)"
+      },
+      "via": {
+        "es": "a quién representa (via)",
+        "pt": "quem representa (via)",
+        "en": "via"
+      },
+      "agreement": {
+        "es": "el contrato (agreement)",
+        "pt": "o contrato (agreement)",
+        "en": "agreement"
+      },
+      "size": {
+        "es": "el tamaño (size)",
+        "pt": "o tamanho (size)",
+        "en": "size"
+      },
+      "sha256": {
+        "es": "el sha256",
+        "pt": "o sha256",
+        "en": "sha256"
+      },
+      "path": {
+        "es": "la ruta (path)",
+        "pt": "o caminho (path)",
+        "en": "path"
+      },
+      "delivery": {
+        "es": "la entrega en que viajó (delivery)",
+        "pt": "a entrega em que viajou (delivery)",
+        "en": "delivery"
+      },
+      "publicationDate": {
+        "es": "la fecha de publicación (publicationDate)",
+        "pt": "a data de publicação (publicationDate)",
+        "en": "publication date (publicationDate)"
+      },
+      "legalDepositCopy": {
+        "es": "el ejemplar del depósito legal (legalDepositCopy)",
+        "pt": "o exemplar do depósito legal (legalDepositCopy)",
+        "en": "legal deposit copy (legalDepositCopy)"
+      },
+      "registration": {
+        "es": "la inscripción como obra publicada",
+        "pt": "o registro como obra publicada",
+        "en": "registration as a published work"
+      },
+      "retailPricePercent": {
+        "es": "regalía sobre el precio de venta",
+        "pt": "royalty sobre o preço de venda",
+        "en": "retail price royalty"
+      },
+      "arrangementRetailPricePercent": {
+        "es": "regalía de orquestaciones y transcripciones",
+        "pt": "royalty de orquestrações e transcrições",
+        "en": "arrangement royalty"
+      }
+    },
+    "reason": {
+      "missing": {
+        "es": "falta",
+        "pt": "está faltando",
+        "en": "is missing"
+      },
+      "invalid": {
+        "es": "no es válida",
+        "pt": "não é válida",
+        "en": "is not valid"
+      },
+      "unknown": {
+        "es": "no existe",
+        "pt": "não existe",
+        "en": "does not exist"
+      },
+      "requiresValidator": {
+        "es": "el perfil pide {required}",
+        "pt": "o perfil pede {required}",
+        "en": "the profile requires {required}"
+      },
+      "minVersion": {
+        "es": "la lista de confianza pide {required}",
+        "pt": "a lista de confiança pede {required}",
+        "en": "the trust list requires {required}"
+      },
+      "unreadable": {
+        "es": "no se puede leer",
+        "pt": "não pode ser lido",
+        "en": "cannot be read"
+      },
+      "version": {
+        "es": "es de otra versión",
+        "pt": "é de outra versão",
+        "en": "is from another version"
+      },
+      "env": {
+        "es": "es de otro entorno",
+        "pt": "é de outro ambiente",
+        "en": "is from another environment"
+      },
+      "locked": {
+        "es": "está bloqueado desde {lockedSince}",
+        "pt": "está bloqueado desde {lockedSince}",
+        "en": "has been locked since {lockedSince}"
+      },
+      "unknownProfile": {
+        "es": "el validador no trae {profile}",
+        "pt": "o validador não traz {profile}",
+        "en": "the validator does not bundle {profile}"
+      },
+      "invalidProfile": {
+        "es": "no cumple el schema de los perfiles",
+        "pt": "não cumpre o schema dos perfis",
+        "en": "it does not conform to the profile schema"
+      },
+      "unknownCatalog": {
+        "es": "pide el catálogo {catalog}, que el validador no trae",
+        "pt": "pede o catálogo {catalog}, que o validador não traz",
+        "en": "it asks for catalog {catalog}, which the validator does not bundle"
+      },
+      "unknownRule": {
+        "es": "la regla {ruleId} no está en el catálogo",
+        "pt": "a regra {ruleId} não está no catálogo",
+        "en": "rule {ruleId} is not in the catalog"
+      },
+      "retiredRule": {
+        "es": "la regla {ruleId} está retirada",
+        "pt": "a regra {ruleId} está retirada",
+        "en": "rule {ruleId} is retired"
+      },
+      "notImplemented": {
+        "es": "el validador no implementa la regla {ruleId}",
+        "pt": "o validador não implementa a regra {ruleId}",
+        "en": "the validator does not implement rule {ruleId}"
+      },
+      "notProfileRule": {
+        "es": "la regla {ruleId} no es de perfil",
+        "pt": "a regra {ruleId} não é de perfil",
+        "en": "rule {ruleId} is not a profile rule"
+      },
+      "invalidParams": {
+        "es": "los parámetros de {ruleId} no cumplen su schema",
+        "pt": "os parâmetros de {ruleId} não cumprem seu schema",
+        "en": "the parameters of {ruleId} do not conform to its schema"
+      },
+      "duplicateRule": {
+        "es": "la regla {ruleId} está repetida",
+        "pt": "a regra {ruleId} está repetida",
+        "en": "rule {ruleId} is listed twice"
+      },
+      "jdxNotAdmitted": {
+        "es": "no admite la versión {jdx} del documento",
+        "pt": "não admite a versão {jdx} do documento",
+        "en": "it does not admit document version {jdx}"
+      },
+      "bom": {
+        "es": "empieza con BOM",
+        "pt": "começa com BOM",
+        "en": "it starts with a BOM"
+      },
+      "utf8": {
+        "es": "no es UTF-8 válido",
+        "pt": "não é UTF-8 válido",
+        "en": "it is not valid UTF-8"
+      },
+      "syntax": {
+        "es": "tiene un error de sintaxis",
+        "pt": "tem um erro de sintaxe",
+        "en": "it has a syntax error"
+      },
+      "duplicateKey": {
+        "es": "repite una clave",
+        "pt": "repete uma chave",
+        "en": "it repeats a key"
+      },
+      "loneSurrogate": {
+        "es": "tiene un surrogate suelto",
+        "pt": "tem um surrogate solto",
+        "en": "it has a lone surrogate"
+      },
+      "integerRange": {
+        "es": "tiene un número fuera de ±(2^53 − 1)",
+        "pt": "tem um número fora de ±(2^53 − 1)",
+        "en": "it has a number beyond ±(2^53 − 1)"
+      },
+      "numberRange": {
+        "es": "tiene un número que no entra en un double",
+        "pt": "tem um número que não cabe em um double",
+        "en": "it has a number that does not fit a double"
+      },
+      "empty": {
+        "es": "está vacío",
+        "pt": "está vazio",
+        "en": "it is empty"
+      },
+      "depth": {
+        "es": "anida más de 64 niveles",
+        "pt": "aninha mais de 64 níveis",
+        "en": "it nests more than 64 levels"
+      },
+      "absolute": {
+        "es": "es absoluta",
+        "pt": "é absoluto",
+        "en": "is absolute"
+      },
+      "segment": {
+        "es": "tiene un segmento vacío, «.» o «..»",
+        "pt": "tem um segmento vazio, «.» ou «..»",
+        "en": "has an empty, \".\" or \"..\" segment"
+      },
+      "characters": {
+        "es": "usa caracteres fuera de A-Z, a-z, 0-9, punto, guion y guion bajo",
+        "pt": "usa caracteres fora de A-Z, a-z, 0-9, ponto, hífen e sublinhado",
+        "en": "uses characters outside A-Z, a-z, 0-9, dot, hyphen and underscore"
+      },
+      "duplicate": {
+        "es": "repite otra sin distinguir mayúsculas",
+        "pt": "repete outro sem distinguir maiúsculas",
+        "en": "repeats another one regardless of case"
+      },
+      "changed": {
+        "es": "no coincide con el que se recibió",
+        "pt": "não confere com o recebido",
+        "en": "does not match the one received"
+      },
+      "notFound": {
+        "es": "no está ni en el estado ni en la entrega",
+        "pt": "não está nem no estado nem na entrega",
+        "en": "is neither in the state nor in the delivery"
+      },
+      "signature": {
+        "es": "no verifica",
+        "pt": "não confere",
+        "en": "does not verify"
+      },
+      "header": {
+        "es": "tiene un encabezado que no cumple con JDX",
+        "pt": "tem um cabeçalho que não cumpre o JDX",
+        "en": "has a header that does not meet JDX"
+      },
+      "alg": {
+        "es": "no usa ES256",
+        "pt": "não usa ES256",
+        "en": "does not use ES256"
+      },
+      "payload": {
+        "es": "no corresponde a este archivo",
+        "pt": "não corresponde a este arquivo",
+        "en": "does not match this file"
+      },
+      "aud": {
+        "es": "no está dirigida a la sociedad del perfil",
+        "pt": "não está dirigida à sociedade do perfil",
+        "en": "is not addressed to the profile's society"
+      },
+      "audience": {
+        "es": "no tiene los mismos destinatarios que la declaración",
+        "pt": "não tem os mesmos destinatários da declaração",
+        "en": "does not have the declaration's recipients"
+      },
+      "unknownKey": {
+        "es": "no está en la lista de confianza",
+        "pt": "não está na lista de confiança",
+        "en": "is not in the trust list"
+      },
+      "pending": {
+        "es": "todavía no está activa",
+        "pt": "ainda não está ativa",
+        "en": "is not active yet"
+      },
+      "retired": {
+        "es": "está retirada",
+        "pt": "está retirada",
+        "en": "is retired"
+      },
+      "expired": {
+        "es": "estaba vencida al recibir el archivo",
+        "pt": "estava vencida ao receber o arquivo",
+        "en": "had expired when the file was received"
+      },
+      "compromised": {
+        "es": "fue revocada",
+        "pt": "foi revogada",
+        "en": "was revoked"
+      },
+      "issuer": {
+        "es": "es de otro emisor",
+        "pt": "é de outro emissor",
+        "en": "belongs to another issuer"
+      },
+      "scope": {
+        "es": "no cubre esta declaración",
+        "pt": "não cobre esta declaração",
+        "en": "does not cover this declaration"
+      },
+      "createdAt": {
+        "es": "no es el createdAt de la declaración",
+        "pt": "não é o createdAt da declaração",
+        "en": "is not the declaration's createdAt"
+      },
+      "receivedAt": {
+        "es": "es más de 5 minutos posterior a la recepción",
+        "pt": "é mais de 5 minutos posterior ao recebimento",
+        "en": "is more than 5 minutes after receipt"
+      },
+      "reciprocal": {
+        "es": "no tiene su referencia de vuelta",
+        "pt": "não tem sua referência de volta",
+        "en": "has no reference back"
+      },
+      "agreementWorks": {
+        "es": "es a un contrato que no incluye la obra",
+        "pt": "é a um contrato que não inclui a obra",
+        "en": "points to an agreement that does not cover the work"
+      }
+    }
+  },
+  "others": {
+    "one": {
+      "es": " y otro país",
+      "pt": " e outro país",
+      "en": " and one other country"
+    },
+    "many": {
+      "es": " y otros {count} países",
+      "pt": " e outros {count} países",
+      "en": " and {count} other countries"
+    }
+  }
+}

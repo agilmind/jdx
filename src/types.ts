@@ -96,7 +96,7 @@ export interface SchemaIndex {
   personalData: string[];                                  // siempre dato personal, con lo que tenga adentro
   personalDataWhen: PersonalDataWhenSite[];                // dato personal según una propiedad del objeto
 }
-export type AuxSchemaName = 'profile' | 'catalog' | 'trustList' | 'state' | 'report' | 'accounts';
+export type AuxSchemaName = 'profile' | 'catalog' | 'terms' | 'trustList' | 'state' | 'report' | 'accounts';
 /** Ruta del repo → texto (src/generated/data.ts: files). */
 export type BundleFiles = Readonly<Record<string, string>>;
 export interface SchemaBundle {

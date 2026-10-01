@@ -303,7 +303,7 @@ describe('schemas auxiliares', () => {
     ]);
   });
 
-  it('the bundle now has the six aux schemas', () => {
-    expect(Object.keys(schemaBundle(files).aux).sort()).toEqual(['accounts', 'catalog', 'profile', 'report', 'state', 'trustList']);
+  it('the bundle now has the seven aux schemas', () => {
+    expect(Object.keys(schemaBundle(files).aux).sort()).toEqual(['accounts', 'catalog', 'profile', 'report', 'state', 'terms', 'trustList']);
   });
 });

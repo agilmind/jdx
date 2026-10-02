@@ -33,6 +33,7 @@
  */
 import { flattenedVerify } from 'jose';
 import semver from 'semver';
+import { fromBase64url } from '../conventions/base64url.js';
 import { addDays, addYears, parseInstant } from '../conventions/time.js';
 import { parseJson } from '../json/parse.js';
 import type {
@@ -77,7 +78,6 @@ export interface VerifyTrustListOptions {
   validators: SchemaValidators;
 }
 
-const BASE64URL = /^[A-Za-z0-9_-]*$/u;
 const NANOS_PER_MILLI = 1_000_000n;
 
 export async function verifyTrustList(jws: Uint8Array, opts: VerifyTrustListOptions): Promise<TrustListOutcome> {
@@ -191,14 +191,6 @@ function isGeneralJws(value: { [k: string]: JsonValue }): value is GeneralJws & 
     Object.keys(value).length === 2 && typeof value.payload === 'string' && Array.isArray(value.signatures) && value.signatures.length > 0 &&
     value.signatures.every((s) => isRecord(s) && Object.keys(s).length === 2 && typeof s.protected === 'string' && typeof s.signature === 'string')
   );
-}
-
-/** Los bytes de un texto base64url sin relleno (RFC 7515), o null si no lo es. */
-function fromBase64url(text: string): Uint8Array | null {
-  if (!BASE64URL.test(text) || text.length % 4 === 1) return null;
-  const bytes = Buffer.from(text, 'base64url');
-  // Los bits que sobran del último carácter van en cero: un texto, unos bytes.
-  return bytes.toString('base64url') === text ? new Uint8Array(bytes) : null;
 }
 
 function finding(ruleId: Finding['ruleId'], params: { [k: string]: JsonValue }): Finding {

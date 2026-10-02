@@ -3,7 +3,7 @@
  * las exclusiones de JDX-MED-003.
  */
 import { describe, expect, it } from 'vitest';
-import { matchDeliveryGlob } from '../../../src/media/glob.js';
+import { globSteps, matchDeliveryGlob } from '../../../src/media/glob.js';
 
 const matches = (pattern: string, paths: readonly string[]) => paths.filter((path) => matchDeliveryGlob(pattern, path));
 
@@ -62,13 +62,16 @@ describe('matchDeliveryGlob', () => {
     expect(matchDeliveryGlob('Canci\u00F3n\\xFF*', 'Cancio\u0301n\\xFF.pdf')).toBe(true);
   });
 
-  it('many stars against a long name are matched in linear steps, not by backtracking', () => {
+  it('many stars against a long name are matched in at most the length of the pattern times that of the path, not by backtracking', () => {
     const name = `${'a'.repeat(100_000)}c`;
-    const started = performance.now();
-    expect(matchDeliveryGlob('*a*a*a*a*a*a*a*a*b', name)).toBe(false);
-    expect(matchDeliveryGlob(`**/${'*a'.repeat(8)}*c`, `x/y/${name}`)).toBe(true);
     const deep = Array<string>(2000).fill('d').join('/');
-    expect(matchDeliveryGlob('**/**/**/**/e', `${deep}/f`)).toBe(false);
-    expect(performance.now() - started).toBeLessThan(2_000);
+    for (const [pattern, path, matched] of [
+      ['*a*a*a*a*a*a*a*a*b', name, false], [`**/${'*a'.repeat(8)}*c`, `x/y/${name}`, true], ['**/**/**/**/e', `${deep}/f`, false],
+    ] as const) {
+      const run = globSteps(pattern, path);
+      expect(run.matched, pattern).toBe(matched);
+      expect(matchDeliveryGlob(pattern, path), pattern).toBe(matched);
+      expect(run.steps, pattern).toBeLessThanOrEqual((pattern.length + 1) * (path.length + 1));
+    }
   });
 });

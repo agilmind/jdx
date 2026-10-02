@@ -9,7 +9,7 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, w
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { dirMediaResolver, FOLDER_OPS, folderResolver } from '../../../../src/media/dirMediaResolver.js';
+import { dirMediaResolver, FOLDER_OPS, type FolderOps, folderResolver } from '../../../../src/media/dirMediaResolver.js';
 import { MediaFolderError } from '../../../../src/media/errors.js';
 import { MAX_RESULTS_PER_RULE } from '../../../../src/report/results.js';
 import { MED_002, MED_006, MED_007, MED_008 } from '../../../../src/rules/core/mediaDir.js';
@@ -37,6 +37,20 @@ function folder(): string {
   return dir;
 }
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+/** Si quien corre los tests puede leer lo que no tiene permiso (root). */
+const READS_EVERYTHING = (() => {
+  const dir = mkdtempSync(join(tmpdir(), 'jdx-media-'));
+  try {
+    writeFileSync(join(dir, 'probe-perm'), '');
+    chmodSync(join(dir, 'probe-perm'), 0o000);
+    readFileSync(join(dir, 'probe-perm'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+})();
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /** El texto del archivo de cada media del ejemplo. */
 const content = (i: number) => `contenido del archivo ${i + 1}`;
@@ -54,14 +68,29 @@ function delivered(): { dir: string; document: DocBuilder } {
   return { dir, document };
 }
 
+/** Las operaciones del sistema de archivos contadas: cuántas veces se leyó cada carpeta, y cuántos lstat y open hubo. */
+function countedOps(): { ops: FolderOps; reads: string[]; lstats: () => number; opens: () => number } {
+  const reads: string[] = [];
+  let lstats = 0;
+  let opens = 0;
+  const ops: FolderOps = {
+    ...FOLDER_OPS,
+    readdir: (path) => (reads.push(path.toString()), FOLDER_OPS.readdir(path)),
+    opendir: (path) => (reads.push(path.toString()), FOLDER_OPS.opendir(path)),
+    lstat: (path) => (lstats++, FOLDER_OPS.lstat(path)),
+    open: (path, flags) => (opens++, FOLDER_OPS.open(path, flags)),
+  };
+  return { ops, reads, lstats: () => lstats, opens: () => opens };
+}
+
 /** Un resolver que cuenta qué paths se buscaron. */
 function counting(resolver: MediaResolver): MediaResolver & { stats: string[]; hashes: string[] } {
   const stats: string[] = [];
   const hashes: string[] = [];
   return {
+    ...resolver,
     stats,
     hashes,
-    list: () => resolver.list(),
     stat: (path) => (stats.push(path), resolver.stat(path)),
     sha256: (path) => (hashes.push(path), resolver.sha256(path)),
   };
@@ -253,22 +282,41 @@ describe('MED-002, MED-007 and MED-008', () => {
       exitCode: 2, valid: null, disposition: null, omitted: [],
       checks: { environment: 'failed', json: 'notEvaluated', schema: 'notEvaluated', core: 'notEvaluated', media: 'notEvaluated', profile: 'notEvaluated', policy: 'notEvaluated' },
     });
-    // Un archivo declarado que no se puede leer, con la carpeta de verdad: lo mismo, con la causa del permiso.
-    chmodSync(join(dir, PATHS[1] as string), 0o000);
-    let readable = true;
-    try {
-      readFileSync(join(dir, PATHS[1] as string));
-    } catch {
-      readable = false;
-    }
-    const unreadable = await validateExample({ document, options: { media: dirMediaResolver(dir) } });
-    chmodSync(join(dir, PATHS[1] as string), 0o644);
-    if (readable) return;
-    expect(unreadable.results.map((r) => [r.ruleId, r.params])).toEqual([['JDX-ENV-011', { cause: 'permission', path: PATHS[1] }]]);
-    expect(unreadable.exitCode).toBe(2);
     // Otra excepción del resolver no es del entorno: la deja pasar (en validate, la falla interna).
     const broken: MediaResolver = { ...failing, sha256: async () => { throw new Error('roto'); } };
     await expect(validateExample({ document, options: { media: broken } })).rejects.toThrow('roto');
+  });
+
+  // Quien lo lee todo (root) no tiene nada ilegible: se salta.
+  it.skipIf(READS_EVERYTHING)('end to end: a declared file that cannot be read is an environment failure, with the cause of the permission', async () => {
+    const { dir, document } = delivered();
+    chmodSync(join(dir, PATHS[1] as string), 0o000);
+    const unreadable = await validateExample({ document, options: { media: dirMediaResolver(dir) } });
+    chmodSync(join(dir, PATHS[1] as string), 0o644);
+    expect(unreadable.results.map((r) => [r.ruleId, r.params])).toEqual([['JDX-ENV-011', { cause: 'permission', path: PATHS[1] }]]);
+    expect(unreadable.exitCode).toBe(2);
+  });
+
+  it('end to end: what the folder leaves open is closed before the report comes back, also when it fails', async () => {
+    const { dir, document } = delivered();
+    for (const fail of [false, true]) {
+      let open = 0;
+      let reads = 0;
+      const ops: FolderOps = {
+        ...FOLDER_OPS,
+        open: async (path, flags) => {
+          const handle = await FOLDER_OPS.open(path, flags);
+          open++;
+          const close = handle.close.bind(handle);
+          return Object.assign(handle, { close: async () => (open--, close()) });
+        },
+        readdir: (path) => (fail && ++reads === 2 ? Promise.reject(Object.assign(new Error('falla'), { code: 'EIO' })) : FOLDER_OPS.readdir(path)),
+      };
+      if (fail) mkdirSync(join(dir, 'sub'), { recursive: true });
+      const report = await validateExample({ document, options: { media: folderResolver(dir, {}, ops) } });
+      expect(report.exitCode, String(fail)).toBe(fail ? 2 : 0);
+      expect(open, String(fail)).toBe(0);
+    }
   });
 });
 
@@ -348,7 +396,7 @@ describe('hostile input through validateWithDeps', () => {
     d.media = marker;
   }, mediaItem(more, path), base);
 
-  it('a chain of folders as deep as the system allows, with 2 MiB of files declared at its bottom, is looked up quickly', async () => {
+  it('a chain of folders as deep as the system allows, with 2 MiB of files declared at its bottom, reads each folder once', async () => {
     // Cada path pasa por toda la cadena: buscarlo no puede costar el largo de la cadena por cada segmento.
     const dir = folder();
     const pathMax = process.platform === 'darwin' ? 1024 : 4096;
@@ -358,12 +406,19 @@ describe('hostile input through validateWithDeps', () => {
     const name = (i: number) => `f${String(i).padStart(5, '0')}.pdf`;
     const { text, count } = mediaFlood('"delivery":1,"size":1', undefined, (i) => `${chain}${name(i)}`);
     for (let i = 0; i < count; i++) writeFileSync(join(dir, chain, name(i)), 'x');
-    const { report, ms } = await measured({ document: text, options: { media: dirMediaResolver(dir) } });
+    // Buscar cada path no puede costar el largo de la cadena: cada carpeta se lee una vez y cada entrada se mira a lo
+    // sumo dos veces (al identificarla y, una carpeta, después de leerla); en Linux, cada carpeta se abre una vez.
+    const counted = countedOps();
+    const { report } = await measured({ document: text, options: { media: folderResolver(dir, {}, counted.ops) } });
     expect(reportErrors(report)).toEqual([]);
     expect(resultsOf(report, ...CODES)).toEqual([]);
     expect(report.checks.media).toBe('passed');
     expect(count).toBeGreaterThan(400);
-    expect(ms).toBeLessThan(5_000);
+    // La raíz se abre una vez más, para controlarla en el paso de entorno.
+    expect(counted.reads.length - new Set(counted.reads).size).toBeLessThanOrEqual(1);
+    expect(counted.reads.length).toBeLessThanOrEqual(depth + 3);
+    expect(counted.lstats()).toBeLessThanOrEqual(2 * (depth + count) + 20);
+    expect(counted.opens()).toBeLessThanOrEqual(depth + count + 20);
   });
 
   it('a declaration whose files each sit in folders of their own, with a quiet folder that has just them, is never refused by the limit', async () => {
@@ -393,23 +448,28 @@ describe('hostile input through validateWithDeps', () => {
 
   it('a MED-007 flood, about 2 MiB of files that are not in the folder, lists 100 and counts the rest, quickly', async () => {
     const { text, count } = mediaFlood('"delivery":1');
-    const { report, chars, ms } = await measured({ document: text, options: { media: dirMediaResolver(folder()) } });
+    const counted = countedOps();
+    const { report, chars } = await measured({ document: text, options: { media: folderResolver(folder(), {}, counted.ops) } });
     expect(reportErrors(report)).toEqual([]);
     expect(resultsOf(report, ...CODES).map((r) => r.instanceLocation)).toEqual(Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => `/media/${i}/path`));
     expect(omittedOf(report, ...CODES)).toEqual([{ ruleId: 'JDX-MED-007', count: count - MAX_RESULTS_PER_RULE }]);
     expect(report.checks.media).toBe('failed');
     expect(count).toBeGreaterThan(30_000);
     expect(chars).toBeLessThan(100_000);
-    expect(ms).toBeLessThan(5_000);
+    // La carpeta vacía se lee una vez para todos los paths.
+    expect(counted.reads.length).toBeLessThanOrEqual(2);
+    expect(counted.lstats()).toBeLessThanOrEqual(5);
   });
 
   it('a MED-006 flood, about 2 MiB of previous files in neither the state nor the folder, lists 100 and counts the rest', async () => {
     const base = docBuilder().set('/declaration/revision', 2).text;
     const { text, count } = mediaFlood('"delivery":1', base);
-    const { report, ms } = await measured({ document: text, fileName: `${ID}.r2.jdx.json`, options: { media: dirMediaResolver(folder()), state: memoryState(withMedia([])) } });
+    const counted = countedOps();
+    const { report } = await measured({ document: text, fileName: `${ID}.r2.jdx.json`, options: { media: folderResolver(folder(), {}, counted.ops), state: memoryState(withMedia([])) } });
     expect(reportErrors(report)).toEqual([]);
     expect(omittedOf(report, ...CODES)).toEqual([{ ruleId: 'JDX-MED-006', count: count - MAX_RESULTS_PER_RULE }]);
-    expect(ms).toBeLessThan(5_000);
+    expect(counted.reads.length).toBeLessThanOrEqual(2);
+    expect(counted.lstats()).toBeLessThanOrEqual(5);
   });
 
   it('two thousand delivered files with another size are each compared once, without hashing', async () => {
@@ -424,11 +484,14 @@ describe('hostile input through validateWithDeps', () => {
       writeFileSync(join(dir, `a${i}.pdf`), 'xx');
       return { id: `m${i}`, kind: 'audio', path: `a${i}.pdf`, delivery: 1, size: 1, sha256: sha('x') };
     });
-    const resolver = counting(dirMediaResolver(dir));
-    const { report, ms } = await measured({ document: JSON.stringify(doc), options: { media: resolver } });
+    const counted = countedOps();
+    const resolver = counting(folderResolver(dir, {}, counted.ops));
+    const { report } = await measured({ document: JSON.stringify(doc), options: { media: resolver } });
     expect(reportErrors(report)).toEqual([]);
     expect(omittedOf(report, ...CODES)).toEqual([{ ruleId: 'JDX-MED-002', count: n - MAX_RESULTS_PER_RULE }]);
     expect([resolver.stats.length, resolver.hashes.length]).toEqual([n, 0]);
-    expect(ms).toBeLessThan(5_000);
+    // Cada archivo se mira una vez, y la carpeta se lee una vez.
+    expect(counted.reads.length).toBeLessThanOrEqual(2);
+    expect(counted.lstats()).toBeLessThanOrEqual(n + 5);
   });
 });

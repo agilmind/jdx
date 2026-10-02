@@ -6,11 +6,11 @@
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { dirMediaResolver } from '../../../../src/media/dirMediaResolver.js';
+import { dirMediaResolver, FOLDER_OPS, type FolderOps, folderResolver } from '../../../../src/media/dirMediaResolver.js';
 import { MediaFolderError } from '../../../../src/media/errors.js';
 import { matchDeliveryGlob } from '../../../../src/media/glob.js';
 import { foldCase } from '../../../../src/media/path.js';
@@ -58,6 +58,21 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
 /** Los cinco archivos del ejemplo con estos textos, más los que se pidan. */
 const withExample = (more: Record<string, string> = {}): Record<string, string> => ({ ...Object.fromEntries(PATHS.map((p, i) => [p, `archivo ${i}`])), ...more });
+
+/** Si quien corre los tests puede leer lo que no tiene permiso (root). */
+const READS_EVERYTHING = (() => {
+  const dir = mkdtempSync(join(tmpdir(), 'jdx-media-'));
+  try {
+    writeFileSync(join(dir, 'probe-perm'), '');
+    chmodSync(join(dir, 'probe-perm'), 0o000);
+    readFileSync(join(dir, 'probe-perm'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+})();
 
 /** Si el sistema de archivos admite nombres que no son UTF-8 válido (Linux sí; el de macOS no). */
 const INVALID_NAMES = (() => {
@@ -176,18 +191,17 @@ describe('MED-003', () => {
     expect(await undeclared(dirMediaResolver(dir))).toEqual([
       '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.report.json', 'dni/scan.jdx.json', 'jdx-trust.json', 'sub/3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json.jws', 'sub/cancion.mp3.report.json', 'sub/jdx-trust.json',
     ]);
-    // Una carpeta con el nombre de un artefacto no esconde lo de adentro, y si no se puede leer, la carpeta falla.
+    // Una carpeta con el nombre de un artefacto no esconde lo de adentro.
     const named = folder(withExample({ 'x.report.json/dni.pdf': 'd' }));
     expect(await undeclared(dirMediaResolver(named))).toEqual(['x.report.json/dni.pdf']);
+  });
+
+  // Quien lo lee todo (root) no tiene nada ilegible: se salta.
+  it.skipIf(READS_EVERYTHING)('a folder with the name of an artifact that cannot be read is a folder failure', async () => {
+    const named = folder(withExample({ 'x.report.json/dni.pdf': 'd' }));
     chmodSync(join(named, 'x.report.json'), 0o000);
-    let readable = true;
-    try {
-      readdirSync(join(named, 'x.report.json'));
-    } catch {
-      readable = false;
-    }
     const ctx = await makeRuleContext({ options: { media: dirMediaResolver(named) } });
-    if (!readable) await expect(MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'))).rejects.toMatchObject({ name: 'MediaFolderError', reason: 'permission', path: 'x.report.json' });
+    await expect(MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'))).rejects.toMatchObject({ name: 'MediaFolderError', reason: 'permission', path: 'x.report.json' });
     chmodSync(join(named, 'x.report.json'), 0o755);
   });
 
@@ -295,16 +309,10 @@ describe('MED-003', () => {
     }
   });
 
-  it('an unreadable folder is a folder failure, not something declared or undeclared', async () => {
+  // Quien lo lee todo (root) no tiene nada ilegible: se salta.
+  it.skipIf(READS_EVERYTHING)('an unreadable folder is a folder failure, not something declared or undeclared', async () => {
     const dir = folder(withExample({ 'cerrada/c.pdf': 'c' }));
     chmodSync(join(dir, 'cerrada'), 0o000);
-    let readable = true;
-    try {
-      readdirSync(join(dir, 'cerrada'));
-    } catch {
-      readable = false;
-    }
-    if (readable) return;
     // Aunque un path declarado pase por ella: lo de adentro podría esconder archivos no declarados.
     const ctx = await makeRuleContext({ document: docBuilder().set('/media/2/path', 'cerrada/c.pdf'), options: { media: dirMediaResolver(dir) } });
     await expect(MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'))).rejects.toMatchObject({ name: 'MediaFolderError', reason: 'permission', path: 'cerrada' });
@@ -419,16 +427,23 @@ describe('hostile input through validateWithDeps', () => {
     expect(MED_003.requires).toEqual(['media']);
   });
 
-  it('a folder of three thousand undeclared files lists 100 and counts the rest, quickly', async () => {
+  it('a folder of three thousand undeclared files lists 100 and counts the rest, reading each folder once', async () => {
     const files = withExample();
     for (let i = 0; i < 3000; i++) files[`extra/f${String(i).padStart(4, '0')}.bin`] = '';
-    const { report, chars, ms } = await measured({ document: matching(), options: { media: dirMediaResolver(folder(files)) } });
+    const reads: string[] = [];
+    const counting: FolderOps = {
+      ...FOLDER_OPS,
+      readdir: (path) => (reads.push(path.toString()), FOLDER_OPS.readdir(path)),
+      opendir: (path) => (reads.push(path.toString()), FOLDER_OPS.opendir(path)),
+    };
+    const { report, chars } = await measured({ document: matching(), options: { media: folderResolver(folder(files), {}, counting) } });
     expect(reportErrors(report)).toEqual([]);
     expect(resultsOf(report, 'JDX-MED-003').map((r) => r.params?.path)).toEqual(Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => `extra/f${String(i).padStart(4, '0')}.bin`));
     expect(omittedOf(report, 'JDX-MED-003')).toEqual([{ ruleId: 'JDX-MED-003', count: 3000 - MAX_RESULTS_PER_RULE }]);
     expect(report.checks.media).toBe('warning');
     expect(chars).toBeLessThan(100_000);
-    expect(ms).toBeLessThan(5_000);
+    // La raíz y extra/ se leen una vez cada una, para buscar y para listar (y la raíz se abre una vez más para controlarla).
+    expect(reads.length).toBe(3);
   });
 
   it('MED-003 keeps only its first results in the report order and counts the others', async () => {
@@ -449,11 +464,10 @@ describe('hostile input through validateWithDeps', () => {
     const media = memoryFolder({ ...entries, ...exampleEntries() });
     const doc = JSON.parse(docBuilder().text) as { media: JsonValue[] };
     for (let i = 0; i < n; i++) doc.media.push({ id: `x${i}`, kind: 'audio', path: `A${i}.PDF`, delivery: 1 });
-    const { report, ms } = await measured({ document: JSON.stringify(doc), options: { media } });
+    const { report } = await measured({ document: JSON.stringify(doc), options: { media } });
     expect(resultsOf(report, 'JDX-MED-003')).toEqual([]);
     // Cada variante se lee una vez (el path declarado resuelve a ella misma) y cada archivo del ejemplo, para MED-002.
     expect(media.hashed.length).toBeLessThanOrEqual(2 * n + PATHS.length);
-    expect(ms).toBeLessThan(5_000);
   });
 });
 

@@ -18,19 +18,26 @@
  */
 
 export function matchDeliveryGlob(pattern: string, path: string): boolean {
+  return globSteps(pattern, path).matched;
+}
+
+/** matchDeliveryGlob, y cuántos pasos dio la comparación (los tests miran que no pasen del largo del patrón por el del path). */
+export function globSteps(pattern: string, path: string): { matched: boolean; steps: number } {
+  const count = { steps: 0 };
   const glob = nfc(pattern);
   const text = nfc(path);
-  if (!glob.includes('/')) return segmentMatches(glob, text.slice(text.lastIndexOf('/') + 1));
-  return segmentsMatch(glob.split('/'), text.split('/'));
+  const matched = glob.includes('/') ? segmentsMatch(glob.split('/'), text.split('/'), count) : segmentMatches(glob, text.slice(text.lastIndexOf('/') + 1), count);
+  return { matched, steps: count.steps };
 }
 
 /** Un segmento contra un segmento del patrón, con `*` como cualquier tramo. */
-function segmentMatches(glob: string, text: string): boolean {
+function segmentMatches(glob: string, text: string, count: { steps: number }): boolean {
   let g = 0;
   let t = 0;
   let star = -1;
   let mark = 0;
   while (t < text.length) {
+    count.steps++;
     if (g < glob.length && glob[g] === '*') {
       star = g++;
       mark = t;
@@ -49,16 +56,17 @@ function segmentMatches(glob: string, text: string): boolean {
 }
 
 /** Los segmentos del path contra los del patrón, con `**` como cero o más segmentos. */
-function segmentsMatch(globs: readonly string[], segments: readonly string[]): boolean {
+function segmentsMatch(globs: readonly string[], segments: readonly string[], count: { steps: number }): boolean {
   let g = 0;
   let s = 0;
   let star = -1;
   let mark = 0;
   while (s < segments.length) {
+    count.steps++;
     if (g < globs.length && globs[g] === '**') {
       star = g++;
       mark = s;
-    } else if (g < globs.length && globs[g] !== '' && segmentMatches(globs[g] as string, segments[s] as string)) {
+    } else if (g < globs.length && globs[g] !== '' && segmentMatches(globs[g] as string, segments[s] as string, count)) {
       g++;
       s++;
     } else if (star >= 0) {

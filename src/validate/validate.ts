@@ -19,9 +19,9 @@
  *
  * El reporte sale de buildReport, con el tope de cada código (capFindings): de
  * cada uno, a lo sumo 100 resultados, y los demás se cuentan sin armarlos. Una
- * regla registrada que no está en el catálogo, retirada, sin implementar o de
- * otra capa es un error de programación y lanza, como una excepción de una
- * regla o del estado.
+ * regla registrada que no está en el catálogo, retirada, sin implementar, de
+ * otra capa o con un código que da un paso de la validación es un error de
+ * programación y lanza, como una excepción de una regla o del estado.
  */
 import { parseInstant } from '../conventions/time.js';
 import { buildReport } from '../report/build.js';
@@ -36,6 +36,15 @@ import { buildDocIndex } from './docIndex.js';
 import { evaluateEnvironment } from './environment.js';
 import { jsonStageOf } from './jsonStage.js';
 import { schemaStage } from './schemaStage.js';
+
+/**
+ * Códigos que da un paso de la validación y no el registro: el JSON, la versión,
+ * el índice del documento, la firma y la falla interna. Una regla registrada
+ * con uno de ellos los repetiría.
+ */
+const STEP_CODES: ReadonlySet<RuleId> = new Set<RuleId>([
+  'JDX-INT-001', 'JDX-JSN-001', 'JDX-REF-001', 'JDX-REF-002', 'JDX-SIG-002', 'JDX-SIG-003', 'JDX-SIG-004', 'JDX-VER-001', 'JDX-VER-002', 'JDX-VER-003',
+]);
 
 const NOT_EVALUATED: ReportSignature = Object.freeze({ status: 'notEvaluated', kid: null, issuer: null, env: null, reason: null });
 const ABSENT: ReportSignature = Object.freeze({ status: 'absent', kid: null, issuer: null, env: null, reason: null });
@@ -157,6 +166,8 @@ async function runRules(ctx: RuleContext, deps: ValidatorDeps): Promise<Finding[
       params = inProfile.params;
     } else if (entry.layer !== 'core' && entry.layer !== 'policy') {
       throw new Error(`${id}: una regla de la capa ${entry.layer} no va en el registro`);
+    } else if (STEP_CODES.has(id)) {
+      throw new Error(`${id}: la da un paso de la validación y no va en el registro`);
     }
     if (rule.requires?.some((need) => !available[need]) === true) continue;
     // Uno por uno: una regla puede dar cientos de miles, y push(...lista) desborda la pila.

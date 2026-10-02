@@ -5,8 +5,8 @@
  *
  * Cada módulo de reglas (src/rules/<capa>/<área>.ts) exporta sus reglas, y la
  * lista de RULES las suma. Una regla tiene que estar en el catálogo, activa e
- * implementada, y ser del núcleo, del perfil o de la política: validate lo
- * controla al correrla.
+ * implementada, y ser del núcleo, del perfil o de la política, con un código
+ * que no da una etapa: validate lo controla al correrla.
  */
 import type { Rule, RuleId } from '../types.js';
 

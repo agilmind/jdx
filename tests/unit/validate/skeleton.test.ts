@@ -15,7 +15,7 @@ import { emptyState } from '../../../src/state/fileStateStore.js';
 import { defaultDeps } from '../../../src/validate/deps.js';
 import { MAX_DOCUMENT_BYTES } from '../../../src/validate/jsonStage.js';
 import type { Finding, JsonValue, MediaResolver, Report, Rule, RuleContext, State, StateStore, ValidatorDeps } from '../../../src/types.js';
-import { docBuilder, EXAMPLE_NAME, exampleText } from '../../helpers/docBuilder.js';
+import { type DocBuilder, docBuilder, EXAMPLE_NAME, exampleText } from '../../helpers/docBuilder.js';
 import { type ExampleRun, findingProblems, makeRuleContext, RECEIVED_AT, testDeps, validateExample } from '../../helpers/ruleContext.js';
 import { validateWithDeps } from '../../../src/validate/validate.js';
 import { sadaicProfile } from '../../helpers/sadaicProfile.js';
@@ -64,8 +64,7 @@ function perWork(
 
 describe('validateWithDeps', () => {
   it('the example with an empty registry → exit 0, signature absent, media notEvaluated', async () => {
-    expect(RULES.size).toBe(0);
-    const report = await validateExample();
+    const report = await validateExample({ deps: { rules: ruleMap([]) } });
     expect(reportErrors(report)).toEqual([]);
     expect(report).toMatchObject({
       jdxReport: '1.0', valid: true, disposition: 'ingest', exitCode: 0,
@@ -90,10 +89,28 @@ describe('validateWithDeps', () => {
     ]);
   });
 
-  it('the trust list read in the environment step is reported', async () => {
+  it('the trust list read in the environment step is reported, also when the JSON or the schema fails', async () => {
     const list = signTestTrustList({ ...trustListExample(), env: 'sandbox' }, TEST_ROOT_KEYS.sandbox.slice(0, 2));
-    const report = await validateExample({ jws: 'eyJhbGciOiJFUzI1NiJ9..c2lnbmF0dXJh', options: { trustList: list } });
-    expect(report.trustList).toEqual({ seq: 1, expiresAt: '2026-12-29T00:00:00-03:00' });
+    const signed = (document?: DocBuilder | string) => validateExample({ jws: 'eyJhbGciOiJFUzI1NiJ9..c2lnbmF0dXJh', options: { trustList: list }, ...(document === undefined ? {} : { document }) });
+    const read = { seq: 1, expiresAt: '2026-12-29T00:00:00-03:00' };
+    const [whole, json, schema] = await Promise.all([signed(), signed('{'), signed(docBuilder().remove('/works/0/titles'))]);
+    expect([whole.trustList, whole.exitCode]).toEqual([read, 0]);
+    expect([json.trustList, json.exitCode, json.checks.json]).toEqual([read, 1, 'failed']);
+    expect([schema.trustList, schema.exitCode, schema.checks.schema]).toEqual([read, 1, 'failed']);
+  });
+
+  it('a newer minor reaches the report as a VER-003 warning, exit 0', async () => {
+    const report = await validateExample({ document: docBuilder().set('/jdx', '1.1').set('/$schema', 'https://jdx.jupiter.ar/schema/1.1/jdx.schema.json') });
+    expect(reportErrors(report)).toEqual([]);
+    expect(report).toMatchObject({
+      valid: true, disposition: 'ingest', exitCode: 0,
+      checks: { environment: 'passed', json: 'passed', schema: 'warning', core: 'passed', profile: 'passed', policy: 'passed' },
+      summary: { error: 0, warning: 1, info: 0 },
+      results: [{
+        ruleId: 'JDX-VER-003', level: 'warning', source: 'core', instanceLocation: '/jdx', params: { jdx: '1.1', validatedWith: '1.0' },
+        message: 'La versión 1.1 es más nueva que las que conoce el validador: se validó con el schema abierto de la 1.0.',
+      }],
+    });
   });
 
   it('environment failure → exit 2, valid null, document best effort', async () => {
@@ -130,6 +147,13 @@ describe('validateWithDeps', () => {
       results: [{ ruleId: 'JDX-ENV-006', source: 'environment', instanceLocation: '', params: { reason: 'jdxNotAdmitted', jdx: '1.1' } }],
     });
     expect(report.document).toMatchObject({ jdx: '1.1', issuer: null, media: null });
+    // Como una falla del entorno: sin la lista leída en el paso 1.
+    const list = signTestTrustList({ ...trustListExample(), env: 'sandbox' }, TEST_ROOT_KEYS.sandbox.slice(0, 2));
+    const signed = await validateExample({
+      document: docBuilder().set('/jdx', '1.1').set('/$schema', 'https://jdx.jupiter.ar/schema/1.1/jdx.schema.json'), jws: 'eyJhbGciOiJFUzI1NiJ9..c2lnbmF0dXJh',
+      options: { profile: { ...sadaicProfile(), jdx: '1.0' }, trustList: list },
+    });
+    expect([signed.exitCode, signed.trustList]).toEqual([2, null]);
   });
 
   it('json failure → later checks notEvaluated', async () => {
@@ -207,9 +231,15 @@ describe('validateWithDeps', () => {
     // Con estado y sin errores, DEC-005 da ignore.
     const ignored = await validateExample({ deps: { rules: ruleMap([needsState]) }, options: { state } });
     expect([ignored.exitCode, ignored.disposition, ignored.summary]).toEqual([0, 'ignore', { error: 0, warning: 0, info: 2 }]);
+    // Cada requisito por separado: corre solo la regla que pide lo que hay.
+    const account = { id: 'sur', identifiers: [{ scheme: 'IPI_NAME', value: '00098765432' }] };
+    for (const [options, ran] of [[{ state }, 'JDX-DEC-005'], [{ media: emptyDir }, 'JDX-MED-007'], [{ account }, 'JDX-POL-002']] as const) {
+      const one = await validateExample({ deps: { rules }, options });
+      expect([...new Set(one.results.map((r) => r.ruleId))], ran).toEqual([ran]);
+    }
   });
 
-  it('an unresolved ref skips the dependent object', async () => {
+  it('unresolved(pointer) lets a rule skip the object with a reference that does not resolve', async () => {
     // La regla depende de las referencias de la obra: no evalúa la que tiene una que no resuelve.
     const rule = perWork('JDX-CMP-001', { skip: (ctx, pointer) => ctx.index.unresolved(pointer) });
     const report = await validateExample({ document: docBuilder().set('/works/1/shares/0/party', 'p9'), deps: { rules: ruleMap([rule]) } });
@@ -317,17 +347,36 @@ describe('validateWithDeps', () => {
 });
 
 describe('registry and deps', () => {
-  it('the registry starts empty, and ruleMap refuses a repeated code', () => {
-    expect([...RULES.keys()]).toEqual([]);
+  it('ruleMap keeps the order of its list and refuses a repeated code, and RULES is one', () => {
+    // RULES crece con cada regla: cada una, con su código de clave.
+    for (const [id, rule] of RULES) expect(rule.id).toBe(id);
+    expect(ruleMap([]).size).toBe(0);
     const rule = perWork('JDX-NUM-001');
     expect([...ruleMap([rule, perWork('JDX-NUM-002')]).keys()]).toEqual(['JDX-NUM-001', 'JDX-NUM-002']);
     expect(() => ruleMap([rule, perWork('JDX-NUM-001')])).toThrow('regla repetida en el registro: JDX-NUM-001');
   });
 
   it('a registered rule of another layer, retired, not implemented or not in the catalog is a programming error', async () => {
-    for (const id of ['JDX-ENV-001', 'JDX-SCH-001', 'JDX-SHR-001', 'JDX-IDN-004', 'JDX-ZZZ-999'] as const) {
-      await expect(validateExample({ deps: { rules: ruleMap([perWork(id)]) } }), id).rejects.toThrow(id);
+    const refused = (id: Rule['id'], more: Partial<ValidatorDeps> = {}) => validateExample({ deps: { ...more, rules: ruleMap([perWork(id)]) } });
+    await expect(refused('JDX-ENV-001')).rejects.toThrow('JDX-ENV-001: una regla de la capa environment no va en el registro');
+    await expect(refused('JDX-SCH-001')).rejects.toThrow('JDX-SCH-001: una regla de la capa schema no va en el registro');
+    await expect(refused('JDX-SHR-001')).rejects.toThrow('JDX-SHR-001: está registrada y el catálogo la da como retirada');
+    await expect(refused('JDX-IDN-004')).rejects.toThrow('JDX-IDN-004: está registrada y el catálogo la da como no implementada');
+    await expect(refused('JDX-ZZZ-999')).rejects.toThrow('JDX-ZZZ-999: no está en el catálogo');
+    // Retirada e implementada: la retirada manda.
+    const retired = { ...deps.catalog, rules: deps.catalog.rules.map((r) => (r.id === 'JDX-NUM-001' ? { ...r, status: 'retired' as const } : r)) };
+    await expect(refused('JDX-NUM-001', { catalog: retired })).rejects.toThrow('JDX-NUM-001: está registrada y el catálogo la da como retirada');
+  });
+
+  it('a registered rule with a code that a validation step gives is a programming error, and SIG-001 and TRU-001 are rules', async () => {
+    // El JSON, la versión, el índice, la firma y la falla interna dan sus códigos sin el registro: registrarlos los repetiría.
+    const steps = ['JDX-INT-001', 'JDX-JSN-001', 'JDX-REF-001', 'JDX-REF-002', 'JDX-SIG-002', 'JDX-SIG-003', 'JDX-SIG-004', 'JDX-VER-001', 'JDX-VER-002', 'JDX-VER-003'] as const;
+    for (const id of steps) {
+      await expect(validateExample({ deps: { rules: ruleMap([perWork(id)]) } }), id).rejects.toThrow(`${id}: la da un paso de la validación y no va en el registro`);
     }
+    // La política los da como reglas del paso 4.
+    const policy = await validateExample({ deps: { rules: ruleMap([perWork('JDX-SIG-001', { none: true }), perWork('JDX-TRU-001', { none: true })]) } });
+    expect(policy.exitCode).toBe(0);
   });
 
   it('defaultDeps carries the bundled data, the pinned roots, the registry and the version', () => {

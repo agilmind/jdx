@@ -97,6 +97,16 @@ function readsEverything(dir: string): boolean {
   return readable;
 }
 const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
+/** Un archivo regular que se puede leer justo debajo de / (en un contenedor, /.dockerenv), o null. */
+const ROOT_FILE = readdirSync('/').find((name) => {
+  try {
+    if (!lstatSync(`/${name}`).isFile()) return false;
+    readFileSync(`/${name}`);
+    return true;
+  } catch {
+    return false;
+  }
+}) ?? null;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /** Si una ruta que da el resolver es la de ese nombre (por ruta, o la última parte de una anclada). */
 const named = (path: Buffer | string, name: string): boolean => path.toString().endsWith(`/${name}`);
@@ -499,6 +509,25 @@ describe('dirMediaResolver', () => {
     // Otra falla del disco sigue siendo io.
     const broken: FolderOps = { ...FOLDER_OPS, open: (path, flags) => (named(path, 'b.pdf') ? fail('EIO') : FOLDER_OPS.open(path, flags)) };
     expect(await folderFailure(folderResolver(dir, {}, broken).sha256('sub/b.pdf'))).toEqual(['io', 'sub/b.pdf']);
+  });
+
+  it('a resolver at / builds the paths of its entries as /name', async () => {
+    // Por la ruta, cada operación usa la ruta real de la entrada: con la raíz /, /usr y no //usr.
+    const used: string[] = [];
+    const spy: FolderOps = {
+      ...FOLDER_OPS,
+      lstat: (path) => (used.push(path.toString()), path.toString().startsWith('/.vol/') ? Promise.reject(Object.assign(new Error('sin rutas por id'), { code: 'ENOENT' })) : FOLDER_OPS.lstat(path)),
+      readlink: (path) => (path.startsWith('/proc/') ? Promise.reject(Object.assign(new Error('sin /proc'), { code: 'ENOENT' })) : FOLDER_OPS.readlink(path)),
+      open: (path, flags) => (used.push(path.toString()), FOLDER_OPS.open(path, flags)),
+    };
+    const name = readdirSync('/').find((n) => lstatSync(`/${n}`).isDirectory()) as string;
+    expect(await folderResolver('/', {}, spy).stat(name)).toMatchObject({ type: 'other', path: name });
+    expect(used.filter((path) => path.startsWith('//'))).toEqual([]);
+  });
+
+  it.skipIf(ROOT_FILE === null)('a file right below / is read whole: its real path is /name', async () => {
+    const name = ROOT_FILE as string;
+    expect(await dirMediaResolver('/').sha256(name)).toBe(sha(readFileSync(`/${name}`)));
   });
 
   it('ignore hides matching files from list, not from stat or sha256', async () => {

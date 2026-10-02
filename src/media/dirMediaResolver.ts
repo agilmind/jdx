@@ -473,9 +473,13 @@ function pathOf(entry: Entry): string {
   return entry.path;
 }
 
-/** La ruta de una entrada en el sistema, con los bytes de cada nombre, desde la ruta real de la raíz. */
+/** La ruta de una entrada en el sistema, con los bytes de cada nombre, desde la ruta real de la raíz (con la raíz /, /nombre). */
 function realOf(entry: Entry): Buffer {
-  return (entry.real ??= Buffer.concat([realOf(entry.parent as Entry), SLASH, entry.bytes]));
+  if (entry.real === undefined) {
+    const parent = realOf(entry.parent as Entry);
+    entry.real = parent.at(-1) === SLASH[0] ? Buffer.concat([parent, entry.bytes]) : Buffer.concat([parent, SLASH, entry.bytes]);
+  }
+  return entry.real;
 }
 
 /** La carpeta por su id en macOS. */

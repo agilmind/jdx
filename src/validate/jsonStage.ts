@@ -3,11 +3,12 @@
  *
  * - Un documento de más de MAX_DOCUMENT_BYTES no se lee: un solo JDX-JSN-001
  *   `size`, con `offset` en el primer byte que no entra. Uno así se puede pasar
- *   sin sus bytes, con su tamaño y su sha256 (jsonStageOf). Con ese tope, lo que
- *   cuesta leer y validar un documento hostil queda acotado: las fallas del
- *   parser suman a lo sumo 1 000 000 de caracteres de puntero más el de la
- *   última, que no pasa del doble del largo de la entrada, y ningún texto se
- *   acerca al largo máximo de un string de V8.
+ *   sin sus bytes, con su tamaño y su sha256 (jsonStageOf). Con ese tope y el
+ *   de resultados de cada regla (capFindings, src/report/results.ts), validar
+ *   un documento hostil cuesta del orden de un segundo: las fallas del parser
+ *   suman a lo sumo 1 000 000 de caracteres de puntero más el de la última, que
+ *   no pasa del doble del largo de la entrada, y ningún texto se acerca al
+ *   largo máximo de un string de V8.
  * - Si no, un JDX-JSN-001 por falla del parser (a lo sumo 100), con su razón y
  *   su `offset`, en el puntero de la falla. Si el parser dejó de leer en su
  *   tope (la falla 100, o la que lleva sus punteros a 1 000 000 de

@@ -34,6 +34,16 @@ describe('matchDeliveryGlob', () => {
     expect(matches('Tmp/*', ['Tmp/a', 'tmp/a', 'TMP/a'])).toEqual(['Tmp/a']);
   });
 
+  it('a pattern and a name compare in NFC: a name written as NFD matches a pattern typed as NFC, and the other way', () => {
+    const nfc = 'Canci\u00f3n';
+    const nfd = 'Cancio\u0301n';
+    expect(matchDeliveryGlob(`${nfc}*.pdf`, `sub/${nfd}-1.pdf`)).toBe(true);
+    expect(matchDeliveryGlob(`${nfd}*.pdf`, `${nfc}.pdf`)).toBe(true);
+    expect(matchDeliveryGlob(`M\u00fasica/**`, `Mu\u0301sica/${nfd}.pdf`)).toBe(true);
+    // Solo la forma: otra letra no.
+    expect(matchDeliveryGlob(`${nfc}*.pdf`, 'Cancion.pdf')).toBe(false);
+  });
+
   it('everything other than * is literal, and an empty segment matches nothing', () => {
     expect(matches('a?b', ['a?b', 'axb'])).toEqual(['a?b']);
     expect(matches('[ab].tmp', ['[ab].tmp', 'a.tmp'])).toEqual(['[ab].tmp']);

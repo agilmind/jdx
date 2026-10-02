@@ -7,16 +7,19 @@
  *   `/`, la ruta entera desde la raíz, segmento por segmento. Un segmento
  *   vacío del patrón (una barra inicial, final o doble) no calza con nada.
  * - `*` es cualquier tramo de un segmento y nunca cruza `/`; un segmento `**`
- *   cubre cero o más segmentos. Todo lo demás se compara tal cual: distingue
- *   mayúsculas.
+ *   cubre cero o más segmentos. Todo lo demás se compara tal cual, con el
+ *   patrón y la ruta en NFC (un nombre en NFD, como los deja macOS, cumple el
+ *   patrón escrito en NFC): distingue mayúsculas.
  *
  * Los dos niveles se comparan sin retroceder más que hasta la última
  * estrella: el costo es a lo sumo el largo del patrón por el del path.
  */
 
 export function matchDeliveryGlob(pattern: string, path: string): boolean {
-  if (!pattern.includes('/')) return segmentMatches(pattern, path.slice(path.lastIndexOf('/') + 1));
-  return segmentsMatch(pattern.split('/'), path.split('/'));
+  const glob = pattern.normalize('NFC');
+  const text = path.normalize('NFC');
+  if (!glob.includes('/')) return segmentMatches(glob, text.slice(text.lastIndexOf('/') + 1));
+  return segmentsMatch(glob.split('/'), text.split('/'));
 }
 
 /** Un segmento contra un segmento del patrón, con `*` como cualquier tramo. */

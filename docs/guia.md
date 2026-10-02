@@ -85,7 +85,8 @@ la barra invertida, van como `\xHH`), salvo los de JDX, que son archivos de
 la raíz (`<id>.r<n>.jdx.json`, su `.jws`, su `.report.json` y `jdx-trust.json`),
 y los que la sociedad ignora con `--ignore` (repetible): sin `/` el patrón mira
 el nombre, con `/` la ruta desde la raíz; `*` no cruza carpetas y `**` cubre
-cero o más.
+cero o más. El patrón y el nombre se comparan en NFC y distinguen mayúsculas;
+un patrón con una barra al principio, al final o doble no cubre nada.
 
 La carpeta no puede cambiar mientras se valida: se valida una copia. Una
 carpeta que no se puede usar (no existe, algo de adentro no se puede leer,

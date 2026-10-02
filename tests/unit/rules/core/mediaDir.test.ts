@@ -9,7 +9,7 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, w
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { dirMediaResolver } from '../../../../src/media/dirMediaResolver.js';
+import { dirMediaResolver, FOLDER_OPS, folderResolver } from '../../../../src/media/dirMediaResolver.js';
 import { MediaFolderError } from '../../../../src/media/errors.js';
 import { MAX_RESULTS_PER_RULE } from '../../../../src/report/results.js';
 import { MED_002, MED_006, MED_007, MED_008 } from '../../../../src/rules/core/mediaDir.js';
@@ -364,6 +364,27 @@ describe('hostile input through validateWithDeps', () => {
     expect(report.checks.media).toBe('passed');
     expect(count).toBeGreaterThan(400);
     expect(ms).toBeLessThan(5_000);
+  });
+
+  it('a declaration whose files each sit in folders of their own, with a quiet folder that has just them, is never refused by the limit', async () => {
+    // Como un documento de 2 MiB con cada archivo en <id>/a/f, en chico: 3 × 60 entradas pedidas y un tope de 20.
+    const dir = folder();
+    const doc = JSON.parse(docBuilder().text) as Doc;
+    delete (doc.edition as Doc).deposit;
+    delete (doc.edition as Doc).media;
+    delete (doc.recordings as Doc[])[0]!.media;
+    delete (doc.agreements as Doc[])[0]!.media;
+    doc.media = Array.from({ length: 60 }, (_, i) => {
+      mkdirSync(join(dir, `m${i}`, 'a'), { recursive: true });
+      writeFileSync(join(dir, `m${i}`, 'a', 'f'), '');
+      return { id: `m${i}`, kind: 'audio', path: `m${i}/a/f`, delivery: 1, size: 0 };
+    });
+    const quiet = await validateExample({ document: JSON.stringify(doc), options: { media: folderResolver(dir, {}, FOLDER_OPS, 20) } });
+    expect([quiet.exitCode, quiet.checks.media, resultsOf(quiet, 'JDX-ENV-011')]).toEqual([0, 'passed', []]);
+    // Veintiún archivos que no se declaran sí pasan el tope.
+    for (let i = 0; i < 21; i++) writeFileSync(join(dir, `m${i}`, `extra`), '');
+    const noisy = await validateExample({ document: JSON.stringify(doc), options: { media: folderResolver(dir, {}, FOLDER_OPS, 20) } });
+    expect(resultsOf(noisy, 'JDX-ENV-011').map((r) => r.params)).toEqual([{ cause: 'tooManyEntries', path: '' }]);
   });
 
   it('registers MED-002, MED-006, MED-007 and MED-008', () => {

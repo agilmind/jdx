@@ -19,7 +19,8 @@
  *
  * Una carpeta de la entrega que no se puede usar es del entorno también si una
  * regla lo encuentra mientras la lee (un MediaFolderError): el reporte es el de
- * una falla del entorno, con su JDX-ENV-011, y lo demás queda notEvaluated.
+ * una falla del entorno, con su JDX-ENV-011, y lo demás queda notEvaluated. Al
+ * terminar, bien o mal, se cierra lo que la carpeta dejó abierto (close).
  *
  * El reporte sale de buildReport, con el tope de cada código (capFindings): de
  * cada uno, a lo sumo 100 resultados, y los demás se cuentan sin armarlos (una
@@ -56,16 +57,21 @@ const NOT_EVALUATED: ReportSignature = Object.freeze({ status: 'notEvaluated', k
 const ABSENT: ReportSignature = Object.freeze({ status: 'absent', kid: null, issuer: null, env: null, reason: null });
 
 export async function validateWithDeps(input: ValidateInput, opts: ValidateOptions, deps: ValidatorDeps): Promise<Report> {
-  const prepared = await prepareRules(input, opts, deps);
-  if (!prepared.ok) return prepared.report;
-  let found: RulesOutcome;
   try {
-    found = await runRules(prepared.ctx, deps);
-  } catch (error) {
-    if (error instanceof MediaFolderError) return prepared.environment([folderFinding(error)]);
-    throw error;
+    const prepared = await prepareRules(input, opts, deps);
+    if (!prepared.ok) return prepared.report;
+    let found: RulesOutcome;
+    try {
+      found = await runRules(prepared.ctx, deps);
+    } catch (error) {
+      if (error instanceof MediaFolderError) return prepared.environment([folderFinding(error)]);
+      throw error;
+    }
+    return prepared.finish([...prepared.findings, ...found.findings], found.more);
+  } finally {
+    // Lo que la carpeta de la entrega dejó abierto se cierra antes de devolver el reporte.
+    await opts.media?.close?.();
   }
-  return prepared.finish([...prepared.findings, ...found.findings], found.more);
 }
 
 /**

@@ -95,6 +95,8 @@ describe('src/types.ts', () => {
       stat(path: string): Promise<{ type: 'file' | 'symlink' | 'other'; size: number; path?: string } | null>;
       sha256(path: string): Promise<string>;
       check?(opts?: { privateCopy?: boolean }): Promise<'anchored' | 'path' | void>;
+      declare?(paths: readonly string[]): void;
+      close?(): Promise<void>;
     }
     expectTypeOf<MediaResolver>().not.toBeAny();
     expectTypeOf<MediaResolver>().toEqualTypeOf<SpecMediaResolver>();

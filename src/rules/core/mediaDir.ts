@@ -17,7 +17,8 @@
  * estado es no estar.
  *
  * Cada archivo se busca una vez por validación, aunque lo miren varias
- * reglas (locate, que usa también JDX-MED-003), y su sha256 se calcula solo
+ * reglas (locate, que usa también JDX-MED-003, y que antes le dice a la
+ * carpeta los paths declarados), y su sha256 se calcula solo
  * si hace falta. Se buscan de a varios; si uno falla, la regla falla después
  * de que terminan los demás.
  */
@@ -59,6 +60,8 @@ function lookedUp(ctx: RuleContext): { index: number; media: Media & { path: str
 
 async function locateAll(resolver: MediaResolver | null, wanted: readonly { index: number; media: Media & { path: string } }[]): Promise<readonly Located[]> {
   if (resolver === null) return [];
+  // Lo que piden los paths declarados no cuenta para el tope de entradas de la carpeta.
+  resolver.declare?.(wanted.map(({ media }) => media.path));
   const out: Located[] = [];
   for (let start = 0; start < wanted.length; start += AT_ONCE) {
     const batch = wanted.slice(start, start + AT_ONCE);

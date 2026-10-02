@@ -239,9 +239,9 @@
         "en": ": a path is longer than the system allows"
       },
       "tooManyEntries": {
-        "es": ": tiene más de 100 000 entradas",
-        "pt": ": tem mais de 100 000 entradas",
-        "en": ": it has more than 100,000 entries"
+        "es": ": tiene más de 100 000 entradas que la declaración no pide",
+        "pt": ": tem mais de 100 000 entradas que a declaração não pede",
+        "en": ": it has more than 100,000 entries that the declaration does not require"
       },
       "tooManyOpenFiles": {
         "es": ": hay demasiados archivos abiertos",

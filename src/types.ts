@@ -301,6 +301,10 @@ export interface MediaResolver {
    * si lo sabe, dice cómo va a buscar. privateCopy: el receptor dice que es una copia privada que nada más escribe.
    */
   check?(opts?: { privateCopy?: boolean }): Promise<MediaLookup | void>;
+  /** Los paths declarados, antes de buscarlos: lo que piden (cada path y sus carpetas) no cuenta para el tope de entradas. */
+  declare?(paths: readonly string[]): void;
+  /** Al terminar la validación: cierra lo que dejó abierto. Se puede seguir usando. */
+  close?(): Promise<void>;
 }
 
 // ───────────── Lista de confianza (schema/trust-list.schema.json) ─────────────

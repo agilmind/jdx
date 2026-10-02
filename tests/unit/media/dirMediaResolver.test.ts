@@ -9,7 +9,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { appendFileSync, type BigIntStats, chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { appendFileSync, type BigIntStats, chmodSync, constants, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -100,6 +100,20 @@ function readsEverything(dir: string): boolean {
   return readable;
 }
 const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
+/** Si quien corre los tests puede leer lo que no tiene permiso (root): entonces no hay nada ilegible. */
+const READS_EVERYTHING = (() => {
+  const dir = mkdtempSync(join(tmpdir(), 'jdx-media-'));
+  try {
+    writeFileSync(join(dir, 'probe-perm'), '');
+    chmodSync(join(dir, 'probe-perm'), 0o000);
+    readFileSync(join(dir, 'probe-perm'));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+})();
 /** El largo máximo de una ruta absoluta, en bytes y sin el NUL final, más uno. */
 const PATH_MAX = process.platform === 'darwin' ? 1024 : 4096;
 /**
@@ -399,7 +413,7 @@ describe('dirMediaResolver', () => {
     expect(await resolver.sha256('a.pdf')).toBe(sha('el declarado'));
     // Una carpeta que se llama U+FEFF es una carpeta más: cuenta sus entradas para el tope.
     const counted = delivery({ 'a': '1', [`${BOM}/1`]: '1', [`${BOM}/2`]: '2', [`${BOM}/3`]: '3' });
-    expect(await folderFailure(listed(folderResolver(counted, {}, FOLDER_OPS, 4)))).toEqual(['tooManyEntries', BOM]);
+    expect(await folderFailure(listed(folderResolver(counted, {}, FOLDER_OPS, 4)))).toEqual(['tooManyEntries', '']);
     expect(await listed(folderResolver(counted, {}, FOLDER_OPS, 5))).toHaveLength(4);
   });
 
@@ -492,10 +506,89 @@ describe('dirMediaResolver', () => {
     expect(await listed(atSeven)).toHaveLength(6);
     expect(await listed(atSeven)).toHaveLength(6);
     expect(await atSeven.stat('sub/d')).toMatchObject({ type: 'file' });
-    expect(await folderFailure(listed(folderResolver(dir, {}, FOLDER_OPS, 6)))).toEqual(['tooManyEntries', 'sub']);
+    expect(await folderFailure(listed(folderResolver(dir, {}, FOLDER_OPS, 6)))).toEqual(['tooManyEntries', '']);
     expect(await folderFailure(folderResolver(dir, {}, FOLDER_OPS, 3).stat('a'))).toEqual(['tooManyEntries', '']);
     // Lo que no se lee no cuenta: buscar un path de la raíz no lee sub.
     expect(await folderResolver(dir, {}, FOLDER_OPS, 4).stat('a')).toMatchObject({ type: 'file' });
+  });
+
+  it('what the declared paths need (each path and its folders) never counts toward the limit; the rest does, by exact name', async () => {
+    const files: Record<string, string> = {};
+    for (let i = 0; i < 20; i++) files[`p${i}/a/f`] = String(i);
+    const dir = delivery(files);
+    const paths = Object.keys(files);
+    // Sesenta entradas, todas pedidas: con un tope de cinco, ni buscarlas ni listar todo lo pasa.
+    const quiet = folderResolver(dir, {}, FOLDER_OPS, 5);
+    quiet.declare?.(paths);
+    for (const path of paths) expect(await quiet.stat(path), path).toMatchObject({ type: 'file' });
+    expect(await listed(quiet)).toHaveLength(20);
+    // Seis que no se piden pasan el tope, estén donde estén.
+    for (let i = 0; i < 6; i++) writeFileSync(join(dir, `p${i}`, `extra${i}`), 'x');
+    const extra = folderResolver(dir, {}, FOLDER_OPS, 5);
+    extra.declare?.(paths);
+    expect(await folderFailure(listed(extra))).toEqual(['tooManyEntries', '']);
+    // Sin decir los paths, todo cuenta; y un nombre que solo coincide sin mayúsculas no es el declarado.
+    expect(await folderFailure(listed(folderResolver(delivery(files), {}, FOLDER_OPS, 5)))).toEqual(['tooManyEntries', '']);
+    const variant = folderResolver(delivery({ 'A.pdf': 'a' }), {}, FOLDER_OPS, 0);
+    variant.declare?.(['a.pdf']);
+    expect(await folderFailure(variant.stat('a.pdf'))).toEqual(['tooManyEntries', '']);
+    const exact = folderResolver(delivery({ 'a.pdf': 'a' }), {}, FOLDER_OPS, 0);
+    exact.declare?.(['a.pdf']);
+    expect(await exact.stat('a.pdf')).toMatchObject({ type: 'file' });
+  });
+
+  it('the limit is global: it is reported at the folder root, the same in every run', async () => {
+    const files: Record<string, string> = {};
+    for (let c = 0; c < 8; c++) for (let f = 0; f < 20; f++) files[`c${c}/f${f}`] = '';
+    const dir = delivery(files);
+    const seen = new Set<string>();
+    for (let run = 0; run < 10; run++) seen.add(JSON.stringify(await folderFailure(listed(folderResolver(dir, {}, FOLDER_OPS, 50)))));
+    expect([...seen]).toEqual([JSON.stringify(['tooManyEntries', ''])]);
+  });
+
+  it('check controls the root without reading all of it, so the limit waits for the declared paths', async () => {
+    const files: Record<string, string> = {};
+    for (let i = 0; i < 10; i++) files[`f${i}`] = String(i);
+    const dir = delivery(files);
+    const resolver = folderResolver(dir, {}, FOLDER_OPS, 2);
+    await resolver.check?.();
+    resolver.declare?.(Object.keys(files));
+    expect(await listed(resolver)).toHaveLength(10);
+    // Una raíz que no se puede leer falla igual en check.
+    if (READS_EVERYTHING) return;
+    chmodSync(dir, 0o300);
+    expect(await folderFailure(folderResolver(dir, {}, FOLDER_OPS).check?.() as Promise<unknown>)).toEqual(['permission', '']);
+    chmodSync(dir, 0o755);
+  });
+
+  it('each folder is opened at most once, also with a declared path per folder and their sha256, and none is left open after close', async () => {
+    const files: Record<string, string> = {};
+    for (let i = 0; i < 150; i++) files[`p${i}/a/f.pdf`] = String(i);
+    const dir = delivery(files);
+    const folderOpens = new Map<string, number>();
+    let open = 0;
+    const tracked: FolderOps = {
+      ...FOLDER_OPS,
+      open: async (path, flags) => {
+        const handle = await FOLDER_OPS.open(path, flags);
+        if ((flags & (constants.O_DIRECTORY ?? 0)) !== 0 && path.toString() !== '/') {
+          const where = (await handle.stat({ bigint: true })).ino.toString();
+          folderOpens.set(where, (folderOpens.get(where) ?? 0) + 1);
+        }
+        open++;
+        const close = handle.close.bind(handle);
+        return Object.assign(handle, { close: async () => { open--; return close(); } });
+      },
+    };
+    const resolver = folderResolver(dir, {}, tracked);
+    await resolver.check?.();
+    resolver.declare?.(Object.keys(files));
+    for (const path of Object.keys(files)) expect(await resolver.stat(path), path).toMatchObject({ type: 'file' });
+    for (const path of Object.keys(files)) expect(await resolver.sha256(path), path).toBe(sha(files[path] as string));
+    expect(await listed(resolver)).toHaveLength(150);
+    expect([...folderOpens.values()].filter((n) => n > 1)).toEqual([]);
+    await resolver.close?.();
+    expect(open).toBe(0);
   });
 
   it('a folder of a wave that fails is reported after the other reads of the wave end, also the lstat that identifies one', async () => {
@@ -675,6 +768,7 @@ describe('dirMediaResolver', () => {
       };
       const resolver = folderResolver(dir, {}, looping, 1000);
       if (base === BY_PATH) await resolver.check?.({ privateCopy: true });
+      reads = 0;
       expect(await folderFailure(listed(resolver))).toEqual(['tooLong', 'a/b']);
       expect(reads).toBeLessThanOrEqual(2);
     }

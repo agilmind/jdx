@@ -7,8 +7,8 @@
  * `reason` es params.cause del resultado: la carpeta no existe (`missingDir`)
  * o no es una carpeta (`notDirectory`); falta permiso para leer algo de
  * adentro (`permission`); una ruta es más larga de lo que admite el sistema
- * (`tooLong`); tiene más entradas de las que se leen (`tooManyEntries`,
- * 100 000 contando las carpetas); hay demasiados archivos abiertos
+ * (`tooLong`); tiene más de 100 000 entradas que la declaración no pide
+ * (`tooManyEntries`, en ''); hay demasiados archivos abiertos
  * (`tooManyOpenFiles`, EMFILE o ENFILE); otra falla del disco (`io`); la
  * carpeta cambió mientras se leía (`modified`); o el sistema no deja anclarla
  * y el receptor no dijo que es una copia privada (`unanchored`). `path` es
@@ -28,7 +28,7 @@ const MESSAGES: Readonly<Record<MediaFolderCause, string>> = Object.freeze({
   notDirectory: 'no es una carpeta',
   permission: 'falta permiso para leer',
   tooLong: 'una ruta es más larga de lo que admite el sistema',
-  tooManyEntries: 'tiene más de 100 000 entradas',
+  tooManyEntries: 'tiene más de 100 000 entradas que la declaración no pide',
   tooManyOpenFiles: 'hay demasiados archivos abiertos',
   io: 'falla el acceso al disco',
   modified: 'cambió mientras se leía',

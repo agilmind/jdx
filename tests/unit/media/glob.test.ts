@@ -52,6 +52,16 @@ describe('matchDeliveryGlob', () => {
     for (const pattern of ['/tmp/*', 'tmp/', 'tmp//a', '', '/']) expect(matches(pattern, ['tmp/a', 'tmp', 'a']), pattern).toEqual([]);
   });
 
+  it('NFC never joins an escaped byte with the mark that follows it', () => {
+    // Los bytes 61 FA CC 81: "a", un byte que no es UTF-8 y U+0301. La A del escape no es una letra que se acentúa.
+    const shown = 'a\\xFA\u0301';
+    expect(matchDeliveryGlob('a\\xFA*', shown)).toBe(true);
+    expect(matchDeliveryGlob('*\u00C1*', shown)).toBe(false);
+    expect(matchDeliveryGlob('a\\xFA\u0301', shown)).toBe(true);
+    // Lo demás de cada tramo sí se compara en NFC.
+    expect(matchDeliveryGlob('Canci\u00F3n\\xFF*', 'Cancio\u0301n\\xFF.pdf')).toBe(true);
+  });
+
   it('many stars against a long name are matched in linear steps, not by backtracking', () => {
     const name = `${'a'.repeat(100_000)}c`;
     const started = performance.now();

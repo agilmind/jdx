@@ -9,15 +9,17 @@
  * - `*` es cualquier tramo de un segmento y nunca cruza `/`; un segmento `**`
  *   cubre cero o más segmentos. Todo lo demás se compara tal cual, con el
  *   patrón y la ruta en NFC (un nombre en NFD, como los deja macOS, cumple el
- *   patrón escrito en NFC): distingue mayúsculas.
+ *   patrón escrito en NFC): distingue mayúsculas. Cada tramo entre los `\xHH`
+ *   de un nombre que no es UTF-8 válido se pasa a NFC aparte: un escape no se
+ *   junta con la marca que lo sigue.
  *
  * Los dos niveles se comparan sin retroceder más que hasta la última
  * estrella: el costo es a lo sumo el largo del patrón por el del path.
  */
 
 export function matchDeliveryGlob(pattern: string, path: string): boolean {
-  const glob = pattern.normalize('NFC');
-  const text = path.normalize('NFC');
+  const glob = nfc(pattern);
+  const text = nfc(path);
   if (!glob.includes('/')) return segmentMatches(glob, text.slice(text.lastIndexOf('/') + 1));
   return segmentsMatch(glob.split('/'), text.split('/'));
 }
@@ -68,4 +70,9 @@ function segmentsMatch(globs: readonly string[], segments: readonly string[]): b
   }
   while (g < globs.length && globs[g] === '**') g++;
   return g === globs.length;
+}
+
+/** El texto en NFC de a tramos, sin tocar los escapes `\xHH` que los separan. */
+function nfc(text: string): string {
+  return text.split(/(\\x[0-9A-F]{2})/u).map((part, i) => (i % 2 === 1 ? part : part.normalize('NFC'))).join('');
 }

@@ -17,20 +17,29 @@
  *   path con un segmento vacío, `.` o `..`, o con `\`, `:` o NUL no se busca:
  *   stat da null. `ignore` no los cambia.
  * - sha256 lee el archivo de a partes, abierto sin seguir enlaces y sin
- *   esperar (O_NOFOLLOW, O_NONBLOCK), y controla con fstat que es un archivo
- *   regular y el mismo que encontró: nunca abre un fifo, un socket ni un
+ *   esperar (O_NOFOLLOW, O_NONBLOCK): nunca abre un fifo, un socket ni un
  *   dispositivo, ni lee un enlace que apareció después.
- * - Una carpeta que no se puede usar es un MediaFolderError: la raíz que no
- *   existe o no es una carpeta, algo de adentro que no se puede leer, o una
- *   entrada que cambió desde que se listó. check() controla la raíz.
  *
  * Un resolver es una foto de la carpeta para una validación: cada carpeta se
  * lista una vez, cada entrada se mira una vez y cada archivo se lee una vez,
- * así el costo de buscar un path es el de sus segmentos.
+ * así el costo de buscar un path es el de sus segmentos. La carpeta no tiene
+ * que cambiar mientras tanto; si cambia, lo que se lee no sale de ella:
+ *
+ * - Cada entrada se mira desde la carpeta que la listó, ya identificada por
+ *   su dev e ino: en macOS por /.vol/<dev>/<ino>/<nombre>; en Linux, con la
+ *   carpeta abierta y controlada (fstat y /proc/self/fd/N contra su ruta real
+ *   desde la de la raíz); si no, por su ruta.
+ * - Una carpeta es la misma antes y después de listarla, un archivo abierto es
+ *   el que se vio (dev, ino, tamaño y fecha, y en Linux su ruta real) y se lee
+ *   entero con ese tamaño, y cada entrada es del tipo que dio su listado.
+ *
+ * Una carpeta que no se puede usar es un MediaFolderError: la raíz que no
+ * existe o no es una carpeta, algo de adentro que no se puede leer, o una
+ * entrada que cambió. check() controla la raíz.
  */
 import { createHash } from 'node:crypto';
 import { type BigIntStats, constants, type Dirent } from 'node:fs';
-import { lstat, open, readdir, stat } from 'node:fs/promises';
+import { type FileHandle, lstat, open, readdir, readlink, realpath, stat } from 'node:fs/promises';
 import type { MediaResolver } from '../types.js';
 import { folderFailure, MediaFolderError } from './errors.js';
 import { matchDeliveryGlob } from './glob.js';
@@ -43,6 +52,35 @@ type Kind = 'dir' | EntryType;
 const CHUNK_BYTES = 1 << 20;
 
 const UNSAFE = /[\\:\u0000]/u;
+
+/** Cuántas entradas se miran a la vez. */
+const AT_ONCE = 64;
+
+const SLASH = Buffer.from('/');
+const FILE_FLAGS = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
+const FOLDER_FLAGS = constants.O_RDONLY | (constants.O_DIRECTORY ?? 0) | (constants.O_NOFOLLOW ?? 0);
+
+/** Las operaciones del sistema de archivos que usa el resolver; FOLDER_OPS son las de node:fs. */
+export interface FolderOps {
+  stat(path: Buffer): Promise<BigIntStats>;
+  lstat(path: Buffer): Promise<BigIntStats>;
+  realpath(path: Buffer): Promise<Buffer>;
+  readdir(path: Buffer): Promise<Dirent<Buffer>[]>;
+  open(path: Buffer, flags: number): Promise<FileHandle>;
+  readlink(path: string): Promise<Buffer>;
+}
+
+export const FOLDER_OPS: FolderOps = Object.freeze({
+  stat: (path: Buffer) => stat(path, { bigint: true }),
+  lstat: (path: Buffer) => lstat(path, { bigint: true }),
+  realpath: (path: Buffer) => realpath(path, { encoding: 'buffer' }),
+  readdir: (path: Buffer) => readdir(path, { withFileTypes: true, encoding: 'buffer' }),
+  open: (path: Buffer, flags: number) => open(path, flags),
+  readlink: (path: string) => readlink(path, { encoding: 'buffer' }),
+});
+
+/** Cómo se llega a una entrada desde la carpeta que la listó: por su id (macOS), por la carpeta abierta (Linux) o por la ruta. */
+type Anchor = 'vol' | 'proc' | 'path';
 
 /**
  * Una entrada de la carpeta, como la listó su carpeta, con lo que se va
@@ -60,28 +98,199 @@ interface Entry {
   stats?: Promise<BigIntStats>;
   listing?: Promise<Listing>;
   hash?: Promise<string>;
+  /** En Linux, la carpeta abierta mientras alguien la usa. */
+  opened?: { users: number; readonly handle: Promise<FileHandle> } | undefined;
 }
 
 /** Las entradas de una carpeta, por nombre exacto y plegado. */
 interface Listing { readonly entries: readonly Entry[]; readonly exact: ReadonlyMap<string, Entry>; readonly folded: ReadonlyMap<string, Entry[]> }
 
 export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[] } = {}): MediaResolver {
+  return folderResolver(dir, opts, FOLDER_OPS);
+}
+
+/** dirMediaResolver con otras operaciones del sistema de archivos (las de los tests). */
+export function folderResolver(dir: string, opts: { ignore?: readonly string[] }, ops: FolderOps): MediaResolver {
   const ignore = [...(opts.ignore ?? [])];
-  const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir', path: '', real: Buffer.from(dir) };
-  let rootChecked: Promise<void> | undefined;
+  const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir', path: '' };
+  let anchor: Anchor = 'path';
+
   /** La raíz: tiene que existir y ser una carpeta (se sigue si es un enlace: la eligió quien llama). */
-  const checked = (): Promise<void> => (rootChecked ??= stat(dir).then(
-    (stats) => {
+  const rooted = async (): Promise<BigIntStats> => {
+    const given = Buffer.from(dir);
+    let stats: BigIntStats;
+    try {
+      stats = await ops.stat(given);
       if (!stats.isDirectory()) throw new MediaFolderError('notDirectory', '');
-    },
-    (error: unknown) => {
+      root.real = await ops.realpath(given);
+    } catch (error) {
       throw folderFailure(error, '', false);
-    },
-  ));
+    }
+    anchor = await anchorOf(root.real, stats);
+    return stats;
+  };
+
+  /** Si se puede llegar a las entradas desde su carpeta ya identificada. */
+  async function anchorOf(real: Buffer, stats: BigIntStats): Promise<Anchor> {
+    if (process.platform === 'darwin') {
+      try {
+        const byId = await ops.lstat(volPath(stats));
+        if (byId.isDirectory() && byId.dev === stats.dev && byId.ino === stats.ino) return 'vol';
+      } catch {
+        // Un volumen sin /.vol: por la ruta.
+      }
+    } else if (process.platform === 'linux' && constants.O_DIRECTORY !== undefined) {
+      let handle: FileHandle | undefined;
+      try {
+        handle = await ops.open(real, FOLDER_FLAGS);
+        if ((await ops.readlink(`/proc/self/fd/${handle.fd}`)).equals(real)) return 'proc';
+      } catch {
+        // Sin /proc: por la ruta.
+      } finally {
+        await handle?.close();
+      }
+    }
+    return 'path';
+  }
 
   /** Las entradas de una carpeta, leídas una vez. */
-  const listingOf = (folder: Entry): Promise<Listing> =>
-    (folder.listing ??= (folder === root ? checked() : Promise.resolve()).then(() => readListing(folder)));
+  const listingOf = (folder: Entry): Promise<Listing> => (folder.listing ??= readListing(folder));
+
+  /** El lstat de una entrada, una vez, desde su carpeta; tiene que ser del tipo que dio su listado. La raíz, al empezar. */
+  const statsOf = (entry: Entry): Promise<BigIntStats> => (entry.stats ??= entry === root ? rooted() : lstatOf(entry));
+
+  /** El lstat de una entrada ahora, desde la carpeta que la listó, del tipo que dio su listado. */
+  async function lstatOf(entry: Entry, at?: Buffer): Promise<BigIntStats> {
+    const parent = entry.parent as Entry;
+    let stats: BigIntStats;
+    try {
+      if (at !== undefined) stats = await ops.lstat(Buffer.concat([at, SLASH, entry.bytes]));
+      else if (anchor === 'vol') stats = await ops.lstat(Buffer.concat([volPath(await statsOf(parent)), SLASH, entry.bytes]));
+      else if (anchor === 'proc') stats = await withFolder(parent, (open) => ops.lstat(Buffer.concat([open, SLASH, entry.bytes])));
+      else stats = await ops.lstat(realOf(entry));
+    } catch (error) {
+      // Sin permiso para recorrer la carpeta, la que no se puede leer es ella.
+      const code = (error as NodeJS.ErrnoException).code;
+      throw folderFailure(error, code === 'EACCES' || code === 'EPERM' ? pathOf(parent) : pathOf(entry), true);
+    }
+    if (kindOf(stats) !== entry.kind) throw new MediaFolderError('modified', pathOf(entry));
+    return stats;
+  }
+
+  /** El lstat de una carpeta ahora: la raíz por su ruta real, las demás desde la suya. */
+  async function lstatNow(folder: Entry): Promise<BigIntStats> {
+    if (folder.parent !== null) return lstatOf(folder);
+    try {
+      return await ops.lstat(realOf(root));
+    } catch (error) {
+      throw folderFailure(error, '', true);
+    }
+  }
+
+  /**
+   * Corre `use` con la carpeta abierta (Linux): la abre por su ruta real sin
+   * seguir un enlace y controla que sea la carpeta que ya se vio (dev e ino,
+   * desde la carpeta que la listó, también abierta). `use` recibe
+   * /proc/self/fd/N. Los que la piden a la vez comparten la apertura, y la
+   * cierra el último.
+   */
+  async function withFolder<T>(folder: Entry, use: (at: Buffer) => Promise<T>): Promise<T> {
+    const shared = (folder.opened ??= { users: 0, handle: openFolder(folder) });
+    shared.users++;
+    try {
+      const handle = await shared.handle;
+      return await use(Buffer.from(`/proc/self/fd/${handle.fd}`));
+    } finally {
+      if (--shared.users === 0) {
+        folder.opened = undefined;
+        await shared.handle.then((h) => h.close(), () => undefined);
+      }
+    }
+  }
+
+  async function openFolder(folder: Entry): Promise<FileHandle> {
+    const seen = await statsOf(folder);
+    let handle: FileHandle;
+    try {
+      handle = await ops.open(realOf(folder), FOLDER_FLAGS);
+    } catch (error) {
+      throw folderFailure(error, pathOf(folder), folder.parent !== null);
+    }
+    try {
+      const opened = await handle.stat({ bigint: true });
+      if (!opened.isDirectory() || !same(opened, seen)) throw new MediaFolderError('modified', pathOf(folder));
+      return handle;
+    } catch (error) {
+      await handle.close();
+      throw error;
+    }
+  }
+
+  /**
+   * Las entradas de una carpeta, que tiene que ser la misma antes y después de
+   * leerla. En Linux se leen de la carpeta abierta y controlada, y las
+   * carpetas de adentro se miran desde ella, así se identifican sin volver a
+   * recorrer su ruta.
+   */
+  async function readListing(folder: Entry): Promise<Listing> {
+    const seen = await statsOf(folder);
+    try {
+      if (anchor === 'proc') {
+        return await withFolder(folder, async (at) => {
+          const listing = listingRead(folder, await ops.readdir(at));
+          const inner = listing.entries.filter((e) => e.kind === 'dir');
+          for (let start = 0; start < inner.length; start += AT_ONCE) {
+            await Promise.all(inner.slice(start, start + AT_ONCE).map((e) => (e.stats ??= lstatOf(e, at))));
+          }
+          return listing;
+        });
+      }
+      const dirents = await ops.readdir(anchor === 'vol' ? volPath(seen) : realOf(folder));
+      const after = await lstatNow(folder);
+      if (!after.isDirectory() || !same(after, seen)) throw new MediaFolderError('modified', pathOf(folder));
+      return listingRead(folder, dirents);
+    } catch (error) {
+      throw folderFailure(error, pathOf(folder), folder.parent !== null);
+    }
+  }
+
+  /** Abre el archivo desde su carpeta, sin seguir un enlace ni esperar. */
+  async function openFile(entry: Entry): Promise<FileHandle> {
+    const parent = entry.parent as Entry;
+    try {
+      if (anchor === 'vol') return await ops.open(Buffer.concat([volPath(await statsOf(parent)), SLASH, entry.bytes]), FILE_FLAGS);
+      if (anchor === 'proc') return await withFolder(parent, (at) => ops.open(Buffer.concat([at, SLASH, entry.bytes]), FILE_FLAGS));
+      return await ops.open(realOf(entry), FILE_FLAGS);
+    } catch (error) {
+      throw folderFailure(error, pathOf(entry), true);
+    }
+  }
+
+  /** El sha256 del archivo, de a partes, si al abrirlo es el mismo archivo regular que se vio y se lee entero. */
+  async function hashFile(entry: Entry): Promise<string> {
+    const seen = await statsOf(entry);
+    const handle = await openFile(entry);
+    try {
+      const opened = await handle.stat({ bigint: true });
+      if (!opened.isFile() || !same(opened, seen) || opened.size !== seen.size || opened.mtimeNs !== seen.mtimeNs) throw new MediaFolderError('modified', pathOf(entry));
+      if (anchor === 'proc' && !(await ops.readlink(`/proc/self/fd/${handle.fd}`)).equals(realOf(entry))) throw new MediaFolderError('modified', pathOf(entry));
+      const hash = createHash('sha256');
+      const buffer = Buffer.allocUnsafe(CHUNK_BYTES);
+      let read = 0n;
+      for (;;) {
+        const { bytesRead } = await handle.read(buffer, 0, CHUNK_BYTES, null);
+        if (bytesRead === 0) break;
+        read += BigInt(bytesRead);
+        hash.update(buffer.subarray(0, bytesRead));
+      }
+      if (read !== seen.size) throw new MediaFolderError('modified', pathOf(entry));
+      return hash.digest('hex');
+    } catch (error) {
+      throw folderFailure(error, pathOf(entry), true);
+    } finally {
+      await handle.close();
+    }
+  }
 
   /** Dónde termina un path de la entrega: la entrada, o null si no está. */
   const resolve = async (path: string): Promise<Entry | null> => {
@@ -91,7 +300,6 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
     for (let i = 0; i < segments.length; i++) {
       const entry = pick(await listingOf(folder), segments[i] as string);
       if (entry === null) return null;
-      // El tipo de una carpeta del camino sale de su listado; el enlace, donde se detiene, y la última, se miran.
       if (entry.kind === 'symlink' || i === segments.length - 1) {
         await statsOf(entry);
         return entry;
@@ -127,13 +335,13 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
       const entry = await resolve(path);
       if (entry === null) return null;
       const stats = await statsOf(entry);
-      return { type: stats.isSymbolicLink() ? 'symlink' : stats.isFile() ? 'file' : 'other', size: Number(stats.size) };
+      return { type: entry.kind === 'dir' ? 'other' : entry.kind, size: Number(stats.size) };
     },
 
     async sha256(path) {
       const entry = await resolve(path);
-      if (entry === null || !(await statsOf(entry)).isFile()) throw new Error(`${path}: no es un archivo regular de la entrega`);
-      return (entry.hash ??= statsOf(entry).then((stats) => hashFile(realOf(entry), stats, pathOf(entry))));
+      if (entry === null || entry.kind !== 'file') throw new Error(`${path}: no es un archivo regular de la entrega`);
+      return (entry.hash ??= hashFile(entry));
     },
 
     async check() {
@@ -162,6 +370,11 @@ function pick(listing: Listing, segment: string): Entry | null {
   return variants?.length === 1 ? (variants[0] as Entry) : null;
 }
 
+/** Las entradas de una carpeta desde lo que dio readdir. */
+function listingRead(folder: Entry, dirents: readonly Dirent<Buffer>[]): Listing {
+  return listingFrom(dirents.map((d) => ({ parent: folder, bytes: d.name, name: shownName(d.name), kind: d.isDirectory() ? 'dir' : typeOf(d) })));
+}
+
 function listingFrom(entries: readonly Entry[]): Listing {
   const exact = new Map<string, Entry>();
   const folded = new Map<string, Entry[]>();
@@ -184,60 +397,25 @@ function pathOf(entry: Entry): string {
   return entry.path;
 }
 
-const SLASH = Buffer.from('/');
-
-/** La ruta de una entrada en el sistema, con los bytes de cada nombre, armada una vez desde la de su carpeta. */
+/** La ruta de una entrada en el sistema, con los bytes de cada nombre, desde la ruta real de la raíz. */
 function realOf(entry: Entry): Buffer {
   return (entry.real ??= Buffer.concat([realOf(entry.parent as Entry), SLASH, entry.bytes]));
 }
 
-/** Las entradas de una carpeta; si no se puede leer, la falla de la carpeta. */
-async function readListing(folder: Entry): Promise<Listing> {
-  let dirents: Dirent<Buffer>[];
-  try {
-    dirents = await readdir(realOf(folder), { withFileTypes: true, encoding: 'buffer' });
-  } catch (error) {
-    throw folderFailure(error, pathOf(folder), folder.parent !== null);
-  }
-  return listingFrom(dirents.map((d) => ({ parent: folder, bytes: d.name, name: shownName(d.name), kind: d.isDirectory() ? 'dir' : typeOf(d) })));
+/** La carpeta por su id en macOS. */
+function volPath(stats: BigIntStats): Buffer {
+  return Buffer.from(`/.vol/${stats.dev}/${stats.ino}`);
+}
+
+function same(a: BigIntStats, b: BigIntStats): boolean {
+  return a.dev === b.dev && a.ino === b.ino;
+}
+
+function kindOf(stats: BigIntStats): Kind {
+  return stats.isDirectory() ? 'dir' : stats.isFile() ? 'file' : stats.isSymbolicLink() ? 'symlink' : 'other';
 }
 
 /** El tipo de una entrada que no es una carpeta. */
 function typeOf(entry: Dirent<Buffer>): EntryType {
   return entry.isFile() ? 'file' : entry.isSymbolicLink() ? 'symlink' : 'other';
-}
-
-/**
- * El lstat de una entrada que su carpeta listó, una vez: si dejó de estar, la
- * carpeta cambió; sin permiso, la carpeta que no se puede recorrer es la suya.
- */
-function statsOf(entry: Entry): Promise<BigIntStats> {
-  return (entry.stats ??= lstat(realOf(entry), { bigint: true }).catch((error: unknown) => {
-    const code = (error as NodeJS.ErrnoException).code;
-    throw folderFailure(error, code === 'EACCES' || code === 'EPERM' ? pathOf(entry.parent as Entry) : pathOf(entry), true);
-  }));
-}
-
-/** El sha256 del archivo, de a partes, si al abrirlo es el mismo archivo regular que se encontró. */
-async function hashFile(path: Buffer, found: BigIntStats, shown: string): Promise<string> {
-  let handle;
-  try {
-    handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));
-  } catch (error) {
-    throw folderFailure(error, shown, true);
-  }
-  try {
-    const opened = await handle.stat({ bigint: true });
-    if (!opened.isFile() || opened.dev !== found.dev || opened.ino !== found.ino) throw new MediaFolderError('modified', shown);
-    const hash = createHash('sha256');
-    const buffer = Buffer.allocUnsafe(CHUNK_BYTES);
-    for (;;) {
-      const { bytesRead } = await handle.read(buffer, 0, CHUNK_BYTES, null);
-      if (bytesRead === 0) break;
-      hash.update(buffer.subarray(0, bytesRead));
-    }
-    return hash.digest('hex');
-  } finally {
-    await handle.close();
-  }
 }

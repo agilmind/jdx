@@ -9,13 +9,13 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { type BigIntStats, chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import fc from 'fast-check';
 import { afterEach, describe, expect, it } from 'vitest';
-import { caseVariant, dirMediaResolver } from '../../../src/media/dirMediaResolver.js';
+import { caseVariant, dirMediaResolver, FOLDER_OPS, type FolderOps, folderResolver } from '../../../src/media/dirMediaResolver.js';
 import { MediaFolderError } from '../../../src/media/errors.js';
 import { shownName } from '../../../src/media/path.js';
 import type { MediaResolver } from '../../../src/types.js';
@@ -377,3 +377,120 @@ describe('dirMediaResolver', () => {
     expect((await listed(dirMediaResolver(dir))).map(([path]) => path)).toEqual(['a.pdf', 'sub/tmp/a', 'sub/x.tmp', 'tmp/a', 'x.tmp']);
   });
 });
+
+/**
+ * Lo que cambia mientras se lee la carpeta: las operaciones del sistema de
+ * archivos con un gancho que la cambia justo antes de una, en el modo propio
+ * del sistema (anclado a la carpeta ya vista) y en el que va por rutas.
+ */
+describe('a folder that changes while it is read', () => {
+  /** Las de node:fs sin las rutas ancladas del sistema: todo por la ruta de cada entrada. */
+  const byPath: FolderOps = {
+    ...FOLDER_OPS,
+    lstat: (path) => (path.toString().startsWith('/.vol/') ? Promise.reject(Object.assign(new Error('sin rutas por id'), { code: 'ENOENT' })) : FOLDER_OPS.lstat(path)),
+    readlink: (path) => (path.startsWith('/proc/') ? Promise.reject(Object.assign(new Error('sin /proc'), { code: 'ENOENT' })) : FOLDER_OPS.readlink(path)),
+  };
+  const modes: [string, FolderOps][] = [['the anchored mode of this system', FOLDER_OPS], ['by path', byPath]];
+  /** Si una ruta que da el resolver es la de ese nombre (por ruta, o la última parte de una anclada). */
+  const named = (path: Buffer | string, name: string): boolean => path.toString().endsWith(`/${name}`);
+  /** Las operaciones de base con `open` o `lstat` cambiados para la entrada `name`, una sola vez. */
+  function once(base: FolderOps, op: 'open' | 'lstat', name: string, change: () => void): FolderOps {
+    let done = false;
+    const fire = (path: Buffer | string) => {
+      if (!done && named(path, name)) {
+        done = true;
+        change();
+      }
+    };
+    if (op === 'open') return { ...base, open: async (path, flags) => (fire(path), base.open(path, flags)) };
+    return { ...base, lstat: async (path) => { const stats = await base.lstat(path); fire(path); return stats; } };
+  }
+
+  for (const [mode, base] of modes) {
+    it(`a file swapped for a link, another file or a fifo between its lstat and its open is never read (${mode})`, async () => {
+      const outside = delivery({ 'secreto.txt': 'secreto' });
+      for (const swap of ['link', 'file', 'fifo'] as const) {
+        const dir = delivery({ 'a.pdf': 'a' });
+        const ops = once(base, 'open', 'a.pdf', () => {
+          rmSync(join(dir, 'a.pdf'));
+          if (swap === 'link') symlinkSync(join(outside, 'secreto.txt'), join(dir, 'a.pdf'));
+          else if (swap === 'file') writeFileSync(join(dir, 'a.pdf'), 'otro contenido');
+          // Sin O_NONBLOCK, abrir un fifo para leer espera para siempre a quien escriba.
+          else mkfifo(join(dir, 'a.pdf'));
+        });
+        const resolver = folderResolver(dir, {}, ops);
+        expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 1 });
+        expect(await folderFailure(resolver.sha256('a.pdf')), swap).toEqual(['modified', 'a.pdf']);
+      }
+    }, 10_000);
+
+    it(`a link to the same file, put in its place before the open, is not followed (${mode})`, async () => {
+      const dir = delivery({ 'a.pdf': 'a' });
+      // Es el mismo archivo (mismo dev, ino, tamaño y fecha): solo O_NOFOLLOW lo ve.
+      const ops = once(base, 'open', 'a.pdf', () => {
+        renameSync(join(dir, 'a.pdf'), join(dir, 'b.pdf'));
+        symlinkSync('b.pdf', join(dir, 'a.pdf'));
+      });
+      const resolver = folderResolver(dir, {}, ops);
+      expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 1 });
+      expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+    });
+
+    it(`a file rewritten in place with another size after its lstat is a change of the folder (${mode})`, async () => {
+      const dir = delivery({ 'a.pdf': 'uno' });
+      const resolver = folderResolver(dir, {}, base);
+      expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 3 });
+      writeFileSync(join(dir, 'a.pdf'), 'otro largo');
+      expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+    });
+
+    it(`the file opened has to be the one seen: another dev and ino, or something that is not a file with the same ones (${mode})`, async () => {
+      // Otro ino que el visto: el archivo abierto es otro, aunque esté en el mismo lugar.
+      const dir = delivery({ 'a.pdf': 'a' });
+      const other: FolderOps = {
+        ...base,
+        lstat: async (path) => {
+          const stats = await base.lstat(path);
+          return named(path, 'a.pdf') ? Object.assign(Object.create(Object.getPrototypeOf(stats) as object) as BigIntStats, stats, { ino: stats.ino + 1000n }) : stats;
+        },
+      };
+      expect(await folderFailure(folderResolver(dir, {}, other).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+      // Un fifo con el dev y el ino que se vieron (un ino que se reusó): no es un archivo regular.
+      const reused = delivery({ 'a.pdf': 'a' });
+      mkfifo(join(reused, 'tubo'));
+      const fifo = lstatSync(join(reused, 'tubo'), { bigint: true });
+      const asFile: FolderOps = {
+        ...base,
+        lstat: async (path) => {
+          const stats = await base.lstat(path);
+          return named(path, 'a.pdf') ? Object.assign(Object.create(Object.getPrototypeOf(stats) as object) as BigIntStats, stats, { dev: fifo.dev, ino: fifo.ino, size: fifo.size, mtimeNs: fifo.mtimeNs }) : stats;
+        },
+        open: async (path, flags) => {
+          if (named(path, 'a.pdf')) renameSync(join(reused, 'tubo'), join(reused, 'a.pdf'));
+          return base.open(path, flags);
+        },
+      };
+      expect(await folderFailure(folderResolver(reused, {}, asFile).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+    }, 10_000);
+
+    it(`a folder swapped for a link to another folder while it is listed is a change, and nothing of the other is listed (${mode})`, async () => {
+      const outside = delivery({ 'solo-afuera.txt': 'x', 'a.pdf': 'afuera' });
+      const dir = delivery({ 'sub/a.pdf': 'a' });
+      const swap = () => {
+        renameSync(join(dir, 'sub'), join(dir, 'subD'));
+        symlinkSync(outside, join(dir, 'sub'));
+      };
+      const listedPaths: string[] = [];
+      const list = folderResolver(dir, {}, once(base, 'lstat', 'sub', swap));
+      const failure = await folderFailure((async () => { for await (const e of list.list()) listedPaths.push(e.path); })());
+      expect(failure).toEqual(['modified', 'sub']);
+      expect(listedPaths.filter((p) => p.includes('solo-afuera'))).toEqual([]);
+      // Lo mismo buscando un path que pasa por ella.
+      rmSync(join(dir, 'sub'));
+      renameSync(join(dir, 'subD'), join(dir, 'sub'));
+      const stat = folderResolver(dir, {}, once(base, 'lstat', 'sub', swap));
+      expect(await folderFailure(stat.sha256('sub/a.pdf'))).toEqual(['modified', 'sub']);
+    });
+  }
+});
+

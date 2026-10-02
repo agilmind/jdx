@@ -35,6 +35,14 @@ JDX (Jupiter Data eXchange) es un archivo JSON para declarar obras musicales, su
 }
 ```
 
+## Por qué
+
+Hoy, el registro de una obra llega a la sociedad de gestión sobre todo como documentos para leer: contratos en PDF, planillas y formularios. La sociedad vuelve a cargar los datos a mano y no puede comprobar en forma automática que los documentos son los declarados ni quién los envió. Los estándares de la industria, CWR y DDEX, no cubren este paso: no traen la prueba de los contratos firmados ni los datos propios que pide cada sociedad. JDX los complementa:
+
+- **Datos para cargar, no para leer:** un JSON que se carga directo en la base de la sociedad.
+- **Verificable:** cada documento va identificado por su hash, y la firma prueba quién envió la declaración y que no cambió.
+- **Un formato para todas las sociedades:** lo que pide cada una va en su propio perfil, sin cambiar el formato.
+
 ## Cómo validarlo
 
 Con Node 20.19 o posterior:

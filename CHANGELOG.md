@@ -8,3 +8,4 @@
 - Un documento de más de 2 MiB no se lee (`JDX-JSN-001` con `params.reason: size`).
 - El reporte lista a lo sumo 100 resultados de cada regla, los primeros en su orden, y menos si sus lugares y textos llegan a 1 000 000 de caracteres; `omitted` dice de qué reglas quedaron resultados afuera y cuántos, y `summary`, la salida y `checks` los cuentan a todos.
 - Un id repetido da `JDX-REF-001` en cada repetición después de la primera, en el orden `parties`, `works`, `recordings`, `agreements` y `media`, y una referencia se resuelve en la lista de su lugar aunque el id esté también en otra lista.
+- Un valor de una lista abierta que su archivo de valores da solo para otros esquemas, como un tipo de identificador bajo otro `scheme`, da `JDX-VER-004` con `params.scheme`.

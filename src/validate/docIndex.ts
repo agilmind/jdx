@@ -15,7 +15,8 @@
  * - `unresolved(puntero)` dice si dentro de ese lugar hay una referencia que no
  *   resuelve: una regla que depende de una referencia no evalúa ese objeto.
  * - contextAt y valuesAt dan a las reglas el context de un lugar y los valores
- *   de los lugares de un patrón, con el mismo recorrido que las referencias.
+ *   de los lugares de los patrones del índice, con el mismo context que las
+ *   referencias.
  *
  * Recibe un documento que ya cumple su schema.
  */
@@ -99,18 +100,58 @@ export function contextAt(doc: JdxDocument | JsonValue, pointer: JsonPointer): F
 }
 
 /**
- * Cada valor de los lugares de un patrón del índice del schema (`*` es un
- * segmento cualquiera), en el orden del documento: su puntero, el context del
- * objeto de la lista raíz que lo contiene (el de contextAt) y el objeto o la
- * lista que lo tiene. Baja solo por el camino del patrón, así cada puntero es
- * corto aunque el documento tenga claves largas en otro lugar.
+ * Cada valor de los lugares de uno o varios patrones del índice del schema (`*`
+ * es un segmento cualquiera): su puntero, el context del objeto de la lista
+ * raíz que lo contiene (el de contextAt), el objeto o la lista que lo tiene y
+ * el patrón. Los patrones bajan juntos por lo que comparten, en un solo
+ * recorrido, y solo por sus caminos: cada puntero es corto aunque el documento
+ * tenga claves largas en otro lugar, y cada valor de un camino se mira una vez
+ * aunque decenas de patrones pasen por él.
  */
 export function valuesAt(
   doc: JdxDocument | JsonValue,
-  pattern: string,
-  visit: (pointer: JsonPointer, value: JsonValue, context: FindingContext | undefined, container: JsonValue) => void,
+  patterns: string | readonly string[],
+  visit: (pointer: JsonPointer, value: JsonValue, context: FindingContext | undefined, container: JsonValue, pattern: string) => void,
 ): void {
-  visitPattern(doc as unknown as JsonValue, segmentsOf(pattern), (pointer, value, context, _parent, container) => visit(pointer, value, context, container));
+  const step = (node: JsonValue, tree: PatternTree, depth: number, pointer: JsonPointer, container: JsonValue, list: RootList | undefined, context: FindingContext | undefined): void => {
+    if (depth === 2 && list !== undefined && isObject(node) && typeof node.id === 'string') context = { [CONTEXT_KEY[list]]: node.id };
+    for (const pattern of tree.ends) visit(pointer, node, context, container, pattern);
+    if (Array.isArray(node)) {
+      if (tree.star !== null) for (let i = 0; i < node.length; i++) step(node[i] as JsonValue, tree.star, depth + 1, `${pointer}/${i}`, node, list, context);
+      for (const [segment, next] of tree.children) {
+        if (INDEX.test(segment) && Number(segment) < node.length) step(node[Number(segment)] as JsonValue, next, depth + 1, `${pointer}/${segment}`, node, list, context);
+      }
+    } else if (isObject(node)) {
+      const member = (key: string, next: PatternTree): void => {
+        const inList = depth === 0 ? ROOT_LISTS.find((l) => l === key) : list;
+        step(node[key] as JsonValue, next, depth + 1, `${pointer}/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`, node, inList, context);
+      };
+      if (tree.star !== null) for (const key of Object.keys(node)) member(key, tree.star);
+      for (const [segment, next] of tree.children) if (Object.hasOwn(node, segment)) member(segment, next);
+    }
+  };
+  step(doc as unknown as JsonValue, treeOf(typeof patterns === 'string' ? [patterns] : patterns), 0, '', doc as unknown as JsonValue, undefined, undefined);
+}
+
+/** Los patrones como un árbol de segmentos: los que comparten un prefijo comparten sus nodos. */
+interface PatternTree { readonly children: Map<string, PatternTree>; star: PatternTree | null; readonly ends: string[] }
+
+function treeOf(patterns: readonly string[]): PatternTree {
+  const node = (): PatternTree => ({ children: new Map(), star: null, ends: [] });
+  const root = node();
+  for (const pattern of patterns) {
+    let at = root;
+    for (const segment of segmentsOf(pattern)) {
+      if (segment === '*') at = at.star ??= node();
+      else {
+        let next = at.children.get(segment);
+        if (next === undefined) at.children.set(segment, (next = node()));
+        at = next;
+      }
+    }
+    at.ends.push(pattern);
+  }
+  return root;
 }
 
 function listOf(root: JsonValue, list: RootList): readonly JsonValue[] {
@@ -118,32 +159,32 @@ function listOf(root: JsonValue, list: RootList): readonly JsonValue[] {
   return Array.isArray(value) ? value : [];
 }
 
-type Visit = (pointer: JsonPointer, value: JsonValue, context: FindingContext | undefined, parent: JsonPointer, container: JsonValue) => void;
+type Visit = (pointer: JsonPointer, value: JsonValue, context: FindingContext | undefined, parent: JsonPointer) => void;
 
 /**
  * Cada valor de los lugares de un patrón (`*` es un segmento cualquiera), en el
  * orden del documento, con el context del objeto de la lista raíz que lo
- * contiene (el de contextAt, armado una vez por objeto), el puntero de su
- * padre (el mismo texto para todos los de un mismo lugar) y el padre mismo.
+ * contiene (el de contextAt, armado una vez por objeto) y el puntero de su
+ * padre (el mismo texto para todos los de un mismo lugar).
  */
 function visitPattern(root: JsonValue, pattern: readonly string[], visit: Visit): void {
   const list = ROOT_LISTS.find((l) => l === pattern[0]);
-  const step = (node: JsonValue, at: number, pointer: JsonPointer, parent: JsonPointer, container: JsonValue, context: FindingContext | undefined): void => {
+  const step = (node: JsonValue, at: number, pointer: JsonPointer, parent: JsonPointer, context: FindingContext | undefined): void => {
     if (at === 2 && list !== undefined && isObject(node) && typeof node.id === 'string') context = { [CONTEXT_KEY[list]]: node.id };
     if (at === pattern.length) {
-      visit(pointer, node, context, parent, container);
+      visit(pointer, node, context, parent);
       return;
     }
     const segment = pattern[at] as string;
     if (Array.isArray(node)) {
-      if (segment === '*') for (let i = 0; i < node.length; i++) step(node[i] as JsonValue, at + 1, `${pointer}/${i}`, pointer, node, context);
-      else if (INDEX.test(segment) && Number(segment) < node.length) step(node[Number(segment)] as JsonValue, at + 1, `${pointer}/${segment}`, pointer, node, context);
+      if (segment === '*') for (let i = 0; i < node.length; i++) step(node[i] as JsonValue, at + 1, `${pointer}/${i}`, pointer, context);
+      else if (INDEX.test(segment) && Number(segment) < node.length) step(node[Number(segment)] as JsonValue, at + 1, `${pointer}/${segment}`, pointer, context);
     } else if (isObject(node)) {
       const keys = segment === '*' ? Object.keys(node) : Object.hasOwn(node, segment) ? [segment] : [];
-      for (const key of keys) step(node[key] as JsonValue, at + 1, `${pointer}/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`, pointer, node, context);
+      for (const key of keys) step(node[key] as JsonValue, at + 1, `${pointer}/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`, pointer, context);
     }
   };
-  step(root, 0, '', '', root, undefined);
+  step(root, 0, '', '', undefined);
 }
 
 /**

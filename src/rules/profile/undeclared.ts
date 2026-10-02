@@ -3,11 +3,12 @@
  * (JDX-MED-003, del perfil; pide la carpeta y cuenta en el bucket media).
  *
  * Recorre ctx.media.list(), que ya omite los patrones --ignore del receptor, y
- * no cuenta los artefactos de JDX: los archivos regulares de la raíz que se
- * llaman como una declaración, su firma o su reporte
- * (`<uuid>.r<n>.jdx.json`, `<uuid>.r<n>.jdx.json.jws`,
- * `<uuid>.r<n>.report.json`) y `jdx-trust.json`. Nada de una carpeta, ni un
- * enlace, un fifo o una carpeta con esos nombres, es un artefacto. Una entrada
+ * no cuenta los artefactos de esta declaración: los archivos regulares de la
+ * raíz que se llaman como ella, su firma o su reporte, en cualquier revisión
+ * (`<id>.r<n>.jdx.json`, `<id>.r<n>.jdx.json.jws`, `<id>.r<n>.report.json`,
+ * con su declaration.id), y `jdx-trust.json`. Los de otra declaración no son
+ * artefactos, ni nada de una carpeta, ni un enlace, un fifo o una carpeta con
+ * esos nombres. MED-003 corre solo con el documento leído. Una entrada
  * está declarada si un path declarado, de cualquier entrega y válido como
  * texto (sin MED-001), resuelve a ella (MediaResolver.stat):
  * - es el path, tal cual;
@@ -28,8 +29,8 @@ import { firstFindings } from '../../report/results.js';
 import type { Finding, MediaResolver, Rule } from '../../types.js';
 import { locate } from '../core/mediaDir.js';
 
-/** Los nombres de la declaración, su firma y su reporte en la raíz de la entrega. */
-const ARTIFACT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.r[1-9][0-9]*\.(?:jdx\.json(?:\.jws)?|report\.json)$/u;
+/** Lo que sigue al id en los nombres de la declaración, su firma y su reporte: la revisión y la extensión. */
+const ARTIFACT = /^\.r[1-9][0-9]*\.(?:jdx\.json(?:\.jws)?|report\.json)$/u;
 
 type Entry = { path: string; type: 'file' | 'symlink' | 'other' };
 /** El archivo regular que resuelve un path declarado: dónde está y su tamaño. */
@@ -72,7 +73,7 @@ export const MED_003: Rule = {
     };
     try {
       for await (const entry of resolver.list()) {
-        if (declared.has(entry.path) || isArtifact(entry)) continue;
+        if (declared.has(entry.path) || isArtifact(entry, ctx.doc.declaration.id)) continue;
         if (entry.type !== 'file') {
           if (!stops.has(entry.path)) out.add(finding(entry));
         } else if (targets.has(foldCase(entry.path))) {
@@ -95,9 +96,10 @@ function finding(entry: Entry): Finding {
   return { ruleId: 'JDX-MED-003', instanceLocation: '', params: { path: entry.path } };
 }
 
-/** Un artefacto de JDX: un archivo regular de la raíz con el nombre de una declaración, su firma o su reporte, o jdx-trust.json. */
-function isArtifact(entry: Entry): boolean {
-  return entry.type === 'file' && (entry.path === 'jdx-trust.json' || ARTIFACT.test(entry.path));
+/** Un artefacto de esta declaración: un archivo regular de la raíz con su nombre, el de su firma o su reporte, o jdx-trust.json. */
+function isArtifact(entry: Entry, id: string): boolean {
+  if (entry.type !== 'file') return false;
+  return entry.path === 'jdx-trust.json' || (entry.path.startsWith(id) && ARTIFACT.test(entry.path.slice(id.length)));
 }
 
 /** Si el archivo es el que resuelve un path declarado con esas mayúsculas, o uno con su tamaño y su sha256. */

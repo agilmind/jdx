@@ -132,18 +132,38 @@ describe('MED-003', () => {
     expect(await undeclared(dirMediaResolver(folder(withExample({ 'notas.txt': 'n', 'sub/dni.pdf': 'd' }))))).toEqual(['notas.txt', 'sub/dni.pdf']);
   });
 
-  it('each JDX artifact at the root is excluded: the declaration, its signature and its report by their names, and jdx-trust.json', async () => {
+  it('the artifacts of this declaration at the root are excluded, at any revision, and jdx-trust.json; those of another declaration are not', async () => {
     const artifacts = {
       '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json.jws': 'jws', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r12.report.json': '{}', 'jdx-trust.json': '{}',
-      '00000000-0000-4000-8000-000000000000.r3.jdx.json': '{}',
+      '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r3.jdx.json': '{}',
     };
     expect(await undeclared(dirMediaResolver(folder(withExample(artifacts))))).toEqual([]);
-    // Un nombre que no es el de una declaración no es un artefacto: otro id, una revisión con cero adelante o algo antes.
+    // Un nombre que no es el de esta declaración no es un artefacto: otro id, una revisión con cero adelante o algo antes.
     const others = {
       'otra.r9.jdx.json': '{}', 'x.report.json': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r01.jdx.json': '{}', '3F2C9A1E-5B7D-4C21-9E0A-7D4B2F8C6A13.r1.jdx.json': '{}',
       'x3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json.bak': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r0.report.json': '{}',
+      '00000000-0000-4000-8000-000000000000.r3.jdx.json': '{}', '00000000-0000-4000-8000-000000000000.r1.report.json': 'cualquier cosa',
+      '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a14.r1.jdx.json.jws': 'jws',
     };
     expect(await undeclared(dirMediaResolver(folder(withExample(others))))).toEqual(Object.keys(others).sort());
+  });
+
+  it('without a document (a JSON or a schema that fails) MED-003 does not run, and the folder is not read for it', async () => {
+    const dir = folder(withExample({ 'notas.txt': 'n' }));
+    for (const document of [docBuilder('{"jdx": '), docBuilder().set('/declaration/revision', 'uno')]) {
+      let listed = 0;
+      const base = dirMediaResolver(dir);
+      const media: MediaResolver = {
+        ...base,
+        async *list() {
+          listed++;
+          yield* base.list();
+        },
+      };
+      const report = await validateExample({ document, options: { media } });
+      expect(report.exitCode).toBe(1);
+      expect([resultsOf(report, 'JDX-MED-003'), report.checks.media, listed]).toEqual([[], 'notEvaluated', 0]);
+    }
   });
 
   it('nothing below the root is an artifact, nor a link, a fifo or a folder with the name of one', async () => {

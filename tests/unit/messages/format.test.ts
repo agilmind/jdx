@@ -274,6 +274,13 @@ describe('mensajes', () => {
       });
     expect(() => loadCatalog(flagOn('cap'), validators)).toThrow('JDX-SHR-002: {cap:flag} pide un dato booleano de params');
     expect(() => loadCatalog(flagOn('shared'), validators)).toThrow('JDX-SHR-002: {shared:flag} no tiene término para shared');
+    // phrase pide un término con el nombre del dato, con datos que la regla declara.
+    const phraseOn = (name: string) =>
+      withRule('JDX-VER-004', (r) => {
+        const texts = r.message as Record<Lang, string>;
+        return { ...r, message: Object.fromEntries(LANGS.map((lang) => [lang, texts[lang].replace('{scheme:phrase}', `{${name}:phrase}`)])) };
+      });
+    expect(() => loadCatalog(phraseOn('list'), validators)).toThrow('JDX-VER-004: {list:phrase} no tiene término para list');
   });
 
   it('an optional value renders in parentheses only when present', () => {
@@ -285,6 +292,16 @@ describe('mensajes', () => {
     // Un null o un texto vacío no dejan paréntesis vacíos.
     for (const name of [null, '']) {
       expect(formatMessage(cls001, 'es', { scheme: 'SADAIC_GENRE', code: '311', name })).toBe('El código 311 no está en la lista de SADAIC_GENRE.');
+    }
+  });
+
+  it('a phrase renders, filled with the same data, only when its value is there', () => {
+    const ver004 = rule('JDX-VER-004');
+    expect(formatMessage(ver004, 'es', { list: 'identifierTypes', value: 'CUIT', scheme: 'NATIONAL_ID' })).toBe('El valor CUIT no está en la lista identifierTypes para el esquema NATIONAL_ID.');
+    expect(formatMessage(ver004, 'pt', { list: 'identifierTypes', value: 'CUIT', scheme: 'NATIONAL_ID' })).toBe('O valor CUIT não está na lista identifierTypes para o esquema NATIONAL_ID.');
+    expect(formatMessage(ver004, 'en', { list: 'identifierTypes', value: 'CUIT', scheme: 'NATIONAL_ID' })).toBe('Value CUIT is not in list identifierTypes for scheme NATIONAL_ID.');
+    for (const scheme of [undefined, null, '']) {
+      expect(formatMessage(ver004, 'es', { list: 'roles', value: 'zz', ...(scheme === undefined ? {} : { scheme }) })).toBe('El valor zz no está en la lista roles.');
     }
   });
 

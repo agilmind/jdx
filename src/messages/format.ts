@@ -17,6 +17,8 @@
  *   nada con uno, `one` con dos y `many` con más, con `{count}` países.
  * - `{name:paren}`: un dato opcional entre paréntesis, precedido de un espacio;
  *   nada si falta, es null o queda vacío.
+ * - `{name:phrase}`: el término de `name` (no de su valor), llenado con los
+ *   mismos datos, si el dato está: si falta, es null o queda vacío, nada.
  *
  * Los términos y los textos de `others` son datos del catálogo
  * (catalog/<M.m>/terms.json, MESSAGE_VOCABULARY): con ellos y las plantillas
@@ -28,9 +30,9 @@
 import { files } from '../generated/data.js';
 import type { CatalogRule, FindingContext, JsonValue, Lang } from '../types.js';
 
-export type TermFormatter = 'right' | 'part' | 'field' | 'reason' | 'flag';
+export type TermFormatter = 'right' | 'part' | 'field' | 'reason' | 'flag' | 'phrase';
 export type Formatter = TermFormatter | 'others' | 'paren';
-export const FORMATTERS: readonly Formatter[] = Object.freeze(['right', 'part', 'field', 'reason', 'flag', 'others', 'paren']);
+export const FORMATTERS: readonly Formatter[] = Object.freeze(['right', 'part', 'field', 'reason', 'flag', 'phrase', 'others', 'paren']);
 
 type Texts = Readonly<Record<Lang, string>>;
 type Terms = Readonly<Record<string, Texts>>;
@@ -61,7 +63,7 @@ export const MESSAGE_TERMS: Readonly<Record<TermFormatter, Terms>> = MESSAGE_VOC
 
 function parseVocabulary(text: string | undefined): MessageVocabulary {
   const none: Texts = { es: '', pt: '', en: '' };
-  const empty: MessageVocabulary = { catalog: '', terms: { right: {}, part: {}, field: {}, reason: {}, flag: {} }, others: { one: none, many: none } };
+  const empty: MessageVocabulary = { catalog: '', terms: { right: {}, part: {}, field: {}, reason: {}, flag: {}, phrase: {} }, others: { one: none, many: none } };
   try {
     const parsed = JSON.parse(text ?? '') as unknown;
     return isRecord(parsed) && isRecord(parsed.terms) && isRecord(parsed.others) ? (parsed as unknown as MessageVocabulary) : empty;
@@ -106,10 +108,12 @@ function fill(template: string, lang: Lang, valueOf: (name: string) => JsonValue
       const shown = text(value, lang);
       return shown === '' ? '' : ` (${shown})`;
     }
-    // flag busca el término del nombre, y solo con true; los demás, el del valor.
-    const key = formatter === 'flag' ? (value === true ? name : undefined) : typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
+    // flag busca el término del nombre, y solo con true; phrase, el del nombre, si el dato está; los demás, el del valor.
+    const key = formatter === 'flag' ? (value === true ? name : undefined)
+      : formatter === 'phrase' ? (text(value, lang) === '' ? undefined : name)
+        : typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
     const term = key === undefined ? undefined : termOf(formatter as TermFormatter, key, lang);
-    if (term === undefined) return formatter === 'flag' ? '' : text(value, lang);
+    if (term === undefined) return formatter === 'flag' || formatter === 'phrase' ? '' : text(value, lang);
     // La frase de un término se llena con los mismos datos, sin otro nivel de términos.
     const phrase = fill(term, lang, valueOf, false);
     return offset === 0 ? phrase.charAt(0).toUpperCase() + phrase.slice(1) : phrase;

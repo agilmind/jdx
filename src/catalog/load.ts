@@ -92,6 +92,10 @@ function checkMessages(rule: CatalogRule): void {
         checkTerm('flag', name, name, lang);
         continue;
       }
+      if (formatter === 'phrase') {
+        checkTerm('phrase', name, name, lang);
+        continue;
+      }
       for (const value of enumOf(rule.resultParamsSchema, name)) checkTerm(formatter as TermFormatter, name, value, lang);
     }
   }

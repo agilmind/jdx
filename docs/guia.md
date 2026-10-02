@@ -119,6 +119,8 @@ resultado:
 - `{x:others}`: nada si `x` es 1, `others.one` si es 2 y `others.many` si es
   más, con `{count}` igual a `x` − 1.
 - `{x:paren}`: el valor entre paréntesis, con un espacio delante, o nada.
+- `{x:phrase}`: el término `terms.phrase.x`, llenado con los mismos datos, si
+  `x` tiene un valor; si no, nada.
 
 ## 4. Cómo se lee el resultado
 

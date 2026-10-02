@@ -37,8 +37,10 @@ function render(template: string, lang: Lang, data: Data, words: Vocabulary, ter
       if (typeof value !== 'number' || value <= 1) return '';
       return render(value === 2 ? words.others.one[lang] : words.others.many[lang], lang, (n) => (n === 'count' ? value - 1 : undefined), words, false);
     }
-    const term = formatter === 'flag' ? (value === true ? words.terms.flag?.[name]?.[lang] : undefined) : words.terms[formatter]?.[String(value)]?.[lang];
-    if (term === undefined) return formatter === 'flag' ? '' : show(value);
+    const term = formatter === 'flag' ? (value === true ? words.terms.flag?.[name]?.[lang] : undefined)
+      : formatter === 'phrase' ? (show(value) === '' ? undefined : words.terms.phrase?.[name]?.[lang])
+        : words.terms[formatter]?.[String(value)]?.[lang];
+    if (term === undefined) return formatter === 'flag' || formatter === 'phrase' ? '' : show(value);
     const phrase = render(term, lang, data, words, false);
     return at === 0 ? phrase.charAt(0).toUpperCase() + phrase.slice(1) : phrase;
   });

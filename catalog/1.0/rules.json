@@ -4740,14 +4740,14 @@
       "implemented": true,
       "level": "warning",
       "predicate": {
-        "es": "Valor de una lista abierta que no está en su archivo de valores empaquetado, o que el archivo da para otros esquemas (schemes) que el scheme del mismo objeto. Los valores X_ no se controlan, y con un scheme X_ no se mira el esquema.",
-        "pt": "Valor de uma lista aberta que não está no seu arquivo de valores empacotado, ou que o arquivo dá para outros esquemas (schemes) que o scheme do mesmo objeto. Os valores X_ não são controlados, e com um scheme X_ o esquema não é verificado.",
-        "en": "Value of an open list that is not in its bundled values file, or that the file gives for other schemes (schemes) than the scheme of the same object. X_ values are not checked, and with an X_ scheme the scheme is not checked."
+        "es": "Valor de una lista abierta que no está en su archivo de valores empaquetado, o que el archivo da solo para esquemas (schemes) distintos del scheme del mismo objeto. Los valores X_ no se controlan, y con un scheme X_ no se mira el esquema.",
+        "pt": "Valor de uma lista aberta que não está no seu arquivo de valores empacotado, ou que o arquivo dá só para esquemas (schemes) diferentes do scheme do mesmo objeto. Os valores X_ não são controlados, e com um scheme X_ o esquema não é verificado.",
+        "en": "Value of an open list that is not in its bundled values file, or that the file gives only for schemes (schemes) other than the scheme of the same object. X_ values are not checked, and with an X_ scheme the scheme is not checked."
       },
       "message": {
-        "es": "El valor {value} no está en la lista {list}{scheme:paren}.",
-        "pt": "O valor {value} não está na lista {list}{scheme:paren}.",
-        "en": "Value {value} is not in list {list}{scheme:paren}."
+        "es": "El valor {value} no está en la lista {list}{scheme:phrase}.",
+        "pt": "O valor {value} não está na lista {list}{scheme:phrase}.",
+        "en": "Value {value} is not in list {list}{scheme:phrase}."
       },
       "profileParamsSchema": {
         "type": "object",

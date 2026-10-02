@@ -128,8 +128,14 @@ describe('VER-004', () => {
   });
 
   it('end to end: a type of another scheme names the scheme in the message', async () => {
-    const report = await validateExample({ document: docBuilder().set('/parties/0/identifiers/1/scheme', 'NATIONAL_ID'), options: { lang: 'en' } });
-    expect(resultsOf(report, 'JDX-VER-004').map((r) => r.message)).toEqual(['Value CUIT is not in list identifierTypes (NATIONAL_ID).']);
+    // El valor está en la lista: lo que no está es para ese esquema.
+    const document = docBuilder().set('/parties/0/identifiers/1/scheme', 'NATIONAL_ID');
+    const messages = await Promise.all((['es', 'pt', 'en'] as const).map(async (lang) => resultsOf(await validateExample({ document, options: { lang } }), 'JDX-VER-004').map((r) => r.message)));
+    expect(messages).toEqual([
+      ['El valor CUIT no está en la lista identifierTypes para el esquema NATIONAL_ID.'],
+      ['O valor CUIT não está na lista identifierTypes para o esquema NATIONAL_ID.'],
+      ['Value CUIT is not in list identifierTypes for scheme NATIONAL_ID.'],
+    ]);
   });
 });
 

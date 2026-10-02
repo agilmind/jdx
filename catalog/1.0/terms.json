@@ -470,6 +470,13 @@
         "pt": " e, com linhas de autor, devem somar exatamente 100",
         "en": " and, with writer rows, they must total exactly 100"
       }
+    },
+    "phrase": {
+      "scheme": {
+        "es": " para el esquema {scheme}",
+        "pt": " para o esquema {scheme}",
+        "en": " for scheme {scheme}"
+      }
     }
   },
   "others": {

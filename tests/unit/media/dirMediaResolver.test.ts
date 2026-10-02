@@ -13,9 +13,11 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSyn
 import { createServer, type Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import fc from 'fast-check';
 import { afterEach, describe, expect, it } from 'vitest';
 import { caseVariant, dirMediaResolver } from '../../../src/media/dirMediaResolver.js';
 import { MediaFolderError } from '../../../src/media/errors.js';
+import { shownName } from '../../../src/media/path.js';
 import type { MediaResolver } from '../../../src/types.js';
 
 const made: string[] = [];
@@ -61,6 +63,24 @@ async function folderFailure(work: Promise<unknown>): Promise<[string, string]> 
   if (!(error instanceof MediaFolderError)) throw new Error(`no es una falla de la carpeta: ${String(error)}`);
   return [error.reason, error.path];
 }
+/** Los bytes de un nombre mostrado con shownName: cada \xHH es un byte y lo demás, su UTF-8. */
+function bytesOf(shown: string): Buffer {
+  const parts: Buffer[] = [];
+  for (const [, hex, text] of shown.matchAll(/\\x([0-9A-F]{2})|([^\\]+)/gu)) parts.push(hex === undefined ? Buffer.from(text as string) : Buffer.from([parseInt(hex, 16)]));
+  return Buffer.concat(parts);
+}
+/** Si el sistema de archivos admite nombres que no son UTF-8 válido (Linux sí; el de macOS no). */
+const INVALID_NAMES = (() => {
+  const dir = mkdtempSync(join(tmpdir(), 'jdx-media-'));
+  try {
+    writeFileSync(Buffer.concat([Buffer.from(`${dir}/`), Buffer.from([0x62, 0xfe])]), '');
+    return readdirSync(dir, { encoding: 'buffer' }).some((name) => name.equals(Buffer.from([0x62, 0xfe])));
+  } catch {
+    return false;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+})();
 /** Si quien corre los tests puede leer lo que no tiene permiso (root): entonces no hay nada ilegible. */
 function readsEverything(dir: string): boolean {
   const probe = join(dir, 'probe-perm');
@@ -259,6 +279,39 @@ describe('dirMediaResolver', () => {
     expect(await resolver.sha256('c.pdf')).toBe(sha('tres'));
     rmSync(join(dir, 'c.pdf'));
     expect(await resolver.sha256('C.PDF')).toBe(sha('tres'));
+  });
+
+  it('shownName keeps valid UTF-8 and writes each byte that is not, and the backslash, as \\xHH', () => {
+    const b = (...bytes: number[]) => Uint8Array.from(bytes);
+    expect(shownName(Buffer.from('Canción.pdf'))).toBe('Canción.pdf');
+    expect(shownName(Buffer.from('Cancio\u0301n €'))).toBe('Cancio\u0301n €');
+    expect(shownName(b(0x61, 0xff, 0x64))).toBe('a\\xFFd');
+    expect([shownName(b(0x62, 0xfe)), shownName(b(0x62, 0xfd))]).toEqual(['b\\xFE', 'b\\xFD']);
+    // La barra invertida también: el texto "b\xFE" no es el byte 0xFE.
+    expect(shownName(Buffer.from('a\\b'))).toBe('a\\x5Cb');
+    expect(shownName(Buffer.from('b\\xFE'))).toBe('b\\x5CxFE');
+    // Secuencias largas de más, sustitutos, más allá de U+10FFFF y cortadas: cada byte.
+    expect(shownName(b(0xc0, 0xaf))).toBe('\\xC0\\xAF');
+    expect(shownName(b(0xed, 0xa0, 0x80))).toBe('\\xED\\xA0\\x80');
+    expect(shownName(b(0xf4, 0x90, 0x80, 0x80))).toBe('\\xF4\\x90\\x80\\x80');
+    expect(shownName(b(0x61, 0xe2, 0x82))).toBe('a\\xE2\\x82');
+    expect(shownName(b(0xe2, 0x82, 0xac, 0xf0, 0x9f, 0x8e, 0xb5))).toBe('€🎵');
+    // Dos nombres distintos nunca se muestran igual: de lo mostrado vuelven los bytes.
+    fc.assert(fc.property(fc.uint8Array({ maxLength: 40 }), (bytes) => bytesOf(shownName(bytes)).equals(Buffer.from(bytes))), { numRuns: 2000 });
+  });
+
+  it.skipIf(!INVALID_NAMES)('names that are not valid UTF-8 are listed with \\xHH, entered, and never confused', async () => {
+    const dir = delivery();
+    const at = (...bytes: number[]) => Buffer.concat([Buffer.from(`${dir}/`), Buffer.from(bytes)]);
+    mkdirSync(at(0x61, 0xff, 0x64));
+    writeFileSync(Buffer.concat([at(0x61, 0xff, 0x64), Buffer.from('/x.pdf')]), 'x');
+    writeFileSync(at(0x62, 0xfe, 0x2e, 0x70), '1');
+    writeFileSync(at(0x62, 0xfd, 0x2e, 0x70), '22');
+    writeFileSync(join(dir, 'b\\xFE.p'), '333');
+    const resolver = dirMediaResolver(dir);
+    expect(await listed(resolver)).toEqual([['a\\xFFd/x.pdf', 'file'], ['b\\x5CxFE.p', 'file'], ['b\\xFD.p', 'file'], ['b\\xFE.p', 'file']]);
+    // Un path con \\ no se busca: lo que se muestra con escapes nunca es un path declarado.
+    for (const path of ['a\\xFFd/x.pdf', 'b\\xFE.p', 'b\\x5CxFE.p']) expect(await resolver.stat(path), path).toBeNull();
   });
 
   it('check refuses a root that is missing, is not a folder or cannot be read', async () => {

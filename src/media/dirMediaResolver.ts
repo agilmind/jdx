@@ -3,11 +3,12 @@
  * { ignore }). `dir` es la raíz de la entrega, tal como la da quien llama.
  *
  * - list() recorre la carpeta entera y da cada entrada que no es una carpeta,
- *   con su ruta desde la raíz (`/` entre segmentos) y su tipo: `file` (un
- *   archivo regular), `symlink` (un enlace, que nunca se sigue, tampoco el
- *   que apunta a una carpeta) u `other` (un fifo, un socket o un
- *   dispositivo), en orden de nombre y en profundidad. Omite las que cumplen
- *   un patrón de `ignore` (matchDeliveryGlob).
+ *   con su ruta desde la raíz (`/` entre segmentos, cada nombre como lo
+ *   muestra shownName: un byte que no es UTF-8 válido va como `\xHH`) y su
+ *   tipo: `file` (un archivo regular), `symlink` (un enlace, que nunca se
+ *   sigue, tampoco el que apunta a una carpeta) u `other` (un fifo, un socket
+ *   o un dispositivo), en orden de nombre y en profundidad. Omite las que
+ *   cumplen un patrón de `ignore` (matchDeliveryGlob).
  * - stat y sha256 buscan el path segmento por segmento en los nombres de cada
  *   carpeta: el nombre exacto y, si no está, el único que coincide sin
  *   distinguir mayúsculas de A a Z (caseVariant). Así dan lo mismo en
@@ -33,7 +34,7 @@ import { lstat, open, readdir, stat } from 'node:fs/promises';
 import type { MediaResolver } from '../types.js';
 import { folderFailure, MediaFolderError } from './errors.js';
 import { matchDeliveryGlob } from './glob.js';
-import { foldCase } from './path.js';
+import { foldCase, shownName } from './path.js';
 
 type EntryType = 'file' | 'symlink' | 'other';
 type Kind = 'dir' | EntryType;
@@ -43,14 +44,19 @@ const CHUNK_BYTES = 1 << 20;
 
 const UNSAFE = /[\\:\u0000]/u;
 
-/** Una entrada de la carpeta, como la listó su carpeta, con lo que se va sabiendo de ella. */
+/**
+ * Una entrada de la carpeta, como la listó su carpeta, con lo que se va
+ * sabiendo de ella. El sistema de archivos se usa siempre con los bytes del
+ * nombre; `name` es como se muestra.
+ */
 interface Entry {
   readonly parent: Entry | null;
+  readonly bytes: Buffer;
   readonly name: string;
   readonly kind: Kind;
   /** La ruta desde la raíz ('' es la raíz) y la del sistema, armadas una vez. */
   path?: string;
-  real?: string;
+  real?: Buffer;
   stats?: Promise<BigIntStats>;
   listing?: Promise<Listing>;
   hash?: Promise<string>;
@@ -61,7 +67,7 @@ interface Listing { readonly entries: readonly Entry[]; readonly exact: Readonly
 
 export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[] } = {}): MediaResolver {
   const ignore = [...(opts.ignore ?? [])];
-  const root: Entry = { parent: null, name: '', kind: 'dir', path: '', real: dir };
+  const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir', path: '', real: Buffer.from(dir) };
   let rootChecked: Promise<void> | undefined;
   /** La raíz: tiene que existir y ser una carpeta (se sigue si es un enlace: la eligió quien llama). */
   const checked = (): Promise<void> => (rootChecked ??= stat(dir).then(
@@ -145,8 +151,8 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
  * coincide sin distinguir mayúsculas de A a Z, o ninguno.
  */
 export function caseVariant(names: readonly string[], segment: string): string | null {
-  const parent: Entry = { parent: null, name: '', kind: 'dir' };
-  return pick(listingFrom(names.map((name) => ({ parent, name, kind: 'file' }))), segment)?.name ?? null;
+  const parent: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir' };
+  return pick(listingFrom(names.map((name) => ({ parent, bytes: Buffer.from(name), name, kind: 'file' }))), segment)?.name ?? null;
 }
 
 function pick(listing: Listing, segment: string): Entry | null {
@@ -178,24 +184,26 @@ function pathOf(entry: Entry): string {
   return entry.path;
 }
 
-/** La ruta de una entrada en el sistema, armada una vez desde la de su carpeta. */
-function realOf(entry: Entry): string {
-  return (entry.real ??= `${realOf(entry.parent as Entry)}/${entry.name}`);
+const SLASH = Buffer.from('/');
+
+/** La ruta de una entrada en el sistema, con los bytes de cada nombre, armada una vez desde la de su carpeta. */
+function realOf(entry: Entry): Buffer {
+  return (entry.real ??= Buffer.concat([realOf(entry.parent as Entry), SLASH, entry.bytes]));
 }
 
 /** Las entradas de una carpeta; si no se puede leer, la falla de la carpeta. */
 async function readListing(folder: Entry): Promise<Listing> {
-  let dirents: Dirent[];
+  let dirents: Dirent<Buffer>[];
   try {
-    dirents = await readdir(realOf(folder), { withFileTypes: true });
+    dirents = await readdir(realOf(folder), { withFileTypes: true, encoding: 'buffer' });
   } catch (error) {
     throw folderFailure(error, pathOf(folder), folder.parent !== null);
   }
-  return listingFrom(dirents.map((d) => ({ parent: folder, name: d.name, kind: d.isDirectory() ? 'dir' : typeOf(d) })));
+  return listingFrom(dirents.map((d) => ({ parent: folder, bytes: d.name, name: shownName(d.name), kind: d.isDirectory() ? 'dir' : typeOf(d) })));
 }
 
 /** El tipo de una entrada que no es una carpeta. */
-function typeOf(entry: Dirent): EntryType {
+function typeOf(entry: Dirent<Buffer>): EntryType {
   return entry.isFile() ? 'file' : entry.isSymbolicLink() ? 'symlink' : 'other';
 }
 
@@ -211,7 +219,7 @@ function statsOf(entry: Entry): Promise<BigIntStats> {
 }
 
 /** El sha256 del archivo, de a partes, si al abrirlo es el mismo archivo regular que se encontró. */
-async function hashFile(path: string, found: BigIntStats, shown: string): Promise<string> {
+async function hashFile(path: Buffer, found: BigIntStats, shown: string): Promise<string> {
   let handle;
   try {
     handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));

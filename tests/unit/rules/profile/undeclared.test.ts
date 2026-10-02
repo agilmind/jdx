@@ -54,6 +54,19 @@ const sha = (text: string) => createHash('sha256').update(text).digest('hex');
 /** Los cinco archivos del ejemplo con estos textos, más los que se pidan. */
 const withExample = (more: Record<string, string> = {}): Record<string, string> => ({ ...Object.fromEntries(PATHS.map((p, i) => [p, `archivo ${i}`])), ...more });
 
+/** Si el sistema de archivos admite nombres que no son UTF-8 válido (Linux sí; el de macOS no). */
+const INVALID_NAMES = (() => {
+  const dir = mkdtempSync(join(tmpdir(), 'jdx-media-'));
+  try {
+    writeFileSync(Buffer.concat([Buffer.from(`${dir}/`), Buffer.from([0x62, 0xfe])]), '');
+    return true;
+  } catch {
+    return false;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+})();
+
 type Entry = { text: string } | 'symlink' | 'other';
 /**
  * Una carpeta en memoria con nombres planos: list omite lo que cumple ignore;
@@ -219,6 +232,17 @@ describe('MED-003', () => {
     // Ya tiene su MED-001: el archivo de la carpeta con ese nombre no cuenta como declarado.
     const dir = folder(withExample({ 'Canción.pdf': 'c' }));
     expect(await undeclared(dirMediaResolver(dir), docBuilder().set('/media/1/path', 'Canción.pdf'))).toEqual(['Canción.pdf', PATHS[1]]);
+  });
+
+  it.skipIf(!INVALID_NAMES)('names that are not valid UTF-8 give one MED-003 each, with distinct paths', async () => {
+    const dir = folder(withExample());
+    const at = (...bytes: number[]) => Buffer.concat([Buffer.from(`${dir}/`), Buffer.from(bytes)]);
+    // Como deja un zip de Windows con nombres en CP437: Canci\xA2n.
+    mkdirSync(at(0x43, 0x61, 0x6e, 0x63, 0x69, 0xa2, 0x6e));
+    writeFileSync(Buffer.concat([at(0x43, 0x61, 0x6e, 0x63, 0x69, 0xa2, 0x6e), Buffer.from('/letra.pdf')]), 'l');
+    writeFileSync(at(0x62, 0xfe), '1');
+    writeFileSync(at(0x62, 0xfd), '2');
+    expect(await undeclared(dirMediaResolver(dir))).toEqual(['Canci\\xA2n/letra.pdf', 'b\\xFD', 'b\\xFE']);
   });
 
   it('end to end: MED-003 lands in the media bucket', async () => {

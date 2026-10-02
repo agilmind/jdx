@@ -2401,8 +2401,8 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "Falla interna del validador (salida 3).",
-        "pt": "Falha interna do validador (saída 3).",
+        "es": "Falla interna del validador (código de salida 3).",
+        "pt": "Falha interna do validador (código de saída 3).",
         "en": "Internal validator failure (exit code 3)."
       },
       "message": {
@@ -4600,8 +4600,8 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "Versión mayor no soportada. Es un defecto del archivo: salida 1.",
-        "pt": "Versão maior não suportada. É um defeito do arquivo: saída 1.",
+        "es": "Versión mayor no soportada. Es un defecto del archivo: código de salida 1.",
+        "pt": "Versão maior não suportada. É um defeito do arquivo: código de saída 1.",
         "en": "Unsupported major version. It is a defect of the file: exit code 1."
       },
       "message": {

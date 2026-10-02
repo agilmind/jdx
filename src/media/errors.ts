@@ -1,8 +1,8 @@
 /**
  * La carpeta de la entrega que el validador no puede usar. validate la
- * devuelve como JDX-ENV-011 (salida 2): ni aceptar ni rechazar la declaración
- * es seguro, porque lo que no se puede leer podría esconder archivos no
- * declarados. El receptor lo corrige y vuelve a validar.
+ * devuelve como JDX-ENV-011 (código de salida 2): ni aceptar ni rechazar la
+ * declaración es seguro, porque lo que no se puede leer podría esconder
+ * archivos no declarados. El receptor lo corrige y vuelve a validar.
  *
  * `reason` es params.cause del resultado: la carpeta no existe (`missingDir`)
  * o no es una carpeta (`notDirectory`); falta permiso para leer algo de

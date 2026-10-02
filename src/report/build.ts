@@ -4,13 +4,14 @@
  *
  * - `results` son los resultados que se listan; `omitted`, por código, cuántos
  *   no se listan (el tope de cada código), o null si el paso dejó de buscar en
- *   el tope y no sabe cuántos más hay. `summary`, la salida, la disposición y
- *   `checks` cuentan también los que no se listan: son los mismos que sin tope.
+ *   el tope y no sabe cuántos más hay. `summary`, el código de salida, la
+ *   disposición y `checks` cuentan también los que no se listan: son los mismos
+ *   que sin tope.
  * - `summary` cuenta los resultados por nivel; `valid` es que no haya errores.
- * - La salida: 3 ante una falla interna (pisa a todas), 2 si falló el entorno,
- *   1 si hay errores o, con failOn warning, avisos; si no, 0. Con salida 2 o 3,
- *   `valid` y `disposition` son null.
- * - `disposition`, después de la salida: `reject` con salida 1; si no,
+ * - El código de salida: 3 ante una falla interna (pisa a los demás), 2 si
+ *   falló el entorno, 1 si hay errores o, con failOn warning, avisos; si no, 0.
+ *   Con 2 o 3, `valid` y `disposition` son null.
+ * - `disposition`, después del código de salida: `reject` con 1; si no,
  *   `ignore` si hay JDX-DEC-005 y hay estado; si no, `ingest`. Sin estado no
  *   hay `ignore`.
  * - Cada bucket de `checks`: `notEvaluated` si no corrió; si corrió, `failed`
@@ -19,8 +20,8 @@
  * - El reporte siempre trae `signature.reason`, `document.issuer` y
  *   `document.media` (null si no hay), y no comparte objetos con las partes.
  *
- * exitCode recalcula solo la salida de un reporte, con otro failOn, para
- * mostrarla; el reporte no cambia.
+ * exitCode recalcula solo el código de salida de un reporte, con otro
+ * failOn, para mostrarlo; el reporte no cambia.
  */
 import type { CheckName, CheckStatus, Disposition, ExitCode, FailOn, Level, OmittedResult, Report, ReportParts, RuleId } from '../types.js';
 import { catalogRule, compareCodes, sortResults } from './results.js';
@@ -70,7 +71,7 @@ function omittedOf(parts: ReportParts): OmittedResult[] {
   return [...counts.keys()].sort((a, b) => compareCodes(a, b, parts.catalog)).map((ruleId) => ({ ruleId, count: counts.get(ruleId) ?? null }));
 }
 
-/** La salida del reporte con `failOn` (por defecto, el que se usó); 2 y 3 no cambian. */
+/** El código de salida del reporte con `failOn` (por defecto, el que se usó); 2 y 3 no cambian. */
 export function exitCode(report: Report, failOn: FailOn = report.options.failOn): ExitCode {
   if (report.exitCode === 2 || report.exitCode === 3) return report.exitCode;
   return fileExit(report.summary, failOn);

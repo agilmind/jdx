@@ -1,9 +1,9 @@
 /**
- * El reporte: el resumen por nivel, `valid`, la salida, la disposición y el
- * estado de cada bucket de `checks`, armados desde los resultados y lo que
- * corrió. La salida 3 pisa a todas; con salida 2 o 3 no hay `valid` ni
- * disposición. Sin estado no hay `ignore`. Todo reporte armado cumple
- * jdx-report.schema.json.
+ * El reporte: el resumen por nivel, `valid`, el código de salida, la
+ * disposición y el estado de cada bucket de `checks`, armados desde los
+ * resultados y lo que corrió. El código de salida 3 pisa a los demás; con 2 o
+ * 3 no hay `valid` ni disposición. Sin estado no hay `ignore`. Todo reporte
+ * armado cumple jdx-report.schema.json.
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
@@ -120,7 +120,7 @@ describe('reporte', () => {
   });
 
   it('VER-001 → 1', () => {
-    // Una versión mayor que el validador no lee es un defecto del archivo: salida 1, no de entorno.
+    // Una versión mayor que el validador no lee es un defecto del archivo: código de salida 1, no de entorno.
     const report = build(parts([VER001], { evaluated: new Set(['environment', 'json', 'schema']), signature: { ...ABSENT, status: 'notEvaluated' } }));
     expect(head(report)).toEqual({ valid: false, disposition: 'reject', exitCode: 1 });
     expect(report.checks.schema).toBe('failed');
@@ -129,7 +129,7 @@ describe('reporte', () => {
   it('DEC-005 alone → ignore', () => {
     expect(head(build(parts([DEC005])))).toEqual({ valid: true, disposition: 'ignore', exitCode: 0 });
     expect(head(build(parts([DEC005, AGR003])))).toEqual({ valid: true, disposition: 'ignore', exitCode: 0 });
-    // Con failOn warning y un aviso, la salida 1 manda: reject antes que ignore.
+    // Con failOn warning y un aviso, el código de salida 1 manda: reject antes que ignore.
     expect(head(build(parts([DEC005, AGR003], { options: { ...parts([]).options, failOn: 'warning' } })))).toEqual({ valid: true, disposition: 'reject', exitCode: 1 });
   });
 

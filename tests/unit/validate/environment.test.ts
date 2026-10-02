@@ -2,8 +2,8 @@
  * El paso de entorno: las opciones, el perfil y su catálogo, la firma pedida
  * contra el piso del perfil, el estado del receptor (lectura compartida) y, si
  * hay .jws, la lista de confianza. Cada falla da su resultado JDX-ENV-* y el
- * archivo no se evalúa (salida 2). Las opciones del reporte salen siempre, con
- * null donde una opción no sirve.
+ * archivo no se evalúa (código de salida 2). Las opciones del reporte salen
+ * siempre, con null donde una opción no sirve.
  */
 import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

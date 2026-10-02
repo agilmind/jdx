@@ -423,7 +423,7 @@ describe('a file over the size cap, given without its bytes', () => {
     });
     // El mismo reporte que con los bytes.
     expect(withoutBytes).toEqual(await validateWithDeps({ fileName: EXAMPLE_NAME, bytes }, opts, deps));
-    // El entorno va primero: con una opción que falta, salida 2 y ningún JDX-JSN-001.
+    // El entorno va primero: con una opción que falta, código de salida 2 y ningún JDX-JSN-001.
     const environment = await validateWithDeps({ fileName: EXAMPLE_NAME, size: OVER, sha256 }, { ...opts, receivedAt: '' }, deps);
     expect(reportErrors(environment)).toEqual([]);
     expect(environment).toMatchObject({ exitCode: 2, document: { sha256, size: OVER }, results: [{ ruleId: 'JDX-ENV-010' }] });
@@ -481,7 +481,7 @@ describe('hostile input through validateWithDeps', () => {
       Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => ['JDX-REF-002', `/recordings/0/performers/0/members/${i}`, { recording: 'r1' }]),
     );
     expect(report.omitted).toEqual([{ ruleId: 'JDX-REF-002', count: count - MAX_RESULTS_PER_RULE }]);
-    // Lo mismo que sin el tope: el resumen cuenta todas, y la salida, la disposición y los checks no cambian.
+    // Lo mismo que sin el tope: el resumen cuenta todas, y el código de salida, la disposición y los checks no cambian.
     expect(report).toMatchObject({ valid: false, disposition: 'reject', exitCode: 1, summary: { error: count, warning: 0, info: 0 }, checks: FLOOD_CHECKS });
     expect(count).toBeGreaterThan(500_000);
     expect(chars).toBeLessThan(100_000);

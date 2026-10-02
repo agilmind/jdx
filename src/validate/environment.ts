@@ -1,6 +1,6 @@
 /**
  * El primer paso de una validación: el entorno. Si algo falla, el archivo no
- * se evalúa (salida 2) y cada falla da su resultado JDX-ENV-*.
+ * se evalúa (código de salida 2) y cada falla da su resultado JDX-ENV-*.
  *
  * - Las opciones (JDX-ENV-010, con el nombre de la opción del CLI): `env`, el
  *   perfil y `receivedAt` son obligatorios, y `receivedAt` es un instante

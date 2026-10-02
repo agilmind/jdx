@@ -202,7 +202,7 @@ export interface ReportParts {
   options: Report['options'];
   document: ReportDocument;
   appliedProfiles: string[];
-  outcome: 'completed' | 'environment' | 'internal';       // environment → salida 2; internal → salida 3 (valid y disposition null)
+  outcome: 'completed' | 'environment' | 'internal';       // código de salida: environment → 2; internal → 3 (valid y disposition null)
   evaluated: ReadonlySet<CheckName>;                       // buckets que corrieron; los demás quedan notEvaluated (media sin --dir)
   hasState: boolean;                                       // sin estado no hay ignore
   signature: ReportSignature;

@@ -7,8 +7,9 @@
  * Las reglas del perfil, la firma y los archivos de la entrega los controla el
  * validador de referencia, en construcción.
  *
- * Salida: 0 si ningún archivo tiene errores, 1 si alguno tiene, 2 si falta el
- * argumento o un archivo no se puede leer.
+ * Código de salida, con el que termina el proceso: 0 si ningún archivo tiene
+ * errores, 1 si alguno tiene, 2 si falta el argumento o un archivo no se puede
+ * leer.
  */
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';

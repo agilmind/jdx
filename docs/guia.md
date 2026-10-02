@@ -105,13 +105,13 @@ más.
 
 | Capa | Qué controla | Qué da |
 |---|---|---|
-| Entorno | Lo que prepara la sociedad: opciones, perfil de SGC, lista de confianza, estado, carpeta de la entrega | Código de resultado 2: el archivo no se evalúa |
-| JSON y schema | Que sea JSON válido (I-JSON), la estructura, los formatos y los valores de las listas cerradas | Código de resultado 1: el archivo tiene errores |
-| Núcleo | Las referencias entre objetos, los hashes, el nombre del archivo, una firma inválida, las revisiones | Código de resultado 1: el archivo o la entrega tienen errores |
-| Perfil | Las reglas propias de la sociedad (sección 8) | Código de resultado 0 con avisos en `sadaic/0.x`; 1 desde `sadaic/1.0`, donde son errores |
-| Política | Lo que decide la sociedad: firma ausente, perfil de SGC no declarado en el archivo, un declarante que no es el de la cuenta, lista de confianza por vencer | Código de resultado 0 con avisos, salvo la firma ausente cuando la sociedad exige firma: 1 |
+| Entorno | Lo que prepara la sociedad: opciones, perfil de SGC, lista de confianza, estado, carpeta de la entrega | Código de salida 2: el archivo no se evalúa |
+| JSON y schema | Que sea JSON válido (I-JSON), la estructura, los formatos y los valores de las listas cerradas | Código de salida 1: el archivo tiene errores |
+| Núcleo | Las referencias entre objetos, los hashes, el nombre del archivo, una firma inválida, las revisiones | Código de salida 1: el archivo o la entrega tienen errores |
+| Perfil | Las reglas propias de la sociedad (sección 8) | Código de salida 0 con avisos en `sadaic/0.x`; 1 desde `sadaic/1.0`, donde son errores |
+| Política | Lo que decide la sociedad: firma ausente, perfil de SGC no declarado en el archivo, un declarante que no es el de la cuenta, lista de confianza por vencer | Código de salida 0 con avisos, salvo la firma ausente cuando la sociedad exige firma: 1 |
 
-Algunas reglas son avisos o informativas: no cambian el código de resultado,
+Algunas reglas son avisos o informativas: no cambian el código de salida,
 que queda en 0. Por ejemplo, una revisión que ya se cargó da 0 y el reporte
 dice que se ignore. Con `--fail-on warning`, la sociedad hace que un aviso
 también dé 1.
@@ -146,7 +146,7 @@ adentro no se puede leer (`permission`), una ruta es más larga de lo que admite
 el sistema (`tooLong`), tiene más de 100 000 entradas que la declaración no pide
 (`tooManyEntries`), hay demasiados archivos abiertos (`tooManyOpenFiles`), falla
 el disco (`io`), cambió durante la validación (`modified`) o no se puede anclar
-(`unanchored`). Es una falla del entorno (código de resultado 2) y no un
+(`unanchored`). Es una falla del entorno (código de salida 2) y no un
 rechazo, porque lo que no se pudo leer podría esconder archivos.
 
 El validador ancla la carpeta: mira cada archivo desde la carpeta que lo
@@ -158,10 +158,10 @@ ruta; el reporte dice cómo buscó (`options.dirLookup`).
 
 ## 4. Cómo se lee el resultado
 
-El código de resultado está en el reporte (`exitCode`) y es también el código
-con que termina el comando `jdx`:
+El código de salida es el `exitCode` del reporte y el código con que termina
+el comando `jdx`:
 
-| Código de resultado | Qué significa | Qué hace la sociedad |
+| Código de salida | Qué significa | Qué hace la sociedad |
 |---|---|---|
 | 0 | No hay errores (puede haber avisos) | Carga la revisión o la ignora, según `disposition` |
 | 1 | El archivo o la entrega tienen errores | No la carga y devuelve el reporte al emisor |
@@ -192,7 +192,7 @@ con la revisión y por qué. Un extracto:
   `params`, nunca por el texto del mensaje.
 - De cada regla se listan a lo sumo 100 resultados, los primeros en el orden
   del reporte. `omitted` dice de qué reglas quedaron resultados afuera y
-  cuántos; `summary`, el código de resultado y `checks` los cuentan a todos.
+  cuántos; `summary`, el código de salida y `checks` los cuentan a todos.
 - `jdx ack` registra la recepción en el estado de la sociedad y deja el
   reporte listo para devolverlo al emisor por el mismo canal.
 

@@ -12,12 +12,12 @@
  * - El catálogo del validador sirve a un perfil de la misma mayor y de una
  *   menor igual o anterior: las menores del catálogo solo suman reglas.
  * - Un perfil se aplica entero o no se aplica: cada falla es un hallazgo de
- *   entorno (salida 2). JDX-ENV-006 si el perfil no se conoce o no cumple su
- *   schema, pide un catálogo que el validador no sirve, o usa una regla
- *   desconocida, retirada, sin implementar, que no es de perfil o repetida, o
- *   con params que no cumplen el schema de la regla (o lo que el schema no
- *   puede decir: en JDX-AGR-003, que el tope con condición no baje del tope);
- *   JDX-ENV-007 si pide un validador más nuevo.
+ *   entorno (código de salida 2). JDX-ENV-006 si el perfil no se conoce o no
+ *   cumple su schema, pide un catálogo que el validador no sirve, o usa una
+ *   regla desconocida, retirada, sin implementar, que no es de perfil o
+ *   repetida, o con params que no cumplen el schema de la regla (o lo que el
+ *   schema no puede decir: en JDX-AGR-003, que el tope con condición no baje
+ *   del tope); JDX-ENV-007 si pide un validador más nuevo.
  * - Cada regla toma el nivel que le da el perfil (o su defaultLevel) y sus
  *   params (o `{}`).
  * - admitsJdx dice si el perfil admite la versión jdx del documento: `1.x`

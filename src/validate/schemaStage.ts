@@ -4,10 +4,11 @@
  *
  * - `jdx` es la versión `M.m` del documento. Una mayor de la que el validador
  *   no trae schemas da JDX-VER-001 y nada más: el archivo tiene un defecto
- *   (salida 1), lo mande quien lo mande.
+ *   (código de salida 1), lo mande quien lo mande.
  * - Con una mayor que el validador lee, el perfil tiene que admitir la versión
  *   (admitsJdx): si no, JDX-ENV-006 `jdxNotAdmitted` y nada más, porque la
- *   configuración del receptor no sirve para ese archivo (salida 2).
+ *   configuración del receptor no sirve para ese archivo: es una falla del
+ *   entorno (código de salida 2).
  * - Una menor que el validador trae se valida con su schema estricto. Una más
  *   nueva que la última que trae, con el abierto de esa última, y da
  *   JDX-VER-003.

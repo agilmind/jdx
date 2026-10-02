@@ -2,14 +2,14 @@
  * Una validación entera con las dependencias dadas (validateWithDeps): las de
  * defaultDeps, o las de la suite de conformidad, con su reloj y sus raíces.
  *
- * 1. El entorno (evaluateEnvironment). Si falla: salida 2, un JDX-ENV-* por
- *    falla y, del documento, lo que se pueda leer del archivo.
+ * 1. El entorno (evaluateEnvironment). Si falla: código de salida 2, un
+ *    JDX-ENV-* por falla y, del documento, lo que se pueda leer del archivo.
  * 2. El JSON (jsonStage). Si falla: sus JDX-JSN-001, y lo demás notEvaluated.
  *    Un archivo de más de MAX_DOCUMENT_BYTES puede llegar sin sus bytes, con su
  *    tamaño y su sha256: da el mismo JDX-JSN-001 `size`, después del entorno.
  * 3. La versión y el schema (schemaStage), con el perfil resuelto. Un perfil
- *    que no admite la versión es del entorno (salida 2); con errores, lo demás
- *    notEvaluated.
+ *    que no admite la versión es del entorno (código de salida 2); con
+ *    errores, lo demás notEvaluated.
  * 4. El índice del documento (JDX-REF-001 y -002) y las reglas de deps.rules,
  *    en su orden: las del núcleo y de la política siempre, con params `{}`; las
  *    del perfil si el perfil aplicado las trae, con sus params (el nivel lo da

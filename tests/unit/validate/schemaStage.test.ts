@@ -4,8 +4,8 @@
  * un JDX-JSN-001 con su razón. La versión: una mayor que el validador no lee
  * (JDX-VER-001), un $schema que no corresponde a jdx (JDX-VER-002), una menor
  * más nueva que se valida con el abierto de la última conocida (JDX-VER-003) y
- * un perfil que no admite la versión (JDX-ENV-006, salida 2). El schema: un
- * JDX-SCH-001 por error del estricto de su menor, a lo sumo 100.
+ * un perfil que no admite la versión (JDX-ENV-006, código de salida 2). El
+ * schema: un JDX-SCH-001 por error del estricto de su menor, a lo sumo 100.
  *
  * Los casos de entradas hostiles miden tiempo con margen: lo que importa es el
  * orden de magnitud y que el reporte se pueda escribir.

@@ -94,6 +94,7 @@ describe('src/types.ts', () => {
       list(): AsyncIterable<{ path: string; type: 'file' | 'symlink' | 'other' }>;
       stat(path: string): Promise<{ type: 'file' | 'symlink' | 'other'; size: number } | null>;
       sha256(path: string): Promise<string>;
+      check?(): Promise<void>;
     }
     expectTypeOf<MediaResolver>().not.toBeAny();
     expectTypeOf<MediaResolver>().toEqualTypeOf<SpecMediaResolver>();

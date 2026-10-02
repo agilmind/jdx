@@ -386,7 +386,7 @@ describe('registry and deps', () => {
     expect([one.rules, one.schemas, one.validators, one.catalog, one.values, one.profiles]).toEqual([RULES, two.schemas, two.validators, two.catalog, two.values, two.profiles]);
     expect(one.validators).toBe(two.validators);
     expect([one.catalog.catalog, one.catalog.rules.length, one.profiles.map((p) => `${p.id}@${p.version}`), one.values.version, one.schemas.minors, one.validatorVersion])
-      .toEqual(['1.0', 79, ['https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0'], '2026-10', ['1.0'], '1.0.0']);
+      .toEqual(['1.0', 80, ['https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0'], '2026-10', ['1.0'], '1.0.0']);
     expect([one.roots.production, one.roots.sandbox]).toEqual([[], []]);
     expect(Math.abs(one.clock().getTime() - Date.now())).toBeLessThan(5_000);
   });

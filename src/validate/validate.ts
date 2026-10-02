@@ -17,6 +17,10 @@
  *    corre sin ellos; el bucket media corre solo con carpeta. La firma: sin
  *    .jws, ausente; con .jws, todavía no se evalúa (notEvaluated).
  *
+ * Una carpeta de la entrega que no se puede usar es del entorno también si una
+ * regla lo encuentra mientras la lee (un MediaFolderError): el reporte es el de
+ * una falla del entorno, con su JDX-ENV-011, y lo demás queda notEvaluated.
+ *
  * El reporte sale de buildReport, con el tope de cada código (capFindings): de
  * cada uno, a lo sumo 100 resultados, y los demás se cuentan sin armarlos. Una
  * regla registrada que no está en el catálogo, retirada, sin implementar, de
@@ -24,6 +28,7 @@
  * programación y lanza, como una excepción de una regla o del estado.
  */
 import { parseInstant } from '../conventions/time.js';
+import { MediaFolderError } from '../media/errors.js';
 import { buildReport } from '../report/build.js';
 import { documentFacts } from '../report/document.js';
 import { capFindings, catalogRule, toResult } from '../report/results.js';
@@ -33,7 +38,7 @@ import type {
   SignatureOutcome, TerritoryExpander, ValidateInput, ValidateOptions, ValidatorDeps, ValueLists,
 } from '../types.js';
 import { buildDocIndex } from './docIndex.js';
-import { evaluateEnvironment } from './environment.js';
+import { evaluateEnvironment, folderFinding } from './environment.js';
 import { jsonStageOf } from './jsonStage.js';
 import { schemaStage } from './schemaStage.js';
 
@@ -52,17 +57,29 @@ const ABSENT: ReportSignature = Object.freeze({ status: 'absent', kid: null, iss
 export async function validateWithDeps(input: ValidateInput, opts: ValidateOptions, deps: ValidatorDeps): Promise<Report> {
   const prepared = await prepareRules(input, opts, deps);
   if (!prepared.ok) return prepared.report;
-  return prepared.finish([...prepared.findings, ...(await runRules(prepared.ctx, deps))]);
+  let found: Finding[];
+  try {
+    found = await runRules(prepared.ctx, deps);
+  } catch (error) {
+    if (error instanceof MediaFolderError) return prepared.environment([folderFinding(error)]);
+    throw error;
+  }
+  return prepared.finish([...prepared.findings, ...found]);
 }
 
 /**
  * Hasta el paso de las reglas: o el reporte de una validación que terminó
- * antes, o el contexto que reciben las reglas, los hallazgos que ya hay y cómo
- * terminar el reporte con los de las reglas.
+ * antes, o el contexto que reciben las reglas, los hallazgos que ya hay, cómo
+ * terminar el reporte con los de las reglas y cómo darlo como una falla del
+ * entorno que apareció mientras corrían (la carpeta de la entrega).
  */
 export type PreparedRules =
   | { ok: false; report: Report }
-  | { ok: true; ctx: RuleContext; findings: readonly Finding[]; finish: (findings: readonly Finding[]) => Report };
+  | {
+      ok: true; ctx: RuleContext; findings: readonly Finding[];
+      finish: (findings: readonly Finding[]) => Report;
+      environment: (findings: readonly Finding[]) => Report;
+    };
 
 /**
  * Los pasos 1 a 3 y el índice del documento, y el contexto de las reglas
@@ -73,17 +90,16 @@ export async function prepareRules(input: ValidateInput, opts: ValidateOptions, 
   const env = await evaluateEnvironment(input, opts, deps);
   const finish = (parts: Finish): Report => report(deps, env.reportOptions, parts);
 
-  if (!env.ok) {
+  // Una falla del entorno: el documento con lo que se puede leer del archivo, y lo demás notEvaluated.
+  const environment = (profile: ResolvedProfile | null, findings: readonly Finding[]): Report => {
     const json = jsonStageOf(input);
-    return {
-      ok: false,
-      report: finish({
-        document: documentFacts(input, json.ok ? json.json : null, false), appliedProfiles: env.profile === null ? [] : [env.profile.applied],
-        outcome: 'environment', evaluated: ['environment'], hasState: false, signature: NOT_EVALUATED, trustList: null,
-        findings: env.findings, profile: env.profile,
-      }),
-    };
-  }
+    return finish({
+      document: documentFacts(input, json.ok ? json.json : null, false), appliedProfiles: profile === null ? [] : [profile.applied],
+      outcome: 'environment', evaluated: ['environment'], hasState: false, signature: NOT_EVALUATED, trustList: null,
+      findings, profile,
+    });
+  };
+  if (!env.ok) return { ok: false, report: environment(env.profile, env.findings) };
   const base = {
     appliedProfiles: [env.profile.applied], hasState: env.state !== null, profile: env.profile,
     trustList: env.trust === null ? null : { seq: env.trust.list.seq, expiresAt: env.trust.list.expiresAt },
@@ -147,6 +163,7 @@ export async function prepareRules(input: ValidateInput, opts: ValidateOptions, 
     ctx,
     findings: [...schema.findings, ...docIndex.findings, ...signature.findings],
     finish: (findings) => finish({ ...base, document, outcome: 'completed', evaluated, signature: signature.report, findings }),
+    environment: (findings) => environment(env.profile, findings),
   };
 }
 

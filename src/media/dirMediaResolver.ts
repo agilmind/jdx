@@ -27,9 +27,10 @@
  */
 import { createHash } from 'node:crypto';
 import { type BigIntStats, constants, type Dirent } from 'node:fs';
-import { lstat, open, readdir } from 'node:fs/promises';
+import { lstat, open, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { MediaResolver } from '../types.js';
+import { folderFailure, MediaFolderError } from './errors.js';
 import { matchDeliveryGlob } from './glob.js';
 import { foldCase } from './path.js';
 
@@ -38,31 +39,37 @@ type EntryType = 'file' | 'symlink' | 'other';
 /** Lo que se lee de un archivo de una vez. */
 const CHUNK_BYTES = 1 << 20;
 
-/** Los nombres de una carpeta, exactos y plegados; null si no se puede leer. */
+/** Los nombres de una carpeta, exactos y plegados. */
 interface Listing { readonly entries: readonly Dirent[]; readonly exact: ReadonlySet<string>; readonly folded: ReadonlyMap<string, string[]> }
 
-/** Una carpeta que no se puede leer cuenta como una entrada `other`: no se entra. */
-const UNREADABLE = new Set(['EACCES', 'EPERM', 'ENAMETOOLONG', 'ELOOP']);
-/** Lo que no está, o dejó de estar, en el camino. */
-const MISSING = new Set(['ENOENT', 'ENOTDIR', 'ENAMETOOLONG']);
 
 const UNSAFE = /[\\:\u0000]/u;
 
 export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[] } = {}): MediaResolver {
   const ignore = [...(opts.ignore ?? [])];
-  const listings = new Map<string, Promise<Listing | null>>();
+  const listings = new Map<string, Promise<Listing>>();
   const hashes = new Map<string, Promise<string>>();
   const real = (path: string) => (path === '' ? dir : join(dir, ...path.split('/')));
 
   /** Los nombres de la carpeta de la entrega `path` ('' es la raíz), leídos una vez. */
-  const listingOf = (path: string): Promise<Listing | null> => {
+  const listingOf = (path: string): Promise<Listing> => {
     let listing = listings.get(path);
     if (listing === undefined) {
-      listing = readListing(real(path), path === '');
+      listing = (path === '' ? checked() : Promise.resolve()).then(() => readListing(real(path), path));
       listings.set(path, listing);
     }
     return listing;
   };
+  let root: Promise<void> | undefined;
+  /** La raíz: tiene que existir y ser una carpeta (se sigue si es un enlace: la eligió quien llama). */
+  const checked = (): Promise<void> => (root ??= stat(dir).then(
+    (stats) => {
+      if (!stats.isDirectory()) throw new MediaFolderError('notDirectory', '');
+    },
+    (error: unknown) => {
+      throw folderFailure(error, '', false);
+    },
+  ));
 
   /** Dónde termina un path de la entrega: la ruta real hasta ahí y su lstat, o null si no está. */
   const resolve = async (path: string): Promise<{ path: string; stats: BigIntStats } | null> => {
@@ -71,13 +78,11 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
     let at = '';
     for (let i = 0; i < segments.length; i++) {
       const listing = await listingOf(at);
-      // Una carpeta que no se puede leer: el path se detiene en ella.
-      if (listing === null) return { path: at, stats: await lstat(real(at), { bigint: true }) };
       const name = pick(listing, segments[i] as string);
       if (name === null) return null;
+      const parent = at;
       at = at === '' ? name : `${at}/${name}`;
-      const stats = await lstatOrNull(real(at));
-      if (stats === null) return null;
+      const stats = await lstatListed(real(at), at, parent);
       if (stats.isSymbolicLink() || i === segments.length - 1) return { path: at, stats };
       if (!stats.isDirectory()) return null;
     }
@@ -88,11 +93,9 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
     async *list() {
       // En profundidad y en orden de nombre, con una pila (cada carpeta, sus entradas de atrás hacia adelante).
       const stack: { prefix: string; entries: Dirent[] }[] = [];
-      const enter = async (prefix: string): Promise<boolean> => {
+      const enter = async (prefix: string): Promise<void> => {
         const listing = await listingOf(prefix);
-        if (listing === null) return false;
         stack.push({ prefix, entries: [...listing.entries].sort((a, b) => (a.name < b.name ? 1 : a.name > b.name ? -1 : 0)) });
-        return true;
       };
       await enter('');
       while (stack.length > 0) {
@@ -103,9 +106,9 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
           continue;
         }
         const path = top.prefix === '' ? entry.name : `${top.prefix}/${entry.name}`;
-        // Una carpeta se recorre; una que no se puede leer es una entrada más. Un enlace nunca se sigue.
-        const type = entry.isDirectory() ? ((await enter(path)) ? null : 'other') : typeOf(entry);
-        if (type !== null && !ignored(path)) yield { path, type };
+        // Una carpeta se recorre; un enlace nunca se sigue.
+        if (entry.isDirectory()) await enter(path);
+        else if (!ignored(path)) yield { path, type: typeOf(entry) };
       }
     },
 
@@ -123,10 +126,14 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
       const key = `${stats.dev}:${stats.ino}:${stats.size}:${stats.mtimeNs}`;
       let hash = hashes.get(key);
       if (hash === undefined) {
-        hash = hashFile(real(found.path), stats, path);
+        hash = hashFile(real(found.path), stats, found.path);
         hashes.set(key, hash);
       }
       return hash;
+    },
+
+    async check() {
+      await listingOf('');
     },
   };
 
@@ -162,13 +169,12 @@ function listingFrom(entries: readonly Dirent[]): Listing {
   return { entries, exact, folded };
 }
 
-/** Los nombres de una carpeta; null si no se puede leer y no es la raíz (la raíz que falta es un error de quien llama). */
-async function readListing(path: string, root: boolean): Promise<Listing | null> {
+/** Los nombres de la carpeta `shown` de la entrega; si no se puede leer, la falla de la carpeta. */
+async function readListing(path: string, shown: string): Promise<Listing> {
   try {
     return listingFrom(await readdir(path, { withFileTypes: true }));
   } catch (error) {
-    if (!root && UNREADABLE.has((error as NodeJS.ErrnoException).code ?? '')) return null;
-    throw error;
+    throw folderFailure(error, shown, shown !== '');
   }
 }
 
@@ -177,21 +183,30 @@ function typeOf(entry: Dirent): EntryType {
   return entry.isFile() ? 'file' : entry.isSymbolicLink() ? 'symlink' : 'other';
 }
 
-async function lstatOrNull(path: string): Promise<BigIntStats | null> {
+/**
+ * El lstat de una entrada que la carpeta `parent` listó: si dejó de estar, la
+ * carpeta cambió; sin permiso, la carpeta que no se puede recorrer es `parent`.
+ */
+async function lstatListed(path: string, shown: string, parent: string): Promise<BigIntStats> {
   try {
     return await lstat(path, { bigint: true });
   } catch (error) {
-    if (MISSING.has((error as NodeJS.ErrnoException).code ?? '')) return null;
-    throw error;
+    const code = (error as NodeJS.ErrnoException).code;
+    throw folderFailure(error, code === 'EACCES' || code === 'EPERM' ? parent : shown, true);
   }
 }
 
 /** El sha256 del archivo, de a partes, si al abrirlo es el mismo archivo regular que se encontró. */
 async function hashFile(path: string, found: BigIntStats, shown: string): Promise<string> {
-  const handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));
+  let handle;
+  try {
+    handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));
+  } catch (error) {
+    throw folderFailure(error, shown, true);
+  }
   try {
     const opened = await handle.stat({ bigint: true });
-    if (!opened.isFile() || opened.dev !== found.dev || opened.ino !== found.ino) throw new Error(`${shown}: no es un archivo regular de la entrega`);
+    if (!opened.isFile() || opened.dev !== found.dev || opened.ino !== found.ino) throw new MediaFolderError('modified', shown);
     const hash = createHash('sha256');
     const buffer = Buffer.allocUnsafe(CHUNK_BYTES);
     for (;;) {

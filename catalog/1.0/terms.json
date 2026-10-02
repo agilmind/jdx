@@ -228,6 +228,21 @@
         "pt": ": falha o acesso ao disco",
         "en": ": disk access fails"
       },
+      "notDirectory": {
+        "es": ": no es una carpeta",
+        "pt": ": não é uma pasta",
+        "en": ": it is not a folder"
+      },
+      "tooLong": {
+        "es": ": una ruta es más larga de lo que admite el sistema",
+        "pt": ": um caminho é mais longo do que o sistema admite",
+        "en": ": a path is longer than the system allows"
+      },
+      "modified": {
+        "es": ": cambió mientras se leía",
+        "pt": ": mudou durante a leitura",
+        "en": ": it changed while it was being read"
+      },
       "unknownProfile": {
         "es": "el validador no incluye {profile}",
         "pt": "o validador não inclui {profile}",

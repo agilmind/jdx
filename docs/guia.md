@@ -85,9 +85,14 @@ está declarado da `JDX-MED-003`, salvo los de JDX (`*.jdx.json`,
 ignora con `--ignore` (repetible): sin `/` el patrón mira el nombre, con `/` la
 ruta desde la raíz; `*` no cruza carpetas y `**` cubre cero o más.
 
+La carpeta no puede cambiar mientras se valida: se valida una copia. Una
+carpeta que no se puede usar (no existe, algo de adentro no se puede leer o
+cambió durante la validación) da `JDX-ENV-011` con la causa y el lugar: es una
+falla del entorno (salida 2), porque lo que no se lee podría esconder archivos.
+
 | Capa | Qué controla | Qué da |
 |---|---|---|
-| Entorno | Opciones, perfil, lista de confianza, estado | Salida 2; el archivo no se evalúa |
+| Entorno | Opciones, perfil, lista de confianza, estado, carpeta de la entrega | Salida 2; el archivo no se evalúa |
 | JSON y schema | I-JSON, estructura, formatos, listas cerradas | Error |
 | Núcleo | Referencias, hashes, nombre del archivo, firma inválida, revisiones | Error |
 | Perfil | Las reglas de la sociedad | Aviso en `sadaic/0.x`, error desde `sadaic/1.0` |

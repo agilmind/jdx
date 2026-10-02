@@ -10,6 +10,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadCatalog } from '../../../src/catalog/load.js';
+import { dirMediaResolver } from '../../../src/media/dirMediaResolver.js';
+import { MediaFolderError } from '../../../src/media/errors.js';
 import { files } from '../../../src/generated/data.js';
 import { VERSION } from '../../../src/generated/version.js';
 import { bundledProfiles } from '../../../src/profile/resolve.js';
@@ -19,7 +21,7 @@ import { StateError } from '../../../src/state/errors.js';
 import { emptyState, fileStateStore } from '../../../src/state/fileStateStore.js';
 import { evaluateEnvironment } from '../../../src/validate/environment.js';
 import { loadValues } from '../../../src/values/load.js';
-import type { EnvironmentOutcome, Finding, JsonValue, Profile, State, StateStore, ValidateInput, ValidateOptions, ValidatorDeps } from '../../../src/types.js';
+import type { EnvironmentOutcome, Finding, JsonValue, MediaResolver, Profile, State, StateStore, ValidateInput, ValidateOptions, ValidatorDeps } from '../../../src/types.js';
 import { sadaicProfile } from '../../helpers/sadaicProfile.js';
 import { withReceipt } from '../../helpers/stateWorker.js';
 import { signTestTrustList, TEST_NOW, TEST_ROOT_KEYS, TEST_ROOTS, trustListExample } from '../../helpers/trustFixtures.js';
@@ -103,6 +105,24 @@ function stateDir(): string {
 }
 
 describe('entorno', () => {
+  it('the delivery folder: one that is missing, is not a folder or fails its check → ENV-011 with the cause and the place', async () => {
+    const dir = stateDir();
+    writeFileSync(join(dir, 'a.pdf'), 'a');
+    expect((await passed(sandbox({ media: dirMediaResolver(dir) }))).reportOptions.dir).toBe(true);
+    expect(await failed(sandbox({ media: dirMediaResolver(join(dir, 'no-existe')) }))).toEqual([['JDX-ENV-011', { cause: 'missingDir', path: '' }]]);
+    expect(await failed(sandbox({ media: dirMediaResolver(join(dir, 'a.pdf')) }))).toEqual([['JDX-ENV-011', { cause: 'notDirectory', path: '' }]]);
+    // Con las demás fallas del entorno, una más; un resolver sin check pasa el paso.
+    expect(await failed(sandbox({ media: dirMediaResolver(join(dir, 'no-existe')), lang: 'xx' as never }))).toEqual([
+      env010('--lang', 'invalid'), ['JDX-ENV-011', { cause: 'missingDir', path: '' }],
+    ]);
+    const plain: MediaResolver = { list: async function* () {}, stat: async () => null, sha256: async () => '' };
+    await passed(sandbox({ media: plain }));
+    const folder = (error: Error): MediaResolver => ({ ...plain, check: async () => { throw error; } });
+    expect(await failed(sandbox({ media: folder(new MediaFolderError('io', '')) }))).toEqual([['JDX-ENV-011', { cause: 'io', path: '' }]]);
+    // Otra excepción de check no es del entorno: el paso la deja pasar.
+    await expect(run(sandbox({ media: folder(new Error('roto')) }))).rejects.toThrow('roto');
+  });
+
   it('missing env → ENV-010', async () => {
     const { env: _env, ...noEnv } = sandbox();
     expect(await failed(noEnv as ValidateOptions)).toEqual([env010('--env', 'missing')]);

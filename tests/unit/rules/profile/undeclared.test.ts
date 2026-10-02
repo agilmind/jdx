@@ -5,7 +5,7 @@
  * las distingue no deja crear), y de punta a punta en el bucket media.
  */
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -184,15 +184,29 @@ describe('MED-003', () => {
     expect(await undeclared(memoryFolder({ 'Enlace.pdf': 'symlink', ...exampleEntries(1) }), docBuilder().set('/media/1/path', 'enlace.pdf'))).toEqual(['Enlace.pdf']);
   });
 
-  it('the link or the unreadable folder where a declared path stops counts as declared', async () => {
+  it('the link where a declared path stops counts as declared', async () => {
     const outside = folder({ 'b.pdf': 'b' });
-    const dir = folder(withExample({ 'cerrada/c.pdf': 'c' }));
+    const dir = folder(withExample());
     symlinkSync(outside, join(dir, 'enlazada'));
-    chmodSync(join(dir, 'cerrada'), 0o000);
-    const document = docBuilder().set('/media/1/path', 'enlazada/b.pdf').set('/media/2/path', 'cerrada/c.pdf');
-    // Las dos dan su MED-008; MED-003 no repite el enlace ni la carpeta donde se detienen.
+    const document = docBuilder().set('/media/1/path', 'enlazada/b.pdf');
+    // Da su MED-008; MED-003 no repite el enlace donde se detiene.
     const found = await undeclared(dirMediaResolver(dir), document);
     expect(found.filter((path) => !PATHS.includes(path))).toEqual([]);
+  });
+
+  it('an unreadable folder is a folder failure, not something declared or undeclared', async () => {
+    const dir = folder(withExample({ 'cerrada/c.pdf': 'c' }));
+    chmodSync(join(dir, 'cerrada'), 0o000);
+    let readable = true;
+    try {
+      readdirSync(join(dir, 'cerrada'));
+    } catch {
+      readable = false;
+    }
+    if (readable) return;
+    // Aunque un path declarado pase por ella: lo de adentro podría esconder archivos no declarados.
+    const ctx = await makeRuleContext({ document: docBuilder().set('/media/2/path', 'cerrada/c.pdf'), options: { media: dirMediaResolver(dir) } });
+    await expect(MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'))).rejects.toMatchObject({ name: 'MediaFolderError', reason: 'permission', path: 'cerrada' });
   });
 
   it('previous deliveries count as declared', async () => {

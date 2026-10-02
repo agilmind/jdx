@@ -1,8 +1,8 @@
 /**
  * Catálogo de reglas, perfil II: identificadores, códigos de territorio,
  * sociedad y clasificación, referencias, completitud de obras y personas, la
- * edición y los archivos. Con estas el catálogo queda completo: 75 reglas
- * activas (10 de entorno, 25 del núcleo, 36 de perfil y 4 de política) y
+ * edición y los archivos. Con estas el catálogo queda completo: 76 reglas
+ * activas (11 de entorno, 25 del núcleo, 36 de perfil y 4 de política) y
  * cuatro retiradas.
  */
 import { describe, expect, it } from 'vitest';
@@ -30,7 +30,7 @@ const DATA = [
   'JDX-MED-003', 'JDX-MED-010', 'JDX-REF-003', 'JDX-REF-004', 'JDX-SOC-001', 'JDX-TER-001',
 ];
 
-/** Las 75 reglas activas del catálogo 1.0, en orden de id. */
+/** Las 76 reglas activas del catálogo 1.0, en orden de id. */
 const ACTIVE = [
   'JDX-AGR-001', 'JDX-AGR-002', 'JDX-AGR-003', 'JDX-AGR-004', 'JDX-AGR-005', 'JDX-AGR-006',
   'JDX-CLS-001',
@@ -38,7 +38,7 @@ const ACTIVE = [
   'JDX-DEC-001', 'JDX-DEC-002', 'JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005',
   'JDX-EDN-001',
   'JDX-ENV-001', 'JDX-ENV-002', 'JDX-ENV-003', 'JDX-ENV-004', 'JDX-ENV-005',
-  'JDX-ENV-006', 'JDX-ENV-007', 'JDX-ENV-008', 'JDX-ENV-009', 'JDX-ENV-010',
+  'JDX-ENV-006', 'JDX-ENV-007', 'JDX-ENV-008', 'JDX-ENV-009', 'JDX-ENV-010', 'JDX-ENV-011',
   'JDX-IDN-001', 'JDX-IDN-002', 'JDX-IDN-003', 'JDX-IDN-004', 'JDX-IDN-005', 'JDX-IDN-006',
   'JDX-INT-001', 'JDX-JSN-001',
   'JDX-MED-001', 'JDX-MED-002', 'JDX-MED-003', 'JDX-MED-004', 'JDX-MED-006', 'JDX-MED-007', 'JDX-MED-008', 'JDX-MED-009', 'JDX-MED-010',
@@ -115,11 +115,11 @@ describe('catálogo: perfil II (datos)', () => {
     }
   });
 
-  it('the catalog has exactly 75 active codes and JDX-MED-005, JDX-SHR-001, JDX-SHR-003 and JDX-SHR-005 retired', () => {
+  it('the catalog has exactly 76 active codes and JDX-MED-005, JDX-SHR-001, JDX-SHR-003 and JDX-SHR-005 retired', () => {
     expect(ids(active)).toEqual(ACTIVE);
     expect(ids(catalog.rules.filter((r) => r.status === 'retired'))).toEqual(['JDX-MED-005', 'JDX-SHR-001', 'JDX-SHR-003', 'JDX-SHR-005']);
-    expect(catalog.rules).toHaveLength(79);
+    expect(catalog.rules).toHaveLength(80);
     const byLayer = (layers: string[]) => active.filter((r) => layers.includes(r.layer)).length;
-    expect([byLayer(['environment']), byLayer(['core', 'schema']), byLayer(['profile']), byLayer(['policy'])]).toEqual([10, 25, 36, 4]);
+    expect([byLayer(['environment']), byLayer(['core', 'schema']), byLayer(['profile']), byLayer(['policy'])]).toEqual([11, 25, 36, 4]);
   });
 });

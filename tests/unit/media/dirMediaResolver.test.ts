@@ -9,12 +9,13 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { caseVariant, dirMediaResolver } from '../../../src/media/dirMediaResolver.js';
+import { MediaFolderError } from '../../../src/media/errors.js';
 import type { MediaResolver } from '../../../src/types.js';
 
 const made: string[] = [];
@@ -54,6 +55,26 @@ async function listed(resolver: MediaResolver): Promise<[string, string][]> {
   return out;
 }
 const sha = (text: string | Uint8Array) => createHash('sha256').update(text).digest('hex');
+/** La causa y el lugar de la falla de la carpeta con que termina la promesa. */
+async function folderFailure(work: Promise<unknown>): Promise<[string, string]> {
+  const error = await work.then(() => null, (e: unknown) => e);
+  if (!(error instanceof MediaFolderError)) throw new Error(`no es una falla de la carpeta: ${String(error)}`);
+  return [error.reason, error.path];
+}
+/** Si quien corre los tests puede leer lo que no tiene permiso (root): entonces no hay nada ilegible. */
+function readsEverything(dir: string): boolean {
+  const probe = join(dir, 'probe-perm');
+  writeFileSync(probe, '');
+  chmodSync(probe, 0o000);
+  let readable = true;
+  try {
+    readFileSync(probe);
+  } catch {
+    readable = false;
+  }
+  rmSync(probe);
+  return readable;
+}
 const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
 
 describe('dirMediaResolver', () => {
@@ -237,24 +258,57 @@ describe('dirMediaResolver', () => {
     expect(await resolver.sha256('a.pdf')).toBe(sha('dos'));
   });
 
-  it('an unreadable folder in the delivery is other, and is not entered', async () => {
-    const dir = delivery({ 'a.pdf': 'a', 'cerrada/b.pdf': 'b' });
-    chmodSync(join(dir, 'cerrada'), 0o000);
-    let readable = true;
-    try {
-      readdirSync(join(dir, 'cerrada'));
-    } catch {
-      readable = false;
-    }
+  it('check refuses a root that is missing, is not a folder or cannot be read', async () => {
+    const dir = delivery({ 'a.pdf': 'a' });
+    await expect(dirMediaResolver(dir).check?.()).resolves.toBeUndefined();
+    expect(await folderFailure(dirMediaResolver(join(dir, 'no-existe')).check?.() as Promise<void>)).toEqual(['missingDir', '']);
+    expect(await folderFailure(dirMediaResolver(join(dir, 'a.pdf', 'x')).check?.() as Promise<void>)).toEqual(['missingDir', '']);
+    expect(await folderFailure(dirMediaResolver(join(dir, 'a.pdf')).check?.() as Promise<void>)).toEqual(['notDirectory', '']);
+    // Lo mismo si se usa sin check: list, stat y sha256 dan la misma falla.
+    expect(await folderFailure(dirMediaResolver(join(dir, 'no-existe')).stat('a.pdf'))).toEqual(['missingDir', '']);
+    expect(await folderFailure(listed(dirMediaResolver(join(dir, 'a.pdf'))))).toEqual(['notDirectory', '']);
+    if (readsEverything(dir)) return;
+    const closed = delivery({ 'a.pdf': 'a' });
+    chmodSync(closed, 0o000);
+    expect(await folderFailure(dirMediaResolver(closed).check?.() as Promise<void>)).toEqual(['permission', '']);
+  });
+
+  it('an unreadable file is a folder failure when it has to be read', async () => {
+    const dir = delivery({ 'a.pdf': 'a', 'b.pdf': 'b' });
+    if (readsEverything(dir)) return;
+    chmodSync(join(dir, 'a.pdf'), 0o000);
     const resolver = dirMediaResolver(dir);
-    if (readable) {
-      // Quien corre los tests puede leer cualquier carpeta (root): no hay una que no se pueda leer.
-      expect(await listed(resolver)).toEqual([['a.pdf', 'file'], ['cerrada/b.pdf', 'file']]);
-      return;
-    }
-    expect(await listed(resolver)).toEqual([['a.pdf', 'file'], ['cerrada', 'other']]);
-    // Un path de adentro se detiene en la carpeta que no se puede leer.
-    expect(await resolver.stat('cerrada/b.pdf')).toMatchObject({ type: 'other' });
+    // Se lista y se ve su tamaño sin leerlo; leerlo es lo que falla.
+    expect(await listed(resolver)).toEqual([['a.pdf', 'file'], ['b.pdf', 'file']]);
+    expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 1 });
+    expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['permission', 'a.pdf']);
+    expect(await resolver.sha256('b.pdf')).toBe(sha('b'));
+  });
+
+  it('a folder that can be listed but not searched is a folder failure at that folder', async () => {
+    const dir = delivery({ 'rx/a.pdf': 'a' });
+    if (readsEverything(dir)) return;
+    chmodSync(join(dir, 'rx'), 0o444);
+    expect(await folderFailure(dirMediaResolver(dir).stat('rx/a.pdf'))).toEqual(['permission', 'rx']);
+  });
+
+  it('an unreadable folder in the delivery is a folder failure, never an entry', async () => {
+    const dir = delivery({ 'a.pdf': 'a', 'cerrada/b.pdf': 'b' });
+    if (readsEverything(dir)) return;
+    chmodSync(join(dir, 'cerrada'), 0o000);
+    // Lo que no se puede leer podría esconder archivos no declarados: ni se lista ni se busca adentro.
+    expect(await folderFailure(listed(dirMediaResolver(dir)))).toEqual(['permission', 'cerrada']);
+    expect(await folderFailure(dirMediaResolver(dir).stat('cerrada/b.pdf'))).toEqual(['permission', 'cerrada']);
+    // Un path que no pasa por ella no la mira.
+    expect(await dirMediaResolver(dir).stat('a.pdf')).toMatchObject({ type: 'file' });
+  });
+
+  it('a folder removed after it was listed is a folder failure: the folder changed', async () => {
+    const dir = delivery({ 'a.pdf': 'a', 'sub/b.pdf': 'b' });
+    const resolver = dirMediaResolver(dir);
+    expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file' });
+    rmSync(join(dir, 'sub'), { recursive: true });
+    expect(await folderFailure(resolver.stat('sub/b.pdf'))).toEqual(['modified', 'sub']);
   });
 
   it('ignore hides matching files from list, not from stat or sha256', async () => {

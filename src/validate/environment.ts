@@ -16,6 +16,8 @@
  *   razón (y, bloqueado, desde cuándo; ilegible, por qué); un estado de otro
  *   entorno, JDX-ENV-005 `env`. Un estado nunca escrito no tiene entorno y pasa: lo fija la
  *   primera escritura.
+ * - La carpeta de la entrega, si hay y su resolver la controla (check): una
+ *   que no se puede usar da JDX-ENV-011 con su causa y el lugar.
  * - Solo si hay .jws, la lista de confianza: sin lista, JDX-ENV-001 `missing`;
  *   con lista, verifyTrustList con el reloj del validador y el maxSeq del
  *   estado, si el estado es del mismo entorno (el de otro entorno ya dio
@@ -24,10 +26,12 @@
  * Las opciones del reporte salen siempre: el entorno o null, el id corto del
  * perfil resuelto (o el pedido, si no resolvió), la firma efectiva, `failOn` y
  * `lang` (o sus defaults si no sirven), `receivedAt` o null, y si hay carpeta
- * de la entrega. Una falla del estado que no es un StateError no es del
- * entorno: se deja pasar, y validate la devuelve como JDX-INT-001.
+ * de la entrega. Una falla del estado que no es un StateError, o de la
+ * carpeta que no es un MediaFolderError, no es del entorno: se deja pasar, y
+ * validate la devuelve como JDX-INT-001.
  */
 import { parseInstant } from '../conventions/time.js';
+import { MediaFolderError } from '../media/errors.js';
 import { resolveProfile } from '../profile/resolve.js';
 import { STATE_UNREADABLE_CAUSES, StateError } from '../state/errors.js';
 import { verifyTrustList } from '../trust/verifyList.js';
@@ -109,6 +113,16 @@ export async function evaluateEnvironment(input: ValidateInput, opts: ValidateOp
     }
   }
 
+  // La carpeta de la entrega.
+  if (opts.media?.check !== undefined) {
+    try {
+      await opts.media.check();
+    } catch (error) {
+      if (!(error instanceof MediaFolderError)) throw error;
+      findings.push(folderFinding(error));
+    }
+  }
+
   // La lista de confianza, solo si hay .jws.
   let trust: VerifiedTrustList | null = null;
   if (input.jws !== undefined) {
@@ -159,6 +173,11 @@ function stateParams(error: StateError, clock: () => Date): { [k: string]: JsonV
     return { reason: 'unreadable', cause: cause as JsonValue };
   }
   return { reason: error.reason };
+}
+
+/** JDX-ENV-011 de una carpeta de la entrega que no se puede usar: la causa y el lugar. */
+export function folderFinding(error: MediaFolderError): Finding {
+  return finding('JDX-ENV-011', { cause: error.reason, path: error.path });
 }
 
 function finding(ruleId: Finding['ruleId'], params: { [k: string]: JsonValue }): Finding {

@@ -5,11 +5,12 @@
  * cada test, y de punta a punta, también con documentos que las inundan.
  */
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { dirMediaResolver } from '../../../../src/media/dirMediaResolver.js';
+import { MediaFolderError } from '../../../../src/media/errors.js';
 import { MAX_RESULTS_PER_RULE } from '../../../../src/report/results.js';
 import { MED_002, MED_006, MED_007, MED_008 } from '../../../../src/rules/core/mediaDir.js';
 import { RULES } from '../../../../src/rules/registry.js';
@@ -201,6 +202,44 @@ describe('MED-002, MED-007 and MED-008', () => {
     expect(failed).toMatchObject({ exitCode: 1, disposition: 'reject', checks: { media: 'failed', core: 'passed' } });
     // Sin carpeta, el bucket no corre.
     expect((await validateExample({ document })).checks.media).toBe('notEvaluated');
+  });
+
+  it('end to end: a folder that fails while the rules read it is an environment failure, and the rest is not evaluated', async () => {
+    const { dir, document } = delivered();
+    // Un resolver que falla a la mitad: el paso de entorno ya pasó y una regla lo encuentra.
+    const failing: MediaResolver = {
+      list: () => dirMediaResolver(dir).list(),
+      stat: (path) => dirMediaResolver(dir).stat(path),
+      sha256: async (path) => {
+        throw new MediaFolderError('modified', path);
+      },
+    };
+    const report = await validateExample({ document, options: { media: failing } });
+    expect(reportErrors(report)).toEqual([]);
+    expect(report.results.map((r) => [r.ruleId, r.level, r.source, r.instanceLocation, r.params, r.message])).toEqual([
+      ['JDX-ENV-011', 'error', 'environment', '', { cause: 'modified', path: PATHS[0] },
+        `La carpeta de la entrega no se puede usar: cambió mientras se leía (${PATHS[0]}).`],
+    ]);
+    expect(report).toMatchObject({
+      exitCode: 2, valid: null, disposition: null, omitted: [],
+      checks: { environment: 'failed', json: 'notEvaluated', schema: 'notEvaluated', core: 'notEvaluated', media: 'notEvaluated', profile: 'notEvaluated', policy: 'notEvaluated' },
+    });
+    // Un archivo declarado que no se puede leer, con la carpeta de verdad: lo mismo, con la causa del permiso.
+    chmodSync(join(dir, PATHS[1] as string), 0o000);
+    let readable = true;
+    try {
+      readFileSync(join(dir, PATHS[1] as string));
+    } catch {
+      readable = false;
+    }
+    const unreadable = await validateExample({ document, options: { media: dirMediaResolver(dir) } });
+    chmodSync(join(dir, PATHS[1] as string), 0o644);
+    if (readable) return;
+    expect(unreadable.results.map((r) => [r.ruleId, r.params])).toEqual([['JDX-ENV-011', { cause: 'permission', path: PATHS[1] }]]);
+    expect(unreadable.exitCode).toBe(2);
+    // Otra excepción del resolver no es del entorno: la deja pasar (en validate, la falla interna).
+    const broken: MediaResolver = { ...failing, sha256: async () => { throw new Error('roto'); } };
+    await expect(validateExample({ document, options: { media: broken } })).rejects.toThrow('roto');
   });
 });
 

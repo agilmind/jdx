@@ -30,7 +30,7 @@ const active = catalog.rules.filter((r) => r.status === 'active');
 
 const ENVIRONMENT = [
   'JDX-ENV-001', 'JDX-ENV-002', 'JDX-ENV-003', 'JDX-ENV-004', 'JDX-ENV-005',
-  'JDX-ENV-006', 'JDX-ENV-007', 'JDX-ENV-008', 'JDX-ENV-009', 'JDX-ENV-010',
+  'JDX-ENV-006', 'JDX-ENV-007', 'JDX-ENV-008', 'JDX-ENV-009', 'JDX-ENV-010', 'JDX-ENV-011',
 ];
 const CORE = [
   'JDX-DEC-002', 'JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005', 'JDX-INT-001', 'JDX-JSN-001',

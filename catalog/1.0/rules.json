@@ -1949,6 +1949,63 @@
       }
     },
     {
+      "id": "JDX-ENV-011",
+      "layer": "environment",
+      "check": "environment",
+      "status": "active",
+      "since": "1.0",
+      "implemented": true,
+      "level": "error",
+      "predicate": {
+        "es": "La carpeta de la entrega no se puede usar: no existe (missingDir) o no es una carpeta (notDirectory), falta permiso para leer algo de adentro (permission), una ruta es más larga de lo que admite el sistema (tooLong), falla el disco (io) o la carpeta cambió mientras se leía (modified). params.cause dice cuál y params.path, dónde, relativo a la carpeta (vacío si es la carpeta misma).",
+        "pt": "A pasta da entrega não pode ser usada: não existe (missingDir) ou não é uma pasta (notDirectory), falta permissão para ler algo de dentro (permission), um caminho é mais longo do que o sistema admite (tooLong), o disco falha (io) ou a pasta mudou durante a leitura (modified). params.cause diz qual e params.path, onde, relativo à pasta (vazio se é a própria pasta).",
+        "en": "The delivery folder cannot be used: it does not exist (missingDir) or is not a folder (notDirectory), something inside cannot be read for lack of permission (permission), a path is longer than the system allows (tooLong), the disk fails (io) or the folder changed while it was being read (modified). params.cause says which and params.path where, relative to the folder (empty for the folder itself)."
+      },
+      "message": {
+        "es": "La carpeta de la entrega no se puede usar{cause:reason}{path:paren}.",
+        "pt": "A pasta da entrega não pode ser usada{cause:reason}{path:paren}.",
+        "en": "The delivery folder cannot be used{cause:reason}{path:paren}."
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "resultParamsSchema": {
+        "type": "object",
+        "properties": {
+          "cause": {
+            "type": "string",
+            "enum": [
+              "missingDir",
+              "notDirectory",
+              "permission",
+              "tooLong",
+              "io",
+              "modified"
+            ]
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cause",
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "contextSchema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "example": {
+        "params": {
+          "cause": "permission",
+          "path": "cerrada/b.pdf"
+        }
+      }
+    },
+    {
       "id": "JDX-IDN-001",
       "layer": "profile",
       "check": "profile",

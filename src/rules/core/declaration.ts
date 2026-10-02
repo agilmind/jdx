@@ -9,7 +9,7 @@
  *   declaration.id:
  *   - DEC-003: un recibo de la misma revisión con otro sha256, con cualquier
  *     estado de ack (una revisión rechazada también cuenta). Lleva el sha256
- *     que ya se recibió, el primero de los recibos.
+ *     que ya se recibió: el del primer recibo con otro sha256.
  *   - DEC-004: el owner del estado no es declaration.issuer.id.
  *   - DEC-005: la revisión no es mayor que lastIngestedRevision (informativa:
  *     la declaración se ignora).

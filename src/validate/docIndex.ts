@@ -107,6 +107,14 @@ export function contextAt(doc: JdxDocument | JsonValue, pointer: JsonPointer): F
  * recorrido, y solo por sus caminos: cada puntero es corto aunque el documento
  * tenga claves largas en otro lugar, y cada valor de un camino se mira una vez
  * aunque decenas de patrones pasen por él.
+ *
+ * El orden de las visitas es el del árbol de patrones, no el del documento ni
+ * el del reporte: en cada lugar, primero los patrones que terminan ahí; después,
+ * en una lista, todos sus elementos por `*` en orden de índice y luego los
+ * índices fijos, y en un objeto, sus claves por `*` en el orden del objeto y
+ * luego los nombres fijos, cada grupo en el orden en que aparece por primera
+ * vez en los patrones. Una regla que necesita la primera ocurrencia en el
+ * documento no puede tomarla de este orden; el reporte ordena sus resultados.
  */
 export function valuesAt(
   doc: JdxDocument | JsonValue,

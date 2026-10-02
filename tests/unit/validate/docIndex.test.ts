@@ -12,7 +12,7 @@ import { files } from '../../../src/generated/data.js';
 import { catalogRule } from '../../../src/report/results.js';
 import { schemaBundle } from '../../../src/schema/bundle.js';
 import { defaultValidators } from '../../../src/schema/validators.js';
-import { buildDocIndex, contextAt } from '../../../src/validate/docIndex.js';
+import { buildDocIndex, contextAt, valuesAt } from '../../../src/validate/docIndex.js';
 import type { JdxDocument } from '../../../src/generated/jdx-types.js';
 import type { Finding, JsonValue, SchemaIndex } from '../../../src/types.js';
 
@@ -150,5 +150,14 @@ describe('buildDocIndex', () => {
     for (const none of ['', '/works', '/works/7', '/works/01/titles', '/declaration/createdAt', '/edition/works/0', '/extensions/ar.example.x']) {
       expect(contextAt(doc, none), none).toBeUndefined();
     }
+  });
+
+  it('valuesAt visits in the order of the pattern tree, not in the order of the document', () => {
+    // En cada lugar, los patrones que terminan ahí; en una lista, los elementos por * y después los índices fijos;
+    // cada grupo en el orden en que aparece por primera vez en los patrones.
+    const doc = { a: [{ x: 1, y: 2 }, { x: 3, y: 4 }], b: 5 } as unknown as JsonValue;
+    const seen: string[] = [];
+    valuesAt(doc, ['/a/1/x', '/a/*/y', '/b', '/a/*/x'], (pointer, _value, _context, _container, pattern) => seen.push(`${pointer} ${pattern}`));
+    expect(seen).toEqual(['/a/0/y /a/*/y', '/a/0/x /a/*/x', '/a/1/y /a/*/y', '/a/1/x /a/*/x', '/a/1/x /a/1/x', '/b /b']);
   });
 });

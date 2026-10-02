@@ -270,6 +270,16 @@ describe('dirMediaResolver', () => {
     await expect(resolver.sha256('secreto.txt')).rejects.toThrow('no es un archivo regular de la entrega');
   });
 
+  it('a file named with : or \\ in the folder is never found by a path, and is listed with its name', async () => {
+    const dir = delivery({ 'a:b': 'dos puntos', 'c\\d': 'barra' });
+    const resolver = dirMediaResolver(dir);
+    // Un path con esos caracteres no se busca; el nombre con la barra se muestra con \x5C.
+    expect(await resolver.stat('a:b')).toBeNull();
+    expect(await resolver.stat('c\\d')).toBeNull();
+    await expect(resolver.sha256('a:b')).rejects.toThrow('no es un archivo regular de la entrega');
+    expect(await listed(resolver)).toEqual([['a:b', 'file'], ['c\\x5Cd', 'file']]);
+  });
+
   it('a file replaced by a link between stat and sha256 is never read: the folder changed', async () => {
     const outside = delivery({ 'secreto.txt': 'no' });
     const dir = delivery({ 'a.pdf': 'a' });

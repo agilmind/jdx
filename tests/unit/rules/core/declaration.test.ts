@@ -64,6 +64,13 @@ describe('DEC-002', () => {
     expect(brief(await declaration({ fileName: `${ID}.r1.JDX.json` }))).toEqual([['JDX-DEC-002', '', { fileName: `${ID}.r1.JDX.json`, expected: EXAMPLE_NAME }]]);
   });
 
+  it('a name with something before or after the expected one → DEC-002', async () => {
+    // Es el nombre entero, no uno que termina o empieza como el esperado.
+    for (const name of [`x${EXAMPLE_NAME}`, `copia-${EXAMPLE_NAME}`, `${EXAMPLE_NAME}.bak`]) {
+      expect(brief(await declaration({ fileName: name })), name).toEqual([['JDX-DEC-002', '', { fileName: name, expected: EXAMPLE_NAME }]]);
+    }
+  });
+
   it('directories in fileName are ignored', async () => {
     for (const fileName of [`entrega/sub/${EXAMPLE_NAME}`, `/data/in/${EXAMPLE_NAME}`, `C:\\entrega\\${EXAMPLE_NAME}`]) {
       expect(await declaration({ fileName }), fileName).toEqual([]);
@@ -96,6 +103,13 @@ describe('DEC-003 to DEC-005', () => {
     // Con el mismo y con otro, el otro cuenta: la revisión ya llegó con otro contenido.
     const both = withDeclaration({ receipts: [receipt(1, sha, 'rejected'), receipt(1, OTHER_SHA, 'rejected')] });
     expect(brief(await declaration({ state: both }))).toEqual([['JDX-DEC-003', '/declaration/revision', { revision: 1, sha256: OTHER_SHA }]]);
+  });
+
+  it('with several receipts of the revision with other content, DEC-003 carries the sha256 of the first of them', async () => {
+    const sha = (await makeRuleContext()).input.sha256;
+    const later = 'f'.repeat(64);
+    const state = withDeclaration({ receipts: [receipt(1, sha, 'rejected'), receipt(1, OTHER_SHA, 'rejected'), receipt(1, later, 'ingested')] });
+    expect(brief(await declaration({ state }))).toEqual([['JDX-DEC-003', '/declaration/revision', { revision: 1, sha256: OTHER_SHA }]]);
   });
 
   it('other owner → DEC-004', async () => {

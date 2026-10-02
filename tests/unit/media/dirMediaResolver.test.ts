@@ -9,7 +9,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { type BigIntStats, chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, type BigIntStats, chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -394,10 +394,10 @@ describe('dirMediaResolver', () => {
     const dir = delivery({ 'a': '1', 'b': '2', 'c': '3', 'sub/d': '4', 'sub/e': '5', 'sub/f': '6' });
     expect(MAX_FOLDER_ENTRIES).toBe(100_000);
     const atSeven = folderResolver(dir, {}, FOLDER_OPS, 7);
-    // Buscar paths y listar leen las mismas carpetas: se cuentan una vez.
+    // Listar dos veces y buscar paths leen las mismas carpetas: se cuentan una vez.
+    expect(await listed(atSeven)).toHaveLength(6);
+    expect(await listed(atSeven)).toHaveLength(6);
     expect(await atSeven.stat('sub/d')).toMatchObject({ type: 'file' });
-    expect(await listed(atSeven)).toHaveLength(6);
-    expect(await listed(atSeven)).toHaveLength(6);
     expect(await folderFailure(listed(folderResolver(dir, {}, FOLDER_OPS, 6)))).toEqual(['tooManyEntries', 'sub']);
     expect(await folderFailure(folderResolver(dir, {}, FOLDER_OPS, 3).stat('a'))).toEqual(['tooManyEntries', '']);
     // Lo que no se lee no cuenta: buscar un path de la raíz no lee sub.
@@ -473,12 +473,40 @@ describe('a folder that changes while it is read', () => {
       expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     });
 
-    it(`a file rewritten in place with another size after its lstat is a change of the folder (${mode})`, async () => {
+    it(`a file rewritten in place after its lstat, with another size or the same, is a change of the folder (${mode})`, async () => {
       const dir = delivery({ 'a.pdf': 'uno' });
       const resolver = folderResolver(dir, {}, base);
       expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 3 });
       writeFileSync(join(dir, 'a.pdf'), 'otro largo');
       expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+      // Con el mismo tamaño, la fecha lo dice.
+      const same = delivery({ 'a.pdf': 'uno' });
+      const again = folderResolver(same, {}, base);
+      expect(await again.stat('a.pdf')).toMatchObject({ type: 'file', size: 3 });
+      writeFileSync(join(same, 'a.pdf'), 'dos');
+      utimesSync(join(same, 'a.pdf'), new Date(), new Date(Date.now() + 60_000));
+      expect(await folderFailure(again.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+    });
+
+    it(`a file that grows while it is read is a change of the folder (${mode})`, async () => {
+      const dir = delivery({ 'a.pdf': 'uno' });
+      // Crece justo después del fstat que lo controla: lo que se lee ya no tiene el tamaño que se vio.
+      const growing: FolderOps = {
+        ...base,
+        open: async (path, flags) => {
+          const handle = await base.open(path, flags);
+          if (!named(path, 'a.pdf')) return handle;
+          const stat = handle.stat.bind(handle);
+          return Object.assign(handle, {
+            stat: async (opts: { bigint: true }) => {
+              const stats = await stat(opts);
+              appendFileSync(join(dir, 'a.pdf'), ' y algo más');
+              return stats;
+            },
+          });
+        },
+      };
+      expect(await folderFailure(folderResolver(dir, {}, growing).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     });
 
     it(`the file opened has to be the one seen: another dev and ino, or something that is not a file with the same ones (${mode})`, async () => {
@@ -510,6 +538,26 @@ describe('a folder that changes while it is read', () => {
       expect(await folderFailure(folderResolver(reused, {}, asFile).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     }, 10_000);
 
+    it(`a folder swapped for another folder while it is listed is a change (${mode})`, async () => {
+      const dir = delivery({ 'sub/a.pdf': 'a', 'otra/b.pdf': 'b' });
+      const swap = () => {
+        renameSync(join(dir, 'sub'), join(dir, 'subD'));
+        renameSync(join(dir, 'otra'), join(dir, 'sub'));
+      };
+      const resolver = folderResolver(dir, {}, once(base, 'lstat', 'sub', swap));
+      expect(await folderFailure(resolver.stat('sub/a.pdf'))).toEqual(['modified', 'sub']);
+    });
+
+    it(`an entry that is no longer what its folder listed is a change (${mode})`, async () => {
+      const dir = delivery({ 'a.pdf': 'a', 'b.pdf': 'b' });
+      const resolver = folderResolver(dir, {}, base);
+      expect(await resolver.stat('b.pdf')).toMatchObject({ type: 'file' });
+      // La carpeta ya se listó con a.pdf como archivo; ahora es un enlace.
+      rmSync(join(dir, 'a.pdf'));
+      symlinkSync('b.pdf', join(dir, 'a.pdf'));
+      expect(await folderFailure(resolver.stat('a.pdf'))).toEqual(['modified', 'a.pdf']);
+    });
+
     it(`a folder swapped for a link to another folder while it is listed is a change, and nothing of the other is listed (${mode})`, async () => {
       const outside = delivery({ 'solo-afuera.txt': 'x', 'a.pdf': 'afuera' });
       const dir = delivery({ 'sub/a.pdf': 'a' });
@@ -529,5 +577,18 @@ describe('a folder that changes while it is read', () => {
       expect(await folderFailure(stat.sha256('sub/a.pdf'))).toEqual(['modified', 'sub']);
     });
   }
+
+  it.skipIf(process.platform !== 'linux')('on Linux, a file renamed after it is opened is a change: its real path is not the one listed', async () => {
+    const dir = delivery({ 'a.pdf': 'a' });
+    const renaming: FolderOps = {
+      ...FOLDER_OPS,
+      open: async (path, flags) => {
+        const handle = await FOLDER_OPS.open(path, flags);
+        if (named(path, 'a.pdf')) renameSync(join(dir, 'a.pdf'), join(dir, 'movido.pdf'));
+        return handle;
+      },
+    };
+    expect(await folderFailure(folderResolver(dir, {}, renaming).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+  });
 });
 

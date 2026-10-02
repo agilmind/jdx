@@ -114,8 +114,6 @@ interface Entry {
   hash?: Promise<string>;
   /** En Linux, la carpeta abierta mientras alguien la usa. */
   opened?: { users: number; readonly handle: Promise<FileHandle> } | undefined;
-  /** Si sus entradas se están contando o ya se contaron (cada carpeta cuenta una vez). */
-  counted?: 'reading' | 'done';
 }
 
 /** Lo que se guarda del lstat de una entrada: su tipo, quién es y, de un archivo, su tamaño y su fecha. */
@@ -140,6 +138,8 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
 export function folderResolver(dir: string, opts: { ignore?: readonly string[] }, ops: FolderOps, maxEntries = MAX_FOLDER_ENTRIES): MediaResolver {
   const ignore = [...(opts.ignore ?? [])];
   let entriesRead = 0;
+  /** Las carpetas cuyas entradas ya se cuentan, por su ruta: cada una cuenta una vez, aunque se lea de nuevo. */
+  const counted = new Set<string>();
   const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir', path: '' };
   let anchor: Anchor = 'path';
 
@@ -276,13 +276,14 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
    * después de leerla: en Linux se leen de la carpeta abierta y controlada, y
    * las carpetas de adentro se identifican desde ella, sin volver a recorrer
    * su ruta; en macOS, de la carpeta por su id; si no, por su ruta, con el
-   * lstat antes y después. Cuenta cada entrada contra el tope, una vez por
-   * carpeta.
+   * lstat antes y después (quien las usa las junta todas antes: una carpeta
+   * que cambió falla después de la última). Cuenta cada entrada contra el
+   * tope, una vez por carpeta.
    */
   async function* readEntries(folder: Entry): AsyncGenerator<Entry> {
     const seen = await statsOf(folder);
-    const counts = folder.counted === undefined;
-    if (counts) folder.counted = 'reading';
+    const counts = !counted.has(pathOf(folder));
+    if (counts) counted.add(pathOf(folder));
     const lease = anchor === 'proc' ? await leaseFolder(folder) : null;
     try {
       // Una carpeta chica se lee de una vez; una grande, de a partes, así se deja de leer en el tope.
@@ -293,17 +294,14 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       } catch (error) {
         throw folderFailure(error, pathOf(folder), folder.parent !== null);
       }
-      // Por la ruta, lo leído puede ser de otra carpeta hasta que se controla: se da después.
-      const held: Entry[] = [];
+      const inner: Entry[] = [];
       try {
         for await (const d of dir) {
           if (counts && ++entriesRead > maxEntries) throw new MediaFolderError('tooManyEntries', pathOf(folder));
           const entry: Entry = { parent: folder, bytes: d.name, name: shownName(d.name), kind: d.isDirectory() ? 'dir' : typeOf(d) };
           if (lease !== null && entry.kind === 'dir') {
-            held.push(entry);
-            if (held.length >= AT_ONCE) yield* identified(held.splice(0), lease.at);
-          } else if (anchor === 'path') {
-            held.push(entry);
+            inner.push(entry);
+            if (inner.length >= AT_ONCE) yield* identified(inner.splice(0), lease.at);
           } else {
             yield entry;
           }
@@ -311,13 +309,11 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       } catch (error) {
         throw folderFailure(error, pathOf(folder), true);
       }
-      if (lease !== null) yield* identified(held, lease.at);
+      if (lease !== null) yield* identified(inner, lease.at);
       else {
         const after = await lstatNow(folder);
         if (after.kind !== 'dir' || !same(after, seen)) throw new MediaFolderError('modified', pathOf(folder));
-        yield* held;
       }
-      if (counts) folder.counted = 'done';
     } finally {
       await lease?.release();
     }
@@ -388,7 +384,8 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
   return {
     async *list() {
       // En profundidad, de a varias carpetas a la vez, sin guardar lo que ya dio: quedan pendientes solo las carpetas
-      // de adentro. Una carpeta que ya se listó para buscar paths no se vuelve a leer.
+      // de adentro. Cada carpeta se lee entera, y controlada, antes de dar sus entradas: lo que se leyó por la ruta de
+      // una carpeta que cambió no se da. Una carpeta que ya se listó para buscar paths no se vuelve a leer.
       const pending: Entry[] = [root];
       while (pending.length > 0) {
         const wave = pending.splice(Math.max(0, pending.length - FOLDERS_AT_ONCE));

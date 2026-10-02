@@ -202,6 +202,10 @@ describe('MED-003', () => {
     // En memoria, en cualquier sistema: el exacto es el declarado; la otra variante, si trae otros bytes, no.
     const document = docBuilder().set('/media/1/path', 'a.pdf');
     expect(await undeclared(memoryFolder({ 'a.pdf': { text: 'x' }, 'A.pdf': { text: 'y' } }), document)).toEqual(['A.pdf']);
+    // Con otro tamaño no se lee ninguno de los dos.
+    const sizes = memoryFolder({ 'a.pdf': { text: 'x' }, 'A.pdf': { text: 'yy' } });
+    expect(await undeclared(sizes, document)).toEqual(['A.pdf']);
+    expect(sizes.hashed).toEqual([]);
     // Con el mismo tamaño y otros bytes tampoco; con los mismos bytes es el mismo archivo y no trae nada distinto.
     expect(await undeclared(memoryFolder({ 'a.pdf': { text: 'x' }, 'A.pdf': { text: 'x' } }), document)).toEqual([]);
   });

@@ -321,8 +321,46 @@ describe('dirMediaResolver', () => {
     expect(shownName(b(0xf4, 0x90, 0x80, 0x80))).toBe('\\xF4\\x90\\x80\\x80');
     expect(shownName(b(0x61, 0xe2, 0x82))).toBe('a\\xE2\\x82');
     expect(shownName(b(0xe2, 0x82, 0xac, 0xf0, 0x9f, 0x8e, 0xb5))).toBe('€🎵');
-    // Dos nombres distintos nunca se muestran igual: de lo mostrado vuelven los bytes.
+    // Un U+FEFF al principio de un tramo es parte del nombre: no se pierde.
+    expect(shownName(b(0xef, 0xbb, 0xbf, 0x61))).toBe('\uFEFFa');
+    expect(shownName(b(0xef, 0xbb, 0xbf))).toBe('\uFEFF');
+    expect(shownName(b(0x5c, 0xef, 0xbb, 0xbf, 0x78))).toBe('\\x5C\uFEFFx');
+    expect(shownName(b(0xff, 0xef, 0xbb, 0xbf, 0x61))).toBe('\\xFF\uFEFFa');
+    // Dos nombres distintos nunca se muestran igual: de lo mostrado vuelven los bytes. Los tramos empiezan a menudo
+    // con lo que más se presta a confundir: un U+FEFF, una barra invertida o un byte que no es UTF-8.
+    const piece = fc.oneof(
+      fc.constant([0xef, 0xbb, 0xbf]), fc.constant([0x5c]), fc.constant([0x5c, 0x78, 0x46, 0x46]), fc.integer({ min: 0x80, max: 0xff }).map((x) => [x]),
+      fc.string({ unit: 'grapheme', maxLength: 3 }).map((text) => [...Buffer.from(text)]), fc.uint8Array({ maxLength: 4 }).map((bytes) => [...bytes]),
+    );
+    const names = fc.array(piece, { maxLength: 12 }).map((pieces) => Uint8Array.from(pieces.flat()));
+    fc.assert(fc.property(names, (bytes) => bytesOf(shownName(bytes)).equals(Buffer.from(bytes))), { numRuns: 4000 });
     fc.assert(fc.property(fc.uint8Array({ maxLength: 40 }), (bytes) => bytesOf(shownName(bytes)).equals(Buffer.from(bytes))), { numRuns: 2000 });
+  });
+
+  it('a name that starts with U+FEFF is its own name: it hides nothing and takes the place of nothing', async () => {
+    const BOM = '\uFEFF';
+    const dir = delivery({ 'a.pdf': 'el declarado', [`${BOM}a.pdf`]: 'otro', 'b.pdf': 'b', [`${BOM}/b.pdf`]: 'otro b' });
+    const resolver = dirMediaResolver(dir);
+    expect((await listed(resolver)).map(([path]) => path)).toEqual(['a.pdf', 'b.pdf', `${BOM}/b.pdf`, `${BOM}a.pdf`]);
+    expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: Buffer.byteLength('el declarado'), path: 'a.pdf' });
+    expect(await resolver.sha256('a.pdf')).toBe(sha('el declarado'));
+    // Una carpeta que se llama U+FEFF es una carpeta más: cuenta sus entradas para el tope.
+    const counted = delivery({ 'a': '1', [`${BOM}/1`]: '1', [`${BOM}/2`]: '2', [`${BOM}/3`]: '3' });
+    expect(await folderFailure(listed(folderResolver(counted, {}, FOLDER_OPS, 4)))).toEqual(['tooManyEntries', BOM]);
+    expect(await listed(folderResolver(counted, {}, FOLDER_OPS, 5))).toHaveLength(4);
+  });
+
+  it('a listing that gives a name twice is a change of the folder', async () => {
+    const dir = delivery({ 'sub/a.pdf': 'a', 'sub/b.pdf': 'b' });
+    const twice: FolderOps = {
+      ...FOLDER_OPS,
+      readdir: async (path) => {
+        const entries = await FOLDER_OPS.readdir(path);
+        const a = entries.find((e) => e.name.equals(Buffer.from('a.pdf')));
+        return a === undefined ? entries : [...entries, a];
+      },
+    };
+    expect(await folderFailure(listed(folderResolver(dir, {}, twice)))).toEqual(['modified', 'sub']);
   });
 
   it.skipIf(!INVALID_NAMES)('names that are not valid UTF-8 are listed with \\xHH, entered, and never confused', async () => {

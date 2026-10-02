@@ -10,8 +10,9 @@
  *   archivos y sin depender del idioma. Otra letra no se pliega.
  *
  * - shownName muestra el nombre de una entrada de la carpeta: el UTF-8 válido
- *   tal cual y cada byte que no lo es, y la barra invertida, como `\xHH`
- *   (hexadecimal en mayúsculas). Dos nombres distintos se muestran distinto, y
+ *   tal cual (también un U+FEFF al principio) y cada byte que no lo es, y la
+ *   barra invertida, como `\xHH` (hexadecimal en mayúsculas). De lo que
+ *   muestra vuelven los bytes: dos nombres distintos se muestran distinto, y
  *   uno con `\` nunca es un path válido: no se confunde con uno declarado.
  *
  * Las reglas de la carpeta de la entrega no buscan un path inválido: solo da
@@ -33,7 +34,8 @@ export function foldCase(path: string): string {
   return path.replace(/[A-Z]+/gu, (upper) => upper.toLowerCase());
 }
 
-const decoder = new TextDecoder('utf-8', { fatal: true });
+// ignoreBOM: un U+FEFF al principio de un tramo queda en el texto (sin esto, se pierde).
+const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 
 export function shownName(name: Uint8Array): string {
   let out = '';

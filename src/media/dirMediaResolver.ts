@@ -139,7 +139,7 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
 export function folderResolver(dir: string, opts: { ignore?: readonly string[] }, ops: FolderOps, maxEntries = MAX_FOLDER_ENTRIES): MediaResolver {
   const ignore = [...(opts.ignore ?? [])];
   let entriesRead = 0;
-  /** Las carpetas cuyas entradas ya se cuentan, por su ruta: cada una cuenta una vez, aunque se lea de nuevo. */
+  /** Las carpetas cuyas entradas ya se cuentan, por su dev e ino: cada una cuenta una vez, aunque se lea de nuevo. */
   const counted = new Set<string>();
   const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir', path: '' };
   let anchor: Anchor = 'path';
@@ -283,8 +283,9 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
    */
   async function* readEntries(folder: Entry): AsyncGenerator<Entry> {
     const seen = await statsOf(folder);
-    const counts = !counted.has(pathOf(folder));
-    if (counts) counted.add(pathOf(folder));
+    const key = `${seen.dev}:${seen.ino}`;
+    const counts = !counted.has(key);
+    if (counts) counted.add(key);
     const lease = anchor === 'proc' ? await leaseFolder(folder) : null;
     try {
       // Una carpeta chica se lee de una vez; una grande, de a partes, así se deja de leer en el tope.
@@ -296,10 +297,14 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
         throw folderFailure(error, pathOf(folder), folder.parent !== null);
       }
       const inner: Entry[] = [];
+      const names = new Set<string>();
       try {
         for await (const d of dir) {
           if (counts && ++entriesRead > maxEntries) throw new MediaFolderError('tooManyEntries', pathOf(folder));
           const entry: Entry = { parent: folder, bytes: d.name, name: shownName(d.name), kind: d.isDirectory() ? 'dir' : typeOf(d) };
+          // Un nombre que el listado da dos veces: la carpeta cambió mientras se leía.
+          if (names.has(entry.name)) throw new MediaFolderError('modified', pathOf(folder));
+          names.add(entry.name);
           if (lease !== null && entry.kind === 'dir') {
             inner.push(entry);
             if (inner.length >= AT_ONCE) yield* identified(inner.splice(0), lease.at);

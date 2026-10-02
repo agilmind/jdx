@@ -342,6 +342,12 @@ describe('MED-003', () => {
     expect(comparedAtFailure).toBe(true);
   });
 
+  it('a folder or a file whose name starts with U+FEFF is undeclared, and hides nothing', async () => {
+    const BOM = '\uFEFF';
+    const dir = folder(withExample({ [`${BOM}/${PATHS[0] as string}`]: 'un escaneo', [`${BOM}${PATHS[1] as string}`]: 'otro' }));
+    expect(await undeclared(dirMediaResolver(dir))).toEqual([`${BOM}/${PATHS[0] as string}`, `${BOM}${PATHS[1] as string}`]);
+  });
+
   it('previous deliveries count as declared', async () => {
     const dir = folder(withExample());
     const document = docBuilder().set('/declaration/revision', 3).set('/media/1/delivery', 1).set('/media/2/delivery', 2);

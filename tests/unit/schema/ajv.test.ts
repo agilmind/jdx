@@ -7,10 +7,45 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { files } from '../../../src/generated/data.js';
-import { createAjv, MAX_SCHEMA_ERROR_CHARS, MAX_SCHEMA_ERRORS, SCHEMA_ERROR_LIMIT, toSchemaErrors } from '../../../src/schema/ajv.js';
+import {
+  createAjv, cutErrors, MAX_SCHEMA_ERROR_CHARS, MAX_SCHEMA_ERRORS, SCHEMA_ERROR_LIMIT, SchemaErrorLimit, toSchemaErrors,
+} from '../../../src/schema/ajv.js';
 import { schemaBundle } from '../../../src/schema/bundle.js';
 import { compileSchemas } from '../../../src/schema/validators.js';
 import type { Catalog, JsonValue, SchemaBundle } from '../../../src/types.js';
+
+/** Los schemas empaquetados: abiertos, estrictos, auxiliares y los de cada regla del catálogo. */
+function bundledSchemas(): [string, unknown][] {
+  const bundle = schemaBundle(files);
+  const catalog = JSON.parse(files['catalog/1.0/rules.json'] as string) as Catalog;
+  return [
+    ...Object.entries(bundle.open).map(([minor, s]): [string, unknown] => [`open ${minor}`, s]),
+    ...Object.entries(bundle.strict).map(([minor, s]): [string, unknown] => [`strict ${minor}`, s]),
+    ...Object.entries(bundle.aux).map(([name, s]): [string, unknown] => [name, s]),
+    ...catalog.rules.flatMap((r): [string, unknown][] => [
+      [`${r.id} profileParamsSchema`, r.profileParamsSchema], [`${r.id} resultParamsSchema`, r.resultParamsSchema], [`${r.id} contextSchema`, r.contextSchema],
+    ]),
+  ];
+}
+
+const DISCARDED = new Set(['anyOf', 'oneOf', 'not', 'if']);
+const ITERATES = new Set(['items', 'prefixItems', 'additionalProperties', 'patternProperties', 'unevaluatedProperties', 'unevaluatedItems', 'propertyNames', 'contains', 'dependentSchemas', '$ref', '$dynamicRef']);
+
+/** Lo que recorre datos dentro de una palabra cuyos errores se descartan, y cada contains, en cualquier lugar. */
+function iterationProblems(schema: unknown, name: string): string[] {
+  const found: string[] = [];
+  const walk = (node: unknown, where: string, inside: boolean): void => {
+    if (Array.isArray(node)) node.forEach((child, i) => walk(child, `${where}/${i}`, inside));
+    else if (typeof node === 'object' && node !== null) {
+      for (const [key, child] of Object.entries(node)) {
+        if (key === 'contains' || (inside && ITERATES.has(key))) found.push(`${where}/${key}`);
+        walk(child, `${where}/${key}`, inside || DISCARDED.has(key));
+      }
+    }
+  };
+  walk(schema, name, false);
+  return found;
+}
 
 /** Valida con un Ajv nuevo y devuelve los errores ya mapeados. */
 function errorsOf(schema: object, value: JsonValue) {
@@ -301,33 +336,78 @@ describe('limits', () => {
     expect(validators.validateWith(schema, Array<boolean>(5000).fill(true)).length).toBeGreaterThan(0);
   });
 
-  it('every bundled schema keeps data iteration out of anyOf, oneOf, not, if and contains', () => {
+  it('every bundled schema keeps data iteration out of anyOf, oneOf, not and if, and uses no contains', () => {
     // Así, cuando una validación se corta, los errores que da no son de una rama que se iba a descartar.
-    const bundle = schemaBundle(files);
-    const catalog = JSON.parse(files['catalog/1.0/rules.json'] as string) as Catalog;
-    const schemas: [string, unknown][] = [
-      ...Object.entries(bundle.open).map(([minor, s]): [string, unknown] => [`open ${minor}`, s]),
-      ...Object.entries(bundle.strict).map(([minor, s]): [string, unknown] => [`strict ${minor}`, s]),
-      ...Object.entries(bundle.aux).map(([name, s]): [string, unknown] => [name, s]),
-      ...catalog.rules.flatMap((r): [string, unknown][] => [
-        [`${r.id} profileParamsSchema`, r.profileParamsSchema], [`${r.id} resultParamsSchema`, r.resultParamsSchema], [`${r.id} contextSchema`, r.contextSchema],
-      ]),
-    ];
-    const DISCARDED = new Set(['anyOf', 'oneOf', 'not', 'if', 'contains']);
-    const ITERATES = new Set(['items', 'prefixItems', 'additionalProperties', 'patternProperties', 'unevaluatedProperties', 'unevaluatedItems', 'propertyNames', 'contains', 'dependentSchemas', '$ref', '$dynamicRef']);
-    const found: string[] = [];
-    const walk = (node: unknown, where: string, inside: boolean): void => {
-      if (Array.isArray(node)) node.forEach((child, i) => walk(child, `${where}/${i}`, inside));
-      else if (typeof node === 'object' && node !== null) {
-        for (const [key, child] of Object.entries(node)) {
-          if (inside && ITERATES.has(key)) found.push(`${where}/${key}`);
-          walk(child, `${where}/${key}`, inside || DISCARDED.has(key));
-        }
-      }
-    };
-    for (const [name, schema] of schemas) walk(schema, name, false);
+    // contains junta un error por elemento que no cumple, aunque el valor sea válido: no se usa en ningún lado.
+    expect(iterationProblems({ type: 'array', contains: { type: 'string' } }, 'x')).toEqual(['x/contains']);
+    expect(iterationProblems({ type: 'array', anyOf: [{ type: 'array', items: { type: 'string' } }] }, 'x')).toEqual(['x/anyOf/0/items']);
+    expect(iterationProblems({ type: 'array', items: { anyOf: [{ type: 'string' }, { type: 'integer' }] } }, 'x')).toEqual([]);
+    const schemas = bundledSchemas();
     expect(schemas.length).toBeGreaterThan(200);
-    expect(found).toEqual([]);
+    expect(schemas.flatMap(([name, schema]) => iterationProblems(schema, name))).toEqual([]);
+  });
+
+  it('a cut throws a SchemaErrorLimit with the errors gathered, also from inline items and without all errors', () => {
+    const thrownBy = (run: () => unknown): unknown => {
+      try {
+        run();
+      } catch (thrown) {
+        return thrown;
+      }
+      return undefined;
+    };
+    // Elementos validados en la misma función (errors++) y con su propia función (la concatenación).
+    const inline = createAjv().compile({ type: 'array', items: { type: 'integer' } });
+    const called = createAjv().compile(items);
+    for (const thrown of [thrownBy(() => inline(Array<string>(200_000).fill('x'))), thrownBy(() => called({ items: Array<number>(200_000).fill(0) }))]) {
+      expect(thrown).toBeInstanceOf(SchemaErrorLimit);
+      expect(thrown).toBeInstanceOf(Error);
+      expect((thrown as SchemaErrorLimit).errors).toHaveLength(SCHEMA_ERROR_LIMIT + 1);
+      expect(cutErrors(thrown)).toBe((thrown as SchemaErrorLimit).errors);
+    }
+    // contains junta errores también en el validador que se detiene en el primero.
+    const first = createAjv({ allErrors: false }).compile({ type: 'array', contains: { type: 'string' } });
+    expect(thrownBy(() => first(Array<number>(5000).fill(1)))).toBeInstanceOf(SchemaErrorLimit);
+    expect(cutErrors({ jdxSchemaErrorLimit: [] })).toBeUndefined();
+  });
+
+  it('a cut in the validator that stops at the first error counts as not valid', () => {
+    const contains = { $id: 'https://example.com/contains.json', type: 'array', contains: { type: 'string' } };
+    const validators = compileSchemas({ minors: [], open: {}, strict: {}, index: {}, aux: { accounts: contains } });
+    const value = Array<number>(5000).fill(1);
+    const errors = validators.validateAux('accounts', value);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.length).toBeLessThanOrEqual(MAX_SCHEMA_ERRORS);
+    expect(validators.firstAuxError('accounts', value)).not.toBeNull();
+    expect(validators.validateWith(contains, value).length).toBeGreaterThan(0);
+    expect([validators.validateAux('accounts', [1, 'x']), validators.firstAuxError('accounts', [1, 'x'])]).toEqual([[], null]);
+  });
+
+  it('the error limit check follows every statement that adds errors in the bundled schemas', () => {
+    // Ajv 8 suma errores con dos sentencias: errors++ (uno propio) y errors = vErrors.length (los de una función que
+    // llamó). Las demás escrituras de errors lo inician o lo restauran. Si Ajv escribiera de otra forma, el corte no
+    // se agregaría: el test lo diría.
+    const ajv = createAjv();
+    const process = ajv.opts.code.process as (code: string) => string;
+    const counts = { increment: 0, concat: 0, restore: 0, start: 0, checks: 0 };
+    const other: string[] = [];
+    ajv.opts.code.process = (code: string) => {
+      for (const [write] of code.matchAll(/(?<![.\w$])errors\s*(?:\+\+|--|[-+*/]?=(?!=))[^;]*;/g)) {
+        if (write === 'errors++;') counts.increment++;
+        else if (write === 'errors = vErrors.length;') counts.concat++;
+        else if (/^errors = _errs\d+;$/.test(write)) counts.restore++;
+        else if (write === 'errors = 0;') counts.start++;
+        else other.push(write);
+      }
+      const out = process(code);
+      counts.checks += out.split(`if (errors > ${SCHEMA_ERROR_LIMIT}) throw `).length - 1;
+      return out;
+    };
+    for (const [, schema] of bundledSchemas()) ajv.compile(schema as object);
+    expect(other).toEqual([]);
+    expect(counts.increment).toBeGreaterThan(1000);
+    expect(counts.concat).toBeGreaterThan(100);
+    expect(counts.checks).toBe(counts.increment + counts.concat);
   });
 
   it('the error list stops at MAX_SCHEMA_ERROR_CHARS of instance locations and texts', () => {

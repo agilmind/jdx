@@ -13,7 +13,8 @@
  * Con un valor que junta más de SCHEMA_ERROR_LIMIT errores en un lugar, Ajv se
  * corta (src/schema/ajv.ts): los errores son los juntados hasta ahí, si el
  * validador que se detiene en el primer error confirma que el valor no cumple.
- * Si cumple, los errores eran de ramas que se descartan, y no hay ninguno.
+ * Si cumple, los errores eran de ramas que se descartan, y no hay ninguno. Un
+ * corte nunca sale de acá: ningún validador lanza por lo que dice el valor.
  *
  * defaultValidators es el de los datos empaquetados (src/generated/data.ts),
  * uno solo por proceso: lo usan las funciones públicas que no reciben deps.
@@ -60,7 +61,9 @@ type Check = (schema: object, value: JsonValue) => SchemaError[];
 /**
  * Valida con los schemas compilados por un Ajv, que se arma la primera vez y
  * compila cada schema una vez. `fails` dice, después de un corte, si el valor
- * no cumple.
+ * no cumple; sin `fails` (el validador que se detiene en el primer error), un
+ * corte cuenta como que no cumple. Eso solo pasa con errores que se descartan
+ * en cantidad, como los de contains, que ningún schema empaquetado usa.
  */
 function compiler(create: () => Ajv2020, fails?: (schema: object, value: JsonValue) => boolean): Check {
   let ajv: Ajv2020 | undefined;
@@ -76,8 +79,11 @@ function compiler(create: () => Ajv2020, fails?: (schema: object, value: JsonVal
       return validate(value) ? [] : toSchemaErrorsIn(schema, validate.errors);
     } catch (thrown) {
       const cut = cutErrors(thrown);
-      if (cut === undefined || fails === undefined) throw thrown;
-      return fails(schema, value) ? toSchemaErrorsIn(schema, cut) : [];
+      if (cut === undefined) throw thrown;
+      if (fails !== undefined && !fails(schema, value)) return [];
+      const errors = toSchemaErrorsIn(schema, cut);
+      // Si todos eran de los que se descartan, el primero que no es un `if` dice dónde.
+      return errors.length > 0 ? errors : toSchemaErrorsIn(schema, cut.filter((e) => e.keyword !== 'if').slice(0, 1));
     }
   };
 }

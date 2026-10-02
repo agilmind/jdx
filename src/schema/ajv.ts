@@ -25,8 +25,9 @@
  *   función que llama copiando la lista entera, así que el costo crece con el
  *   cuadrado de los errores: 40 000 elementos con error tardaban segundos, y
  *   100 000, un minuto. El código que arma Ajv se corta cuando una función junta
- *   más de SCHEMA_ERROR_LIMIT errores (cutErrors los recupera; compileSchemas
- *   confirma que el valor no cumple). Y una validación da a lo sumo
+ *   más de SCHEMA_ERROR_LIMIT errores: lanza un SchemaErrorLimit con los
+ *   juntados (cutErrors los recupera; compileSchemas confirma que el valor no
+ *   cumple). Y una validación da a lo sumo
  *   MAX_SCHEMA_ERRORS errores, y menos si sus lugares y los textos de sus
  *   params pasan de MAX_SCHEMA_ERROR_CHARS caracteres: una clave puede ser tan
  *   larga como el documento.
@@ -49,7 +50,15 @@ export const MAX_SCHEMA_ERRORS = 100;
  */
 export const MAX_SCHEMA_ERROR_CHARS = 1_000_000;
 
-/** La marca del corte: el código de Ajv lanza un objeto con los errores juntados en esta propiedad. */
+/** El corte de una validación: los errores que juntó la función de Ajv que pasó el tope. */
+export class SchemaErrorLimit extends Error {
+  constructor(readonly errors: readonly ErrorObject[]) {
+    super(`la validación juntó más de ${SCHEMA_ERROR_LIMIT} errores en una función`);
+    this.name = 'SchemaErrorLimit';
+  }
+}
+
+/** Lo que llama el código de Ajv para cortar: ese código recibe la instancia de Ajv como `self`. */
 const CUT = 'jdxSchemaErrorLimit';
 
 /**
@@ -58,14 +67,12 @@ const CUT = 'jdxSchemaErrorLimit';
  * siempre con esas dos sentencias.
  */
 function cutAtLimit(code: string): string {
-  return code.replace(/\berrors\+\+;|\berrors = vErrors\.length;/g, (sum) => `${sum}if (errors > ${SCHEMA_ERROR_LIMIT}) throw { ${CUT}: vErrors };`);
+  return code.replace(/\berrors\+\+;|\berrors = vErrors\.length;/g, (sum) => `${sum}if (errors > ${SCHEMA_ERROR_LIMIT}) throw self.${CUT}(vErrors);`);
 }
 
 /** Los errores juntados hasta el corte, si `thrown` es el corte de una validación; si no, undefined. */
 export function cutErrors(thrown: unknown): readonly ErrorObject[] | undefined {
-  if (typeof thrown !== 'object' || thrown === null || !Object.hasOwn(thrown, CUT)) return undefined;
-  const errors = (thrown as Record<string, unknown>)[CUT];
-  return Array.isArray(errors) ? (errors as ErrorObject[]) : undefined;
+  return thrown instanceof SchemaErrorLimit ? thrown.errors : undefined;
 }
 
 export function createAjv(opts: { allErrors?: boolean } = {}): Ajv2020 {
@@ -73,6 +80,7 @@ export function createAjv(opts: { allErrors?: boolean } = {}): Ajv2020 {
     strict: true, allErrors: opts.allErrors ?? true, verbose: true, allowUnionTypes: true, addUsedSchema: false,
     code: { process: cutAtLimit },
   });
+  Object.defineProperty(ajv, CUT, { value: (errors: ErrorObject[]) => new SchemaErrorLimit(errors) });
   ajv.addKeyword({
     keyword: 'x-jdx-ref',
     schemaType: 'string',

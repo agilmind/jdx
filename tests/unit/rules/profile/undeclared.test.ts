@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { dirMediaResolver } from '../../../../src/media/dirMediaResolver.js';
+import { MediaFolderError } from '../../../../src/media/errors.js';
 import { matchDeliveryGlob } from '../../../../src/media/glob.js';
 import { foldCase } from '../../../../src/media/path.js';
 import { MAX_RESULTS_PER_RULE } from '../../../../src/report/results.js';
@@ -21,6 +22,7 @@ import { type DocBuilder, docBuilder } from '../../../helpers/docBuilder.js';
 import { measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
 import { findingProblems, makeRuleContext, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 import { sadaicParams, sadaicProfile } from '../../../helpers/sadaicProfile.js';
+import { unhandledDuring } from '../../../helpers/unhandled.js';
 
 const PATHS = [
   '00034-001-CTTO_2-obras.pdf', 'Chacarera-del-Rancho.mp3', '00034-Ejemplar_Chacareras-del-Norte.pdf',
@@ -52,6 +54,7 @@ const caseSensitive = (dir: string): boolean => {
   return sensitive;
 };
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
 /** Los cinco archivos del ejemplo con estos textos, más los que se pidan. */
 const withExample = (more: Record<string, string> = {}): Record<string, string> => ({ ...Object.fromEntries(PATHS.map((p, i) => [p, `archivo ${i}`])), ...more });
@@ -285,6 +288,58 @@ describe('MED-003', () => {
     // Aunque un path declarado pase por ella: lo de adentro podría esconder archivos no declarados.
     const ctx = await makeRuleContext({ document: docBuilder().set('/media/2/path', 'cerrada/c.pdf'), options: { media: dirMediaResolver(dir) } });
     await expect(MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'))).rejects.toMatchObject({ name: 'MediaFolderError', reason: 'permission', path: 'cerrada' });
+  });
+
+  it('a comparison that fails while the folder is still listed is never left unhandled, and MED-003 fails with it', async () => {
+    // La variante A.pdf se compara mientras list() sigue: su sha256 falla antes de que llegue la entrada siguiente.
+    const document = docBuilder().set('/media/1/path', 'a.pdf');
+    const base = memoryFolder({ 'a.pdf': { text: 'x' }, 'A.pdf': { text: 'x' }, ...exampleEntries(1) });
+    const failing: MediaResolver = {
+      ...base,
+      async *list() {
+        for await (const entry of base.list()) {
+          yield entry;
+          await sleep(30);
+        }
+      },
+      async sha256(path) {
+        if (path !== 'A.pdf') return base.sha256(path);
+        await sleep(5);
+        throw new MediaFolderError('io', 'A.pdf');
+      },
+    };
+    const ctx = await makeRuleContext({ document, options: { media: failing } });
+    const { unhandled, outcome } = await unhandledDuring(async () => MED_003.evaluate(ctx, sadaicParams('JDX-MED-003')));
+    expect(unhandled).toEqual([]);
+    expect(outcome).toMatchObject({ error: { name: 'MediaFolderError', reason: 'io', path: 'A.pdf' } });
+  });
+
+  it('a folder that fails while a comparison runs fails MED-003 only after the comparison ends', async () => {
+    const document = docBuilder().set('/media/1/path', 'a.pdf');
+    const base = memoryFolder({ 'a.pdf': { text: 'x' }, 'A.pdf': { text: 'x' }, ...exampleEntries(1) });
+    let compared = false;
+    const broken: MediaResolver = {
+      ...base,
+      async *list() {
+        yield { path: 'A.pdf', type: 'file' };
+        await sleep(5);
+        throw new MediaFolderError('modified', '');
+      },
+      async sha256(path) {
+        if (path === 'A.pdf') {
+          await sleep(40);
+          compared = true;
+        }
+        return base.sha256(path);
+      },
+    };
+    const ctx = await makeRuleContext({ document, options: { media: broken } });
+    let comparedAtFailure: boolean | null = null;
+    await expect(Promise.resolve(MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'))).catch((error: unknown) => {
+      comparedAtFailure = compared;
+      throw error;
+    })).rejects.toMatchObject({ name: 'MediaFolderError', reason: 'modified' });
+    expect(comparedAtFailure).toBe(true);
   });
 
   it('previous deliveries count as declared', async () => {

@@ -97,6 +97,9 @@ function readsEverything(dir: string): boolean {
   return readable;
 }
 const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Si una ruta que da el resolver es la de ese nombre (por ruta, o la última parte de una anclada). */
+const named = (path: Buffer | string, name: string): boolean => path.toString().endsWith(`/${name}`);
 
 describe('dirMediaResolver', () => {
   it('list is recursive with / and does not follow symlinked dirs', async () => {
@@ -404,6 +407,44 @@ describe('dirMediaResolver', () => {
     expect(await folderResolver(dir, {}, FOLDER_OPS, 4).stat('a')).toMatchObject({ type: 'file' });
   });
 
+  it('a folder of a wave that fails is reported after the other reads of the wave end, also the lstat that identifies one', async () => {
+    const dir = delivery({ 'c0/a': '1', 'c1/a': '1', 'c2/a': '1', 'c3/a': '1' });
+    for (const op of ['readdir', 'lstat'] as const) {
+      let running = 0;
+      let calls = 0;
+      let failed = false;
+      let startedAfter = 0;
+      const slow: FolderOps = {
+        ...FOLDER_OPS,
+        [op]: async (path: Buffer) => {
+          // Una carpeta de adentro falla enseguida (la primera que se lee, o c1 al identificarla); las otras tardan.
+          const n = ++calls;
+          const fails = op === 'readdir' ? n === 2 : named(path, 'c1');
+          const slowly = op === 'readdir' ? n > 2 : ['c0', 'c2', 'c3'].some((c) => named(path, c));
+          running++;
+          if (failed) startedAfter++;
+          try {
+            if (fails) throw Object.assign(new Error('falla del disco'), { code: 'EIO' });
+            if (slowly) await sleep(30);
+            return await (FOLDER_OPS[op] as (p: Buffer) => Promise<unknown>)(path);
+          } finally {
+            running--;
+          }
+        },
+      };
+      let atFailure = -1;
+      const failure = await listed(folderResolver(dir, {}, slow)).then(() => null, (error: unknown) => {
+        atFailure = running;
+        failed = true;
+        return error;
+      });
+      await sleep(60);
+      // Cuando list() falla no queda nada corriendo, ni empieza nada después.
+      expect(failure, op).toMatchObject({ name: 'MediaFolderError', reason: 'io' });
+      expect([atFailure, startedAfter], op).toEqual([0, 0]);
+    }
+  });
+
   it('ignore hides matching files from list, not from stat or sha256', async () => {
     const dir = delivery({ 'a.pdf': 'a', 'x.tmp': 't', 'sub/x.tmp': 't', 'tmp/a': 'a', 'sub/tmp/a': 'a' });
     const resolver = dirMediaResolver(dir, { ignore: ['*.tmp', 'tmp/**'] });
@@ -428,8 +469,6 @@ describe('a folder that changes while it is read', () => {
     readlink: (path) => (path.startsWith('/proc/') ? Promise.reject(Object.assign(new Error('sin /proc'), { code: 'ENOENT' })) : FOLDER_OPS.readlink(path)),
   };
   const modes: [string, FolderOps][] = [['the anchored mode of this system', FOLDER_OPS], ['by path', byPath]];
-  /** Si una ruta que da el resolver es la de ese nombre (por ruta, o la última parte de una anclada). */
-  const named = (path: Buffer | string, name: string): boolean => path.toString().endsWith(`/${name}`);
   /** Las operaciones de base con `open` o `lstat` cambiados para la entrada `name`, una sola vez. */
   function once(base: FolderOps, op: 'open' | 'lstat', name: string, change: () => void): FolderOps {
     let done = false;

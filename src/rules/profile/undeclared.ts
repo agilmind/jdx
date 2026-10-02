@@ -23,6 +23,7 @@
  * memoria no crece con los archivos de la carpeta.
  */
 import { foldCase } from '../../media/path.js';
+import { settleAll } from '../../media/settle.js';
 import { firstFindings } from '../../report/results.js';
 import type { Finding, MediaResolver, Rule } from '../../types.js';
 import { locate } from '../core/mediaDir.js';
@@ -59,22 +60,33 @@ export const MED_003: Rule = {
 
     // De los no declarados se guardan solo los primeros en el orden del reporte; los demás se cuentan.
     const out = firstFindings();
+    // Las variantes se comparan de a varias mientras sigue la lista: cada falla queda tomada al empezar, y si algo
+    // falla, MED-003 falla después de que terminan las comparaciones que ya empezaron.
     const pending: Promise<void>[] = [];
-    const judge = async (entry: Entry): Promise<void> => {
-      if (!(await sameFileAs(resolver, entry, targets.get(foldCase(entry.path)) ?? []))) out.add(finding(entry));
+    const judge = (entry: Entry): void => {
+      const work = sameFileAs(resolver, entry, targets.get(foldCase(entry.path)) ?? []).then((same) => {
+        if (!same) out.add(finding(entry));
+      });
+      work.catch(() => undefined);
+      pending.push(work);
     };
-    for await (const entry of resolver.list()) {
-      if (declared.has(entry.path) || isArtifact(entry)) continue;
-      if (entry.type !== 'file') {
-        if (!stops.has(entry.path)) out.add(finding(entry));
-      } else if (targets.has(foldCase(entry.path))) {
-        pending.push(judge(entry));
-        if (pending.length >= AT_ONCE) await Promise.all(pending.splice(0));
-      } else {
-        out.add(finding(entry));
+    try {
+      for await (const entry of resolver.list()) {
+        if (declared.has(entry.path) || isArtifact(entry)) continue;
+        if (entry.type !== 'file') {
+          if (!stops.has(entry.path)) out.add(finding(entry));
+        } else if (targets.has(foldCase(entry.path))) {
+          judge(entry);
+          if (pending.length >= AT_ONCE) await settleAll(pending.splice(0));
+        } else {
+          out.add(finding(entry));
+        }
       }
+    } catch (error) {
+      await Promise.allSettled(pending);
+      throw error;
     }
-    await Promise.all(pending);
+    await settleAll(pending);
     return out.result();
   },
 };

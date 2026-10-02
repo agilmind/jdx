@@ -46,6 +46,7 @@ import { type FileHandle, lstat, open, opendir, readdir, readlink, realpath, sta
 import type { MediaResolver } from '../types.js';
 import { folderFailure, MediaFolderError } from './errors.js';
 import { matchDeliveryGlob } from './glob.js';
+import { settleAll } from './settle.js';
 import { foldCase, shownName } from './path.js';
 
 type EntryType = 'file' | 'symlink' | 'other';
@@ -321,7 +322,7 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
 
   /** Las carpetas de adentro, con su dev e ino mirados desde la carpeta abierta (Linux). */
   async function* identified(folders: readonly Entry[], at: Buffer): AsyncGenerator<Entry> {
-    await Promise.all(folders.map((e) => (e.stats ??= lstatOf(e, at))));
+    await settleAll(folders.map((e) => (e.stats ??= lstatOf(e, at))));
     yield* folders;
   }
 
@@ -389,7 +390,7 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       const pending: Entry[] = [root];
       while (pending.length > 0) {
         const wave = pending.splice(Math.max(0, pending.length - FOLDERS_AT_ONCE));
-        const read = await Promise.all(wave.map(async (folder) => (folder.listing === undefined ? collect(readEntries(folder)) : (await folder.listing).entries)));
+        const read = await settleAll(wave.map(async (folder) => (folder.listing === undefined ? collect(readEntries(folder)) : (await folder.listing).entries)));
         for (const entries of read) {
           for (const entry of entries) {
             // Una carpeta se recorre; un enlace nunca se sigue.

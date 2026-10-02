@@ -18,10 +18,12 @@
  *
  * Cada archivo se busca una vez por validación, aunque lo miren varias
  * reglas (locate, que usa también JDX-MED-003), y su sha256 se calcula solo
- * si hace falta.
+ * si hace falta. Se buscan de a varios; si uno falla, la regla falla después
+ * de que terminan los demás.
  */
 import type { Media } from '../../generated/jdx-types.js';
 import { foldCase, pathProblem } from '../../media/path.js';
+import { settleAll } from '../../media/settle.js';
 import type { Finding, MediaRecord, MediaResolver, Rule, RuleContext } from '../../types.js';
 
 /** Un archivo declarado que se busca en la carpeta, con lo que dio stat. */
@@ -60,7 +62,7 @@ async function locateAll(resolver: MediaResolver | null, wanted: readonly { inde
   const out: Located[] = [];
   for (let start = 0; start < wanted.length; start += AT_ONCE) {
     const batch = wanted.slice(start, start + AT_ONCE);
-    const stats = await Promise.all(batch.map(({ media }) => resolver.stat(media.path)));
+    const stats = await settleAll(batch.map(({ media }) => resolver.stat(media.path)));
     batch.forEach((item, k) => out.push({ ...item, found: stats[k] ?? null }));
   }
   return out;
@@ -80,7 +82,7 @@ export const MED_002: Rule = {
     const field: ('size' | 'sha256' | null)[] = [];
     for (let start = 0; start < compared.length; start += AT_ONCE) {
       const batch = compared.slice(start, start + AT_ONCE);
-      field.push(...(await Promise.all(batch.map(async ({ media, found }) => {
+      field.push(...(await settleAll(batch.map(async ({ media, found }) => {
         if (media.size !== undefined && found?.size !== media.size) return 'size' as const;
         return media.sha256 !== undefined && (await resolver.sha256(media.path)) !== media.sha256 ? ('sha256' as const) : null;
       }))));

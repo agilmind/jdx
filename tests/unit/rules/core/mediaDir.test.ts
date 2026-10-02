@@ -37,6 +37,7 @@ function folder(): string {
   return dir;
 }
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /** El texto del archivo de cada media del ejemplo. */
 const content = (i: number) => `contenido del archivo ${i + 1}`;
 
@@ -202,6 +203,34 @@ describe('MED-002, MED-007 and MED-008', () => {
     expect(failed).toMatchObject({ exitCode: 1, disposition: 'reject', checks: { media: 'failed', core: 'passed' } });
     // Sin carpeta, el bucket no corre.
     expect((await validateExample({ document })).checks.media).toBe('notEvaluated');
+  });
+
+  it('a lookup or a sha256 that fails is reported after the others of its batch end', async () => {
+    const { dir, document } = delivered();
+    const base = dirMediaResolver(dir);
+    let running = 0;
+    const slow = (op: 'stat' | 'sha256', failing: string): MediaResolver => ({
+      ...base,
+      [op]: async (path: string) => {
+        running++;
+        try {
+          if (path === failing) throw new MediaFolderError('io', path);
+          await sleep(30);
+          return await (base[op] as (p: string) => Promise<unknown>)(path);
+        } finally {
+          running--;
+        }
+      },
+    });
+    for (const [op, failing] of [['stat', PATHS[0]], ['sha256', PATHS[0]]] as const) {
+      const ctx = await makeRuleContext({ document, options: { media: slow(op, failing as string) } });
+      let atFailure = -1;
+      await expect(Promise.resolve(MED_002.evaluate(ctx, {})).catch((error: unknown) => {
+        atFailure = running;
+        throw error;
+      }), op).rejects.toMatchObject({ name: 'MediaFolderError', reason: 'io' });
+      expect(atFailure, op).toBe(0);
+    }
   });
 
   it('end to end: a folder that fails while the rules read it is an environment failure, and the rest is not evaluated', async () => {

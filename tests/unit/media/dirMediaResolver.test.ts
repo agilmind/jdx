@@ -445,6 +445,24 @@ describe('dirMediaResolver', () => {
     }
   });
 
+  it('too many open files is a folder failure of its own, wherever it happens', async () => {
+    const dir = delivery({ 'a.pdf': 'a', 'sub/b.pdf': 'b' });
+    const fail = (code: string) => Promise.reject(Object.assign(new Error('demasiados archivos abiertos'), { code }));
+    for (const code of ['EMFILE', 'ENFILE']) {
+      // Al abrir el archivo, al identificar una entrada y al leer una carpeta de adentro (la segunda que se lee).
+      let reads = 0;
+      const opening: FolderOps = { ...FOLDER_OPS, open: (path, flags) => (named(path, 'b.pdf') ? fail(code) : FOLDER_OPS.open(path, flags)) };
+      const looking: FolderOps = { ...FOLDER_OPS, lstat: (path) => (named(path, 'b.pdf') ? fail(code) : FOLDER_OPS.lstat(path)) };
+      const reading: FolderOps = { ...FOLDER_OPS, readdir: (path) => (++reads === 2 ? fail(code) : FOLDER_OPS.readdir(path)) };
+      expect(await folderFailure(folderResolver(dir, {}, opening).sha256('sub/b.pdf')), code).toEqual(['tooManyOpenFiles', 'sub/b.pdf']);
+      expect(await folderFailure(folderResolver(dir, {}, looking).stat('sub/b.pdf')), code).toEqual(['tooManyOpenFiles', 'sub/b.pdf']);
+      expect(await folderFailure(folderResolver(dir, {}, reading).stat('sub/b.pdf')), code).toEqual(['tooManyOpenFiles', 'sub']);
+    }
+    // Otra falla del disco sigue siendo io.
+    const broken: FolderOps = { ...FOLDER_OPS, open: (path, flags) => (named(path, 'b.pdf') ? fail('EIO') : FOLDER_OPS.open(path, flags)) };
+    expect(await folderFailure(folderResolver(dir, {}, broken).sha256('sub/b.pdf'))).toEqual(['io', 'sub/b.pdf']);
+  });
+
   it('ignore hides matching files from list, not from stat or sha256', async () => {
     const dir = delivery({ 'a.pdf': 'a', 'x.tmp': 't', 'sub/x.tmp': 't', 'tmp/a': 'a', 'sub/tmp/a': 'a' });
     const resolver = dirMediaResolver(dir, { ignore: ['*.tmp', 'tmp/**'] });

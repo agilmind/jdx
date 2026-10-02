@@ -243,6 +243,11 @@
         "pt": ": tem mais de 100 000 entradas",
         "en": ": it has more than 100,000 entries"
       },
+      "tooManyOpenFiles": {
+        "es": ": hay demasiados archivos abiertos",
+        "pt": ": há arquivos abertos demais",
+        "en": ": too many files are open"
+      },
       "modified": {
         "es": ": cambió mientras se leía",
         "pt": ": mudou durante a leitura",

@@ -53,7 +53,7 @@ npm test
 
 ## Estado
 
-En desarrollo. Los schemas, las listas de valores y la referencia de campos están disponibles; el validador de referencia completo (perfiles, firma y reporte) está en construcción. La primera implementación está en curso con una SGC de Argentina.
+En desarrollo. Los schemas, las listas de valores y la referencia de campos están disponibles; el validador de referencia completo (perfiles, firma y reporte) está en construcción.
 
 ## Licencia
 

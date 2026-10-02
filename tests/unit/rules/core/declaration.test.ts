@@ -9,7 +9,7 @@ import { RULES } from '../../../../src/rules/registry.js';
 import { emptyState } from '../../../../src/state/fileStateStore.js';
 import type { DeclarationState, Finding, JsonValue, Receipt, State, StateStore } from '../../../../src/types.js';
 import { docBuilder, EXAMPLE_NAME } from '../../../helpers/docBuilder.js';
-import { measured } from '../../../helpers/flood.js';
+import { measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
 import { findingProblems, makeRuleContext, type RuleContextOverrides, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 
 const ID = '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13';
@@ -75,7 +75,7 @@ describe('DEC-002', () => {
   it('end to end: the example named .r7. reports DEC-002', async () => {
     const report = await validateExample({ fileName: `${ID}.r7.jdx.json` });
     expect(reportErrors(report)).toEqual([]);
-    expect(report.results.map((r) => [r.ruleId, r.level, r.source, r.instanceLocation, r.message])).toEqual([
+    expect(resultsOf(report, 'JDX-DEC-002', 'JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005').map((r) => [r.ruleId, r.level, r.source, r.instanceLocation, r.message])).toEqual([
       ['JDX-DEC-002', 'error', 'core', '', `El archivo se llama ${ID}.r7.jdx.json; por su contenido debería llamarse ${EXAMPLE_NAME}.`],
     ]);
     expect(report).toMatchObject({ exitCode: 1, disposition: 'reject', checks: { core: 'failed' } });
@@ -129,14 +129,14 @@ describe('DEC-003 to DEC-005', () => {
   it('end to end: with state, an old revision is ignored and other content is rejected', async () => {
     const ignored = await validateExample({ options: { state: memoryState(withDeclaration({ owner: 'jupiter', lastIngestedRevision: 1 })) } });
     expect(reportErrors(ignored)).toEqual([]);
-    expect(ignored.results.map((r) => [r.ruleId, r.level, r.message])).toEqual([
+    expect(resultsOf(ignored, 'JDX-DEC-002', 'JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005').map((r) => [r.ruleId, r.level, r.message])).toEqual([
       ['JDX-DEC-005', 'info', 'La revisión 1 no es posterior a la 1, ya cargada: se ignora.'],
     ]);
     expect(ignored).toMatchObject({ exitCode: 0, disposition: 'ignore', checks: { core: 'passed' } });
     const rejected = await validateExample({
       options: { state: memoryState(withDeclaration({ owner: 'otro-emisor', receipts: [receipt(1, OTHER_SHA, 'rejected')] })) },
     });
-    expect(rejected.results.map((r) => [r.ruleId, r.instanceLocation])).toEqual([['JDX-DEC-003', '/declaration/revision'], ['JDX-DEC-004', '/declaration/issuer/id']]);
+    expect(resultsOf(rejected, 'JDX-DEC-002', 'JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005').map((r) => [r.ruleId, r.instanceLocation])).toEqual([['JDX-DEC-003', '/declaration/revision'], ['JDX-DEC-004', '/declaration/issuer/id']]);
     expect(rejected).toMatchObject({ exitCode: 1, disposition: 'reject', checks: { core: 'failed' } });
   });
 });
@@ -150,7 +150,7 @@ describe('hostile input through validateWithDeps', () => {
     const fileName = `${'a\\'.repeat(1_048_576)}${ID}.r7.jdx.json`;
     const { report, readBack, ms } = await measured({ fileName });
     expect(reportErrors(report)).toEqual([]);
-    expect(report.results.map((r) => [r.ruleId, r.params])).toEqual([['JDX-DEC-002', { fileName: `${ID}.r7.jdx.json`, expected: EXAMPLE_NAME }]]);
+    expect(resultsOf(report, 'JDX-DEC-002', 'JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005').map((r) => [r.ruleId, r.params])).toEqual([['JDX-DEC-002', { fileName: `${ID}.r7.jdx.json`, expected: EXAMPLE_NAME }]]);
     expect(readBack).toBe(true);
     expect(ms).toBeLessThan(5_000);
   });
@@ -162,8 +162,8 @@ describe('hostile input through validateWithDeps', () => {
     const state: State = { ...emptyState('sandbox'), declarations: { ...others, [ID]: { owner: 'otro-emisor', lastIngestedRevision: 7, receipts, media: [] } } };
     const { report, ms } = await measured({ options: { state: memoryState(state) } });
     expect(reportErrors(report)).toEqual([]);
-    expect(report.results.map((r) => r.ruleId)).toEqual(['JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005']);
-    expect(report.omitted).toEqual([]);
+    expect(resultsOf(report, 'JDX-DEC-002', 'JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005').map((r) => r.ruleId)).toEqual(['JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005']);
+    expect(omittedOf(report, 'JDX-DEC-002', 'JDX-DEC-003', 'JDX-DEC-004', 'JDX-DEC-005')).toEqual([]);
     expect(ms).toBeLessThan(5_000);
   });
 });

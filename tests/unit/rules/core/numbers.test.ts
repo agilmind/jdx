@@ -9,7 +9,7 @@ import { NUM_001, NUM_002 } from '../../../../src/rules/core/numbers.js';
 import { RULES } from '../../../../src/rules/registry.js';
 import type { Finding, JsonValue } from '../../../../src/types.js';
 import { type DocBuilder, docBuilder } from '../../../helpers/docBuilder.js';
-import { type Doc, flood, measured } from '../../../helpers/flood.js';
+import { type Doc, flood, measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
 import { findingProblems, makeRuleContext, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 
 /** Los hallazgos de las dos reglas sobre una variante, controlados contra el catálogo. */
@@ -77,7 +77,7 @@ describe('NUM-001', () => {
   it('end to end: the example with a 5-decimal percent reports NUM-001', async () => {
     const report = await validateExample({ document: docBuilder().setRaw('/works/0/shares/0/percent', '12.50001') });
     expect(reportErrors(report)).toEqual([]);
-    expect(report.results).toEqual([{
+    expect(resultsOf(report, 'JDX-NUM-001', 'JDX-NUM-002')).toEqual([{
       ruleId: 'JDX-NUM-001', level: 'error', source: 'core', instanceLocation: '/works/0/shares/0/percent', context: { work: 'w1' },
       message: 'El porcentaje 12.50001 no está bien escrito: hasta 4 decimales, sin exponente ni -0.', params: { text: '12.50001' },
     }]);
@@ -129,7 +129,7 @@ describe('NUM-002', () => {
   it('end to end: an impossible date is an error in core', async () => {
     const report = await validateExample({ document: docBuilder().set('/works/1/creationDate', '2026-02-30') });
     expect(reportErrors(report)).toEqual([]);
-    expect(report.results.map((r) => [r.ruleId, r.level, r.source, r.instanceLocation, r.context, r.message])).toEqual([
+    expect(resultsOf(report, 'JDX-NUM-001', 'JDX-NUM-002').map((r) => [r.ruleId, r.level, r.source, r.instanceLocation, r.context, r.message])).toEqual([
       ['JDX-NUM-002', 'error', 'core', '/works/1/creationDate', { work: 'w2' }, 'La fecha 2026-02-30 no existe en el calendario.'],
     ]);
     expect(report).toMatchObject({ exitCode: 1, checks: { core: 'failed' } });
@@ -147,11 +147,11 @@ describe('hostile input through validateWithDeps', () => {
     }, '{"party":"p1","part":"music","percent":-0}');
     const { report, chars, readBack, ms } = await measured({ document: text });
     expect(reportErrors(report)).toEqual([]);
-    expect(report.results.map((r) => [r.ruleId, r.instanceLocation])).toEqual(
+    expect(resultsOf(report, 'JDX-NUM-001').map((r) => [r.ruleId, r.instanceLocation])).toEqual(
       Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => ['JDX-NUM-001', `/works/0/authorship/${i}/percent`]),
     );
-    expect(report.omitted).toEqual([{ ruleId: 'JDX-NUM-001', count: count - MAX_RESULTS_PER_RULE }]);
-    expect(report).toMatchObject({ exitCode: 1, summary: { error: count, warning: 0, info: 0 }, checks: { core: 'failed' } });
+    expect(omittedOf(report, 'JDX-NUM-001')).toEqual([{ ruleId: 'JDX-NUM-001', count: count - MAX_RESULTS_PER_RULE }]);
+    expect(report).toMatchObject({ exitCode: 1, summary: { error: count }, checks: { core: 'failed' } });
     expect(count).toBeGreaterThan(45_000);
     expect([chars < 100_000, readBack]).toEqual([true, true]);
     expect(ms).toBeLessThan(5_000);
@@ -163,11 +163,11 @@ describe('hostile input through validateWithDeps', () => {
     }, '{"society":"061","startDate":"2026-02-30"}');
     const { report, chars, readBack, ms } = await measured({ document: text });
     expect(reportErrors(report)).toEqual([]);
-    expect(report.results.map((r) => [r.ruleId, r.instanceLocation, r.context])).toEqual(
+    expect(resultsOf(report, 'JDX-NUM-002').map((r) => [r.ruleId, r.instanceLocation, r.context])).toEqual(
       Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => ['JDX-NUM-002', `/parties/0/affiliations/${i}/startDate`, { party: 'p1' }]),
     );
-    expect(report.omitted).toEqual([{ ruleId: 'JDX-NUM-002', count: count - MAX_RESULTS_PER_RULE }]);
-    expect(report).toMatchObject({ exitCode: 1, summary: { error: count, warning: 0, info: 0 } });
+    expect(omittedOf(report, 'JDX-NUM-002')).toEqual([{ ruleId: 'JDX-NUM-002', count: count - MAX_RESULTS_PER_RULE }]);
+    expect(report).toMatchObject({ exitCode: 1, summary: { error: count } });
     expect(count).toBeGreaterThan(45_000);
     expect([chars < 100_000, readBack]).toEqual([true, true]);
     expect(ms).toBeLessThan(5_000);
@@ -181,7 +181,7 @@ describe('hostile input through validateWithDeps', () => {
     }, '1');
     const { report, ms } = await measured({ document: text });
     expect(reportErrors(report)).toEqual([]);
-    expect([report.exitCode, report.results]).toEqual([0, []]);
+    expect([report.exitCode, resultsOf(report, 'JDX-NUM-001', 'JDX-NUM-002')]).toEqual([0, []]);
     expect(ms).toBeLessThan(5_000);
   });
 });

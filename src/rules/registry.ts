@@ -10,6 +10,7 @@
  */
 import type { Rule, RuleId } from '../types.js';
 import { DEC_002, DEC_003, DEC_004, DEC_005 } from './core/declaration.js';
+import { MED_001, MED_004, MED_009 } from './core/media.js';
 import { NUM_001, NUM_002 } from './core/numbers.js';
 
 /** Un registro: cada regla por su código, en el orden de la lista. Lanza con un código repetido. */
@@ -22,4 +23,4 @@ export function ruleMap(rules: readonly Rule[]): ReadonlyMap<RuleId, Rule> {
   return map;
 }
 
-export const RULES: ReadonlyMap<RuleId, Rule> = ruleMap([NUM_001, NUM_002, DEC_002, DEC_003, DEC_004, DEC_005]);
+export const RULES: ReadonlyMap<RuleId, Rule> = ruleMap([NUM_001, NUM_002, DEC_002, DEC_003, DEC_004, DEC_005, MED_001, MED_004, MED_009]);

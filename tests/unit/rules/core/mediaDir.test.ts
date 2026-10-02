@@ -297,6 +297,30 @@ describe('MED-002, MED-007 and MED-008', () => {
     expect(unreadable.exitCode).toBe(2);
   });
 
+  it('end to end: validation closes the folder once, whether it passes, fails in the environment step or while the rules run', async () => {
+    const { dir, document } = delivered();
+    const base = dirMediaResolver(dir);
+    for (const fail of ['none', 'check', 'rules'] as const) {
+      let closes = 0;
+      const media: MediaResolver = {
+        ...base,
+        check: async (opts) => {
+          if (fail === 'check') throw new MediaFolderError('missingDir', '');
+          return base.check?.(opts);
+        },
+        sha256: async (path) => {
+          if (fail === 'rules') throw new MediaFolderError('modified', path);
+          return base.sha256(path);
+        },
+        close: async () => {
+          closes++;
+        },
+      };
+      const report = await validateExample({ document, options: { media } });
+      expect([report.exitCode, closes], fail).toEqual([fail === 'none' ? 0 : 2, 1]);
+    }
+  });
+
   it('end to end: what the folder leaves open is closed before the report comes back, also when it fails', async () => {
     const { dir, document } = delivered();
     for (const fail of [false, true]) {

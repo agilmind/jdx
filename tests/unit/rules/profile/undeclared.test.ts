@@ -20,7 +20,7 @@ import { RULES } from '../../../../src/rules/registry.js';
 import type { Finding, JsonValue, MediaResolver, Profile } from '../../../../src/types.js';
 import { type DocBuilder, docBuilder } from '../../../helpers/docBuilder.js';
 import { measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
-import { findingProblems, makeRuleContext, testDeps, validateExample } from '../../../helpers/ruleContext.js';
+import { findingProblems, findingsOf, makeRuleContext, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 import { sadaicParams, sadaicProfile } from '../../../helpers/sadaicProfile.js';
 import { unhandledDuring } from '../../../helpers/unhandled.js';
 
@@ -340,6 +340,32 @@ describe('MED-003', () => {
     const { unhandled, outcome } = await unhandledDuring(async () => MED_003.evaluate(ctx, sadaicParams('JDX-MED-003')));
     expect(unhandled).toEqual([]);
     expect(outcome).toMatchObject({ error: { name: 'MediaFolderError', reason: 'io', path: 'A.pdf' } });
+  });
+
+  it('case variants are compared several at a time, while the folder is still listed', async () => {
+    const document = docBuilder().set('/media/1/path', 'a0.pdf');
+    const entries: Record<string, Entry> = { ...exampleEntries(1) };
+    const doc = JSON.parse(document.text) as { media: JsonValue[] };
+    for (let i = 0; i < 40; i++) {
+      entries[`a${i}.pdf`] = { text: 'x' };
+      entries[`A${i}.pdf`] = { text: 'x' };
+      doc.media.push({ id: `v${i}`, kind: 'audio', path: `a${i}.pdf`, delivery: 1 });
+    }
+    const base = memoryFolder(entries);
+    let running = 0;
+    let most = 0;
+    const slow: MediaResolver = {
+      ...base,
+      async sha256(path) {
+        most = Math.max(most, ++running);
+        await sleep(2);
+        running--;
+        return base.sha256(path);
+      },
+    };
+    const ctx = await makeRuleContext({ document: JSON.stringify(doc), options: { media: slow } });
+    expect(findingsOf(await MED_003.evaluate(ctx, sadaicParams('JDX-MED-003')))).toEqual([]);
+    expect(most).toBeGreaterThan(1);
   });
 
   it('a folder that fails while a comparison runs fails MED-003 only after the comparison ends', async () => {

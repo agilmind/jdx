@@ -832,6 +832,35 @@ describe('dirMediaResolver', () => {
     expect(used.filter((path) => path.startsWith(anchor)).length).toBeGreaterThan(8);
   });
 
+  it('with nothing running, the folders left open are closed on the next turn, without close', async () => {
+    const dir = delivery({ 'a.pdf': 'a', 'sub/b.pdf': 'b', 'sub/c/d.pdf': 'd' });
+    const tracking = trackedOps(FOLDER_OPS);
+    const resolver = folderResolver(dir, {}, tracking.ops);
+    await resolver.check?.();
+    expect(await listed(resolver)).toHaveLength(3);
+    expect(await resolver.sha256('sub/c/d.pdf')).toBe(sha('d'));
+    for (let turn = 0; turn < 3; turn++) await new Promise((resolve) => setImmediate(resolve));
+    expect(tracking.open()).toBe(0);
+    // Y se pueden volver a abrir.
+    expect(await resolver.sha256('sub/b.pdf')).toBe(sha('b'));
+  });
+
+  it('by path, the root is controlled by its real path: another folder there is a change', async () => {
+    const dir = delivery({ 'a.pdf': 'a' });
+    const real = realpathSync(dir);
+    const moved: FolderOps = { ...BY_PATH, lstat: async (path) => (path.toString() === real ? onAnotherDevice(await BY_PATH.lstat(path)) : BY_PATH.lstat(path)) };
+    expect(await folderFailure(folderResolver(dir, {}, moved).check?.({ privateCopy: true }) as Promise<unknown>)).toEqual(['modified', '']);
+  });
+
+  it('a folder counts once toward the limit by what it is, also when it shows up with another name in another list', async () => {
+    // Seis entradas: a, b, c y sub, y d y e en sub; con el tope en seis, listar dos veces no lo pasa aunque sub cambie de nombre.
+    const dir = delivery({ 'a': '1', 'b': '2', 'c': '3', 'sub/d': '4', 'sub/e': '5' });
+    const resolver = folderResolver(dir, {}, FOLDER_OPS, 6);
+    expect(await listed(resolver)).toHaveLength(5);
+    renameSync(join(dir, 'sub'), join(dir, 'otro'));
+    expect((await listed(resolver)).map(([path]) => path)).toEqual(['a', 'b', 'c', 'otro/d', 'otro/e']);
+  });
+
   it('a big folder is read in parts, and reading stops at the limit', async () => {
     const dir = delivery();
     for (let i = 0; lstatSync(dir).size <= 64 * 1024 && i < 50_000; i += 100) {

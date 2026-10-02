@@ -16,8 +16,9 @@
  *   razón (y, bloqueado, desde cuándo; ilegible, por qué); un estado de otro
  *   entorno, JDX-ENV-005 `env`. Un estado nunca escrito no tiene entorno y pasa: lo fija la
  *   primera escritura.
- * - La carpeta de la entrega, si hay y su resolver la controla (check): una
- *   que no se puede usar da JDX-ENV-011 con su causa y el lugar.
+ * - La carpeta de la entrega, si hay y su resolver la controla (check, con
+ *   privateCopy): una que no se puede usar da JDX-ENV-011 con su causa y el
+ *   lugar. Lo que check dice de cómo va a buscar va al reporte (dirLookup).
  * - Solo si hay .jws, la lista de confianza: sin lista, JDX-ENV-001 `missing`;
  *   con lista, verifyTrustList con el reloj del validador y el maxSeq del
  *   estado, si el estado es del mismo entorno (el de otro entorno ya dio
@@ -25,8 +26,9 @@
  *
  * Las opciones del reporte salen siempre: el entorno o null, el id corto del
  * perfil resuelto (o el pedido, si no resolvió), la firma efectiva, `failOn` y
- * `lang` (o sus defaults si no sirven), `receivedAt` o null, y si hay carpeta
- * de la entrega. Una falla del estado que no es un StateError, o de la
+ * `lang` (o sus defaults si no sirven), `receivedAt` o null, si hay carpeta
+ * de la entrega y cómo se busca en ella (o null). `privateCopy`, si viene, es
+ * un booleano (JDX-ENV-010 `--private-copy`). Una falla del estado que no es un StateError, o de la
  * carpeta que no es un MediaFolderError, no es del entorno: se deja pasar, y
  * validate la devuelve como JDX-INT-001.
  */
@@ -42,6 +44,7 @@ import type {
   Finding,
   JsonValue,
   Lang,
+  MediaLookup,
   Report,
   ResolvedProfile,
   SignaturePolicy,
@@ -82,6 +85,7 @@ export async function evaluateEnvironment(input: ValidateInput, opts: ValidateOp
   const lang = oneOf(opts.lang, LANGS);
   if (opts.lang !== undefined && lang === null) option('--lang', 'invalid');
   if (opts.account !== undefined && !isAccount(opts.account)) option('--account', 'invalid');
+  if (opts.privateCopy !== undefined && typeof opts.privateCopy !== 'boolean') option('--private-copy', 'invalid');
 
   // El perfil y su catálogo.
   let profile: ResolvedProfile | null = null;
@@ -113,10 +117,11 @@ export async function evaluateEnvironment(input: ValidateInput, opts: ValidateOp
     }
   }
 
-  // La carpeta de la entrega.
+  // La carpeta de la entrega, y cómo se va a buscar en ella.
+  let dirLookup: MediaLookup | null = null;
   if (opts.media?.check !== undefined) {
     try {
-      await opts.media.check();
+      dirLookup = (await opts.media.check({ privateCopy: opts.privateCopy === true })) ?? null;
     } catch (error) {
       if (!(error instanceof MediaFolderError)) throw error;
       findings.push(folderFinding(error));
@@ -145,6 +150,7 @@ export async function evaluateEnvironment(input: ValidateInput, opts: ValidateOp
     failOn: failOn ?? 'error',
     receivedAt: receivedAt === null ? null : receivedAt.text,
     dir: opts.media !== undefined,
+    dirLookup,
     lang: lang ?? 'es',
   };
   if (findings.length > 0 || env === null || profile === null || receivedAt === null || signature === null) {

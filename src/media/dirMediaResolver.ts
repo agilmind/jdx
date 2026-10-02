@@ -94,7 +94,7 @@ export const FOLDER_OPS: FolderOps = Object.freeze({
   readlink: (path: string) => readlink(path, { encoding: 'buffer' }),
 });
 
-/** Cómo se llega a una entrada desde la carpeta que la listó: por su id (macOS), por la carpeta abierta (Linux) o por la ruta. */
+/** Cómo se llega a una entrada desde la carpeta que la listó: por su id (macOS), por la carpeta abierta (Linux) o por la ruta (una copia privada). */
 type Anchor = 'vol' | 'proc' | 'path';
 
 /**
@@ -106,7 +106,8 @@ interface Entry {
   readonly parent: Entry | null;
   readonly bytes: Buffer;
   readonly name: string;
-  readonly kind: Kind;
+  /** El del listado; una carpeta de otro dispositivo que la suya (un punto de montaje) pasa a other al mirarla. */
+  kind: Kind;
   /** La ruta desde la raíz ('' es la raíz) y la del sistema, armadas una vez. */
   path?: string;
   real?: Buffer;
@@ -143,8 +144,14 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
   const counted = new Set<string>();
   const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir', path: '' };
   let anchor: Anchor = 'path';
+  /** El receptor dijo que la carpeta es una copia privada (check): sin anclaje, se busca por la ruta. */
+  let privateCopy = false;
 
-  /** La raíz: tiene que existir y ser una carpeta (se sigue si es un enlace: la eligió quien llama). */
+  /**
+   * La raíz: tiene que existir y ser una carpeta (se sigue si es un enlace: la eligió quien llama). Si el sistema la
+   * deja anclar, se identifica por el anclaje; si no, sin copia privada no se usa (unanchored). Cualquier falla al
+   * identificarla es una falla de la carpeta, nunca la búsqueda por la ruta.
+   */
   const rooted = async (): Promise<Seen> => {
     const given = Buffer.from(dir);
     let stats: BigIntStats;
@@ -155,31 +162,64 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
     } catch (error) {
       throw folderFailure(error, '', false);
     }
-    anchor = await anchorOf(root.real, stats);
-    return seenOf(stats);
+    const seen = seenOf(stats);
+    const system = await anchorOf(seen);
+    if (system === null && !privateCopy) throw new MediaFolderError('unanchored', '');
+    anchor = system ?? 'path';
+    try {
+      if (anchor === 'vol') {
+        const byId = await ops.lstat(volPath(seen));
+        if (!byId.isDirectory() || !same(byId, seen)) throw new MediaFolderError('modified', '');
+      } else if (anchor === 'proc') {
+        await (await openRoot(seen)).close();
+      } else {
+        const now = await ops.lstat(root.real);
+        if (!now.isDirectory() || !same(now, seen)) throw new MediaFolderError('modified', '');
+      }
+    } catch (error) {
+      throw folderFailure(error, '', true);
+    }
+    return seen;
   };
 
-  /** Si se puede llegar a las entradas desde su carpeta ya identificada. */
-  async function anchorOf(real: Buffer, stats: BigIntStats): Promise<Anchor> {
-    if (process.platform === 'darwin') {
-      try {
-        const byId = await ops.lstat(volPath(stats));
-        if (byId.isDirectory() && byId.dev === stats.dev && byId.ino === stats.ino) return 'vol';
-      } catch {
-        // Un volumen sin /.vol: por la ruta.
+  /**
+   * Cómo deja el sistema llegar a cada entrada desde su carpeta ya identificada, o null. Lo deciden el proceso y el
+   * volumen, nunca la carpeta: en macOS, la raíz del volumen por su id (/.vol/<dev>/2; un volumen exFAT, FAT, SMB o
+   * NFS no la da); en Linux, / abierta y vista por /proc/self/fd/N. Demasiados archivos abiertos es esa falla.
+   */
+  async function anchorOf(seen: Seen): Promise<Anchor | null> {
+    try {
+      if (process.platform === 'darwin') {
+        const volume = await ops.lstat(Buffer.from(`/.vol/${seen.dev}/2`));
+        return volume.isDirectory() && volume.dev === seen.dev && volume.ino === 2n ? 'vol' : null;
       }
-    } else if (process.platform === 'linux' && constants.O_DIRECTORY !== undefined) {
-      let handle: FileHandle | undefined;
-      try {
-        handle = await ops.open(real, FOLDER_FLAGS);
-        if ((await ops.readlink(`/proc/self/fd/${handle.fd}`)).equals(real)) return 'proc';
-      } catch {
-        // Sin /proc: por la ruta.
-      } finally {
-        await handle?.close();
+      if (process.platform === 'linux' && constants.O_DIRECTORY !== undefined) {
+        const handle = await ops.open(SLASH, FOLDER_FLAGS);
+        try {
+          return (await ops.readlink(procPath(handle.fd))).equals(SLASH) ? 'proc' : null;
+        } finally {
+          await handle.close();
+        }
       }
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'EMFILE' || code === 'ENFILE') throw folderFailure(error, '', true);
     }
-    return 'path';
+    return null;
+  }
+
+  /** La raíz abierta (Linux): la que se vio (dev e ino) y en su ruta real (/proc/self/fd/N). */
+  async function openRoot(seen: Seen): Promise<FileHandle> {
+    const real = root.real as Buffer;
+    const handle = await ops.open(real, FOLDER_FLAGS);
+    try {
+      const opened = await handle.stat({ bigint: true });
+      if (!opened.isDirectory() || !same(opened, seen) || !(await ops.readlink(procPath(handle.fd))).equals(real)) throw new MediaFolderError('modified', '');
+      return handle;
+    } catch (error) {
+      await handle.close();
+      throw error;
+    }
   }
 
   /** Las entradas de una carpeta, leídas una vez. */
@@ -188,13 +228,17 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
   /** El lstat de una entrada, una vez, desde su carpeta; tiene que ser del tipo que dio su listado. La raíz, al empezar. */
   const statsOf = (entry: Entry): Promise<Seen> => (entry.stats ??= entry === root ? rooted() : lstatOf(entry));
 
-  /** El lstat de una entrada ahora, desde la carpeta que la listó, del tipo que dio su listado. */
+  /**
+   * El lstat de una entrada ahora, desde la carpeta que la listó, del tipo que dio su listado. Una carpeta de otro
+   * dispositivo que la suya (un punto de montaje) es otra entrada (other): no se entra.
+   */
   async function lstatOf(entry: Entry, at?: Buffer): Promise<Seen> {
     const parent = entry.parent as Entry;
+    const folder = await statsOf(parent);
     let stats: BigIntStats;
     try {
       if (at !== undefined) stats = await ops.lstat(Buffer.concat([at, SLASH, entry.bytes]));
-      else if (anchor === 'vol') stats = await ops.lstat(Buffer.concat([volPath(await statsOf(parent)), SLASH, entry.bytes]));
+      else if (anchor === 'vol') stats = await ops.lstat(Buffer.concat([volPath(folder), SLASH, entry.bytes]));
       else if (anchor === 'proc') stats = await withFolder(parent, (open) => ops.lstat(Buffer.concat([open, SLASH, entry.bytes])));
       else stats = await ops.lstat(realOf(entry));
     } catch (error) {
@@ -203,6 +247,10 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       throw folderFailure(error, code === 'EACCES' || code === 'EPERM' ? pathOf(parent) : pathOf(entry), true);
     }
     if (kindOf(stats) !== entry.kind) throw new MediaFolderError('modified', pathOf(entry));
+    if (entry.kind === 'dir' && stats.dev !== folder.dev) {
+      entry.kind = 'other';
+      return { ...seenOf(stats), kind: 'other' };
+    }
     return seenOf(stats);
   }
 
@@ -242,7 +290,7 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       }
     };
     try {
-      return { at: Buffer.from(`/proc/self/fd/${(await shared.handle).fd}`), release };
+      return { at: Buffer.from(procPath((await shared.handle).fd)), release };
     } catch (error) {
       await release();
       throw error;
@@ -253,9 +301,9 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
     const seen = await statsOf(folder);
     let handle: FileHandle;
     try {
-      handle = await ops.open(realOf(folder), FOLDER_FLAGS);
+      handle = folder.parent === null ? await openRoot(seen) : await ops.open(realOf(folder), FOLDER_FLAGS);
     } catch (error) {
-      throw folderFailure(error, pathOf(folder), folder.parent !== null);
+      throw folderFailure(error, pathOf(folder), true);
     }
     try {
       const opened = await handle.stat({ bigint: true });
@@ -274,12 +322,12 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
 
   /**
    * Las entradas de una carpeta, de a una, que tiene que ser la misma antes y
-   * después de leerla: en Linux se leen de la carpeta abierta y controlada, y
-   * las carpetas de adentro se identifican desde ella, sin volver a recorrer
-   * su ruta; en macOS, de la carpeta por su id; si no, por su ruta, con el
-   * lstat antes y después (quien las usa las junta todas antes: una carpeta
-   * que cambió falla después de la última). Cuenta cada entrada contra el
-   * tope, una vez por carpeta.
+   * después de leerla: en Linux se leen de la carpeta abierta y controlada; en
+   * macOS, de la carpeta por su id, con el lstat antes y después; por la ruta
+   * (una copia privada), igual (quien las usa las junta todas antes: una
+   * carpeta que cambió falla después de la última). Las carpetas de adentro se
+   * identifican desde ella antes de darlas: una de otro dispositivo sale como
+   * other. Cuenta cada entrada contra el tope, una vez por carpeta.
    */
   async function* readEntries(folder: Entry): AsyncGenerator<Entry> {
     const seen = await statsOf(folder);
@@ -305,9 +353,9 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
           // Un nombre que el listado da dos veces: la carpeta cambió mientras se leía.
           if (names.has(entry.name)) throw new MediaFolderError('modified', pathOf(folder));
           names.add(entry.name);
-          if (lease !== null && entry.kind === 'dir') {
+          if (entry.kind === 'dir') {
             inner.push(entry);
-            if (inner.length >= AT_ONCE) yield* identified(inner.splice(0), lease.at);
+            if (inner.length >= AT_ONCE) yield* identified(inner.splice(0), lease?.at);
           } else {
             yield entry;
           }
@@ -315,8 +363,8 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       } catch (error) {
         throw folderFailure(error, pathOf(folder), true);
       }
-      if (lease !== null) yield* identified(inner, lease.at);
-      else {
+      yield* identified(inner, lease?.at);
+      if (lease === null) {
         const after = await lstatNow(folder);
         if (after.kind !== 'dir' || !same(after, seen)) throw new MediaFolderError('modified', pathOf(folder));
       }
@@ -325,8 +373,8 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
     }
   }
 
-  /** Las carpetas de adentro, con su dev e ino mirados desde la carpeta abierta (Linux). */
-  async function* identified(folders: readonly Entry[], at: Buffer): AsyncGenerator<Entry> {
+  /** Las carpetas de adentro, con su dev e ino mirados desde la carpeta (en Linux, la abierta). */
+  async function* identified(folders: readonly Entry[], at: Buffer | undefined): AsyncGenerator<Entry> {
     await settleAll(folders.map((e) => (e.stats ??= lstatOf(e, at))));
     yield* folders;
   }
@@ -350,7 +398,7 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
     try {
       const opened = await handle.stat({ bigint: true });
       if (!opened.isFile() || !same(opened, seen) || opened.size !== seen.size || opened.mtimeNs !== seen.mtimeNs) throw new MediaFolderError('modified', pathOf(entry));
-      if (anchor === 'proc' && !(await ops.readlink(`/proc/self/fd/${handle.fd}`)).equals(realOf(entry))) throw new MediaFolderError('modified', pathOf(entry));
+      if (anchor === 'proc' && !(await ops.readlink(procPath(handle.fd))).equals(realOf(entry))) throw new MediaFolderError('modified', pathOf(entry));
       const hash = createHash('sha256');
       const buffer = Buffer.allocUnsafe(CHUNK_BYTES);
       let read = 0n;
@@ -419,8 +467,10 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       return (entry.hash ??= hashFile(entry));
     },
 
-    async check() {
+    async check(opts = {}) {
+      privateCopy = opts.privateCopy === true;
       await listingOf(root);
+      return anchor === 'path' ? 'path' : 'anchored';
     },
   };
 
@@ -485,6 +535,11 @@ function realOf(entry: Entry): Buffer {
 /** La carpeta por su id en macOS. */
 function volPath(stats: { dev: bigint; ino: bigint }): Buffer {
   return Buffer.from(`/.vol/${stats.dev}/${stats.ino}`);
+}
+
+/** Lo que tiene abierto el proceso en ese descriptor (Linux). */
+function procPath(fd: number): string {
+  return `/proc/self/fd/${fd}`;
 }
 
 function same(a: { dev: bigint; ino: bigint }, b: { dev: bigint; ino: bigint }): boolean {

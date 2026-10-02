@@ -181,7 +181,7 @@ export interface Report {
   validator: { name: 'jdx'; version: string; catalog: string };
   options: {
     env: Env | null; profile: string | null; signature: SignaturePolicy | null; failOn: FailOn;
-    receivedAt: string | null; dir: boolean; lang: Lang;
+    receivedAt: string | null; dir: boolean; dirLookup: MediaLookup | null; lang: Lang;
   };
   document: ReportDocument;
   appliedProfiles: string[];                               // `${uri}@${version}`
@@ -289,13 +289,18 @@ export interface StateStore {
 
 // ───────────── Carpeta de la entrega ─────────────
 
+/** Cómo se busca en la carpeta: cada entrada desde su carpeta ya identificada, o por su ruta (solo en una copia privada). */
+export type MediaLookup = 'anchored' | 'path';
 export interface MediaResolver {
   list(): AsyncIterable<{ path: string; type: 'file' | 'symlink' | 'other' }>;
   /** Dónde termina un path: el tipo, el tamaño y, si lo sabe, la entrada donde terminó (la ruta como la da list). */
   stat(path: string): Promise<{ type: 'file' | 'symlink' | 'other'; size: number; path?: string } | null>;
   sha256(path: string): Promise<string>;
-  /** La raíz de la carpeta, en el paso de entorno: lanza un MediaFolderError si no se puede usar. */
-  check?(): Promise<void>;
+  /**
+   * La raíz de la carpeta, en el paso de entorno, antes que lo demás: lanza un MediaFolderError si no se puede usar y,
+   * si lo sabe, dice cómo va a buscar. privateCopy: el receptor dice que es una copia privada que nada más escribe.
+   */
+  check?(opts?: { privateCopy?: boolean }): Promise<MediaLookup | void>;
 }
 
 // ───────────── Lista de confianza (schema/trust-list.schema.json) ─────────────
@@ -419,6 +424,7 @@ export interface ValidateOptions {
   trustList?: Uint8Array;
   state?: StateStore;
   media?: MediaResolver;
+  privateCopy?: boolean;                                    // la carpeta de media es una copia privada: se puede buscar por la ruta
   receivedAt: string;
   failOn?: FailOn;
   account?: Account;

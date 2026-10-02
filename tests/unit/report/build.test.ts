@@ -52,7 +52,7 @@ const MED007: Finding = { ruleId: 'JDX-MED-007', instanceLocation: '/media/1/pat
 function parts(findings: Finding[], more: Partial<ReportParts> = {}): ReportParts {
   return {
     validator: { name: 'jdx', version: VERSION, catalog: '1.0' },
-    options: { env: 'production', profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: '2026-09-30T09:12:00-03:00', dir: true, lang: 'es' },
+    options: { env: 'production', profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: '2026-09-30T09:12:00-03:00', dir: true, dirLookup: 'anchored', lang: 'es' },
     document: DOCUMENT,
     appliedProfiles: [profile.applied],
     outcome: 'completed',
@@ -179,7 +179,7 @@ describe('reporte', () => {
 
   it('media is notEvaluated when not in evaluated (no --dir)', () => {
     const noDir = new Set<CheckName>([...ALL].filter((name) => name !== 'media'));
-    const report = build(parts([AGR003], { evaluated: noDir, options: { ...parts([]).options, dir: false } }));
+    const report = build(parts([AGR003], { evaluated: noDir, options: { ...parts([]).options, dir: false, dirLookup: null } }));
     expect(report.checks).toMatchObject({ media: 'notEvaluated', profile: 'warning', signature: 'verified' });
   });
 

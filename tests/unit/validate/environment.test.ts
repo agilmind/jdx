@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadCatalog } from '../../../src/catalog/load.js';
-import { dirMediaResolver } from '../../../src/media/dirMediaResolver.js';
+import { dirMediaResolver, FOLDER_OPS, type FolderOps, folderResolver } from '../../../src/media/dirMediaResolver.js';
 import { MEDIA_FOLDER_CAUSES, MediaFolderError } from '../../../src/media/errors.js';
 import { files } from '../../../src/generated/data.js';
 import { VERSION } from '../../../src/generated/version.js';
@@ -126,6 +126,29 @@ describe('entorno', () => {
     expect(await failed(sandbox({ media: folder(new MediaFolderError('io', '')) }))).toEqual([['JDX-ENV-011', { cause: 'io', path: '' }]]);
     // Otra excepción de check no es del entorno: el paso la deja pasar.
     await expect(run(sandbox({ media: folder(new Error('roto')) }))).rejects.toThrow('roto');
+  });
+
+  it('how the folder was looked up reaches the report: anchored, by path only for a private copy, null without a folder', async () => {
+    const dir = stateDir();
+    writeFileSync(join(dir, 'a.pdf'), 'a');
+    const anchored = process.platform === 'darwin' || process.platform === 'linux';
+    if (anchored) {
+      expect((await passed(sandbox({ media: dirMediaResolver(dir) }))).reportOptions.dirLookup).toBe('anchored');
+      expect((await passed(sandbox({ media: dirMediaResolver(dir), privateCopy: true }))).reportOptions.dirLookup).toBe('anchored');
+    }
+    // Sin /.vol ni /proc: la carpeta no se puede usar, salvo que el receptor diga que es una copia privada.
+    const unanchored: FolderOps = {
+      ...FOLDER_OPS,
+      lstat: (path) => (path.toString().startsWith('/.vol/') ? Promise.reject(Object.assign(new Error('sin /.vol'), { code: 'ENOENT' })) : FOLDER_OPS.lstat(path)),
+      readlink: (path) => (path.startsWith('/proc/') ? Promise.reject(Object.assign(new Error('sin /proc'), { code: 'ENOENT' })) : FOLDER_OPS.readlink(path)),
+    };
+    expect(await failed(sandbox({ media: folderResolver(dir, {}, unanchored) }))).toEqual([['JDX-ENV-011', { cause: 'unanchored', path: '' }]]);
+    expect((await passed(sandbox({ media: folderResolver(dir, {}, unanchored), privateCopy: true }))).reportOptions.dirLookup).toBe('path');
+    // Sin carpeta, o con un resolver propio que no lo dice: null. La opción tiene que ser un booleano.
+    expect((await passed(sandbox({ privateCopy: true }))).reportOptions.dirLookup).toBeNull();
+    const plain: MediaResolver = { list: async function* () {}, stat: async () => null, sha256: async () => '', check: async () => undefined };
+    expect((await passed(sandbox({ media: plain }))).reportOptions).toMatchObject({ dir: true, dirLookup: null });
+    expect(await failed(sandbox({ privateCopy: 'sí' as never }))).toEqual([env010('--private-copy', 'invalid')]);
   });
 
   it('missing env → ENV-010', async () => {
@@ -316,12 +339,12 @@ describe('entorno', () => {
     // Las opciones del reporte: las efectivas, con dir según haya carpeta.
     const ok = await passed(production({ failOn: 'warning', lang: 'pt', media: { list: async function* () {}, stat: async () => null, sha256: async () => '' } }));
     expect(ok.reportOptions).toEqual({
-      env: 'production', profile: 'sadaic/0.1', signature: 'required', failOn: 'warning', receivedAt: RECEIVED, dir: true, lang: 'pt',
+      env: 'production', profile: 'sadaic/0.1', signature: 'required', failOn: 'warning', receivedAt: RECEIVED, dir: true, dirLookup: null, lang: 'pt',
     });
     expect(ok.options).toMatchObject({ env: 'production', profileShortId: 'sadaic/0.1', failOn: 'warning', lang: 'pt', dir: true });
     expect(ok.profile.applied).toBe('https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0');
     expect((await passed(sandbox())).reportOptions).toEqual({
-      env: 'sandbox', profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: RECEIVED, dir: false, lang: 'es',
+      env: 'sandbox', profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: RECEIVED, dir: false, dirLookup: null, lang: 'es',
     });
   });
 
@@ -331,7 +354,7 @@ describe('entorno', () => {
     expect(outcome.reportOptions.receivedAt).toBeNull();
     // Y lo mismo con otras opciones que no sirven: env null, failOn y lang por defecto.
     const bad = await run({ profile: 'sadaic/0.1', env: 'staging' as never, receivedAt: 'x', failOn: 'never' as never, lang: 'fr' as never });
-    expect(bad.reportOptions).toEqual({ env: null, profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: null, dir: false, lang: 'es' });
+    expect(bad.reportOptions).toEqual({ env: null, profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: null, dir: false, dirLookup: null, lang: 'es' });
     expect(validators.validateWith(REPORT_OPTIONS_SCHEMA, bad.reportOptions as unknown as JsonValue)).toEqual([]);
   });
 });

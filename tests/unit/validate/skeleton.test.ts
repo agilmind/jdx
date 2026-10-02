@@ -69,7 +69,7 @@ describe('validateWithDeps', () => {
     expect(report).toMatchObject({
       jdxReport: '1.0', valid: true, disposition: 'ingest', exitCode: 0,
       validator: { name: 'jdx', version: deps.validatorVersion, catalog: '1.0' },
-      options: { env: 'sandbox', profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: RECEIVED_AT, dir: false, lang: 'es' },
+      options: { env: 'sandbox', profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: RECEIVED_AT, dir: false, dirLookup: null, lang: 'es' },
       appliedProfiles: ['https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0'],
       checks: { environment: 'passed', json: 'passed', schema: 'passed', core: 'passed', profile: 'passed', policy: 'passed', media: 'notEvaluated', signature: 'absent' },
       signature: { status: 'absent', kid: null, issuer: null, env: null, reason: null },

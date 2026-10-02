@@ -253,6 +253,11 @@
         "pt": ": mudou durante a leitura",
         "en": ": it changed while it was being read"
       },
+      "unanchored": {
+        "es": ": no se puede anclar y no se dijo que es una copia privada",
+        "pt": ": não pode ser ancorada e não se disse que é uma cópia privada",
+        "en": ": it cannot be anchored and it was not stated to be a private copy"
+      },
       "unknownProfile": {
         "es": "el validador no incluye {profile}",
         "pt": "o validador não inclui {profile}",

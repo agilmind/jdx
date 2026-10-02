@@ -9,7 +9,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { appendFileSync, type BigIntStats, chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { appendFileSync, type BigIntStats, chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -97,6 +97,16 @@ function readsEverything(dir: string): boolean {
   return readable;
 }
 const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
+/** Las de node:fs sin las rutas ancladas del sistema (ni /.vol ni /proc): todo por la ruta de cada entrada. */
+const BY_PATH: FolderOps = {
+  ...FOLDER_OPS,
+  lstat: (path) => (path.toString().startsWith('/.vol/') ? Promise.reject(Object.assign(new Error('sin rutas por id'), { code: 'ENOENT' })) : FOLDER_OPS.lstat(path)),
+  readlink: (path) => (path.startsWith('/proc/') ? Promise.reject(Object.assign(new Error('sin /proc'), { code: 'ENOENT' })) : FOLDER_OPS.readlink(path)),
+};
+/** Si este sistema ancla la carpeta (macOS con /.vol en el volumen de las carpetas temporales, Linux con /proc). */
+const ANCHORED = process.platform === 'darwin' || process.platform === 'linux';
+/** Los stats con otro dev, como los de un punto de montaje. */
+const onAnotherDevice = (stats: BigIntStats): BigIntStats => Object.assign(Object.create(Object.getPrototypeOf(stats) as object) as BigIntStats, stats, { dev: stats.dev + 1n });
 /** Un archivo regular que se puede leer justo debajo de / (en un contenedor, /.dockerenv), o null. */
 const ROOT_FILE = readdirSync('/').find((name) => {
   try {
@@ -389,7 +399,7 @@ describe('dirMediaResolver', () => {
 
   it('check refuses a root that is missing, is not a folder or cannot be read', async () => {
     const dir = delivery({ 'a.pdf': 'a' });
-    await expect(dirMediaResolver(dir).check?.()).resolves.toBeUndefined();
+    expect(await dirMediaResolver(dir).check?.()).toBe('anchored');
     expect(await folderFailure(dirMediaResolver(join(dir, 'no-existe')).check?.() as Promise<void>)).toEqual(['missingDir', '']);
     expect(await folderFailure(dirMediaResolver(join(dir, 'a.pdf', 'x')).check?.() as Promise<void>)).toEqual(['missingDir', '']);
     expect(await folderFailure(dirMediaResolver(join(dir, 'a.pdf')).check?.() as Promise<void>)).toEqual(['notDirectory', '']);
@@ -521,13 +531,78 @@ describe('dirMediaResolver', () => {
       open: (path, flags) => (used.push(path.toString()), FOLDER_OPS.open(path, flags)),
     };
     const name = readdirSync('/').find((n) => lstatSync(`/${n}`).isDirectory()) as string;
-    expect(await folderResolver('/', {}, spy).stat(name)).toMatchObject({ type: 'other', path: name });
+    const resolver = folderResolver('/', {}, spy);
+    await resolver.check?.({ privateCopy: true });
+    expect(await resolver.stat(name)).toMatchObject({ type: 'other', path: name });
     expect(used.filter((path) => path.startsWith('//'))).toEqual([]);
   });
 
   it.skipIf(ROOT_FILE === null)('a file right below / is read whole: its real path is /name', async () => {
     const name = ROOT_FILE as string;
     expect(await dirMediaResolver('/').sha256(name)).toBe(sha(readFileSync(`/${name}`)));
+  });
+
+  it.skipIf(!ANCHORED)('a failure while the root is anchored is a folder failure, never a lookup by path', async () => {
+    const dir = delivery({ 'sub/a.pdf': 'a' });
+    const real = realpathSync(dir);
+    const seen = lstatSync(real, { bigint: true });
+    const byId = `/.vol/${seen.dev}/${seen.ino}`;
+    const reject = (code: string) => Promise.reject(Object.assign(new Error('falla al anclar la raíz'), { code }));
+    // En macOS, la raíz por su id falla; en Linux, la raíz abierta está en otro lugar (se movió) o no se puede abrir.
+    const anchoring = (code: string | null): FolderOps => ({
+      ...FOLDER_OPS,
+      lstat: (path) => (path.toString() === byId ? reject(code ?? 'ENOENT') : FOLDER_OPS.lstat(path)),
+      open: (path, flags) => (code !== null && path.toString() === real ? reject(code) : FOLDER_OPS.open(path, flags)),
+      readlink: async (path) => {
+        const link = await FOLDER_OPS.readlink(path);
+        return link.equals(Buffer.from(real)) ? Buffer.from(`${real}-movida`) : link;
+      },
+    });
+    const byPathBelowRoot: string[] = [];
+    const watched = (ops: FolderOps): FolderOps => ({
+      ...ops,
+      readdir: (path) => (path.toString().startsWith(`${real}/`) && byPathBelowRoot.push(path.toString()), ops.readdir(path)),
+      lstat: (path) => (path.toString().startsWith(`${real}/`) && byPathBelowRoot.push(path.toString()), ops.lstat(path)),
+    });
+    const moved = folderResolver(dir, {}, watched(anchoring(null)));
+    expect(await folderFailure(moved.check?.() as Promise<unknown>)).toEqual(['modified', '']);
+    expect(await folderFailure(moved.stat('sub/a.pdf'))).toEqual(['modified', '']);
+    expect(await folderFailure(folderResolver(dir, {}, anchoring('EMFILE')).check?.() as Promise<unknown>)).toEqual(['tooManyOpenFiles', '']);
+    expect(await folderFailure(folderResolver(dir, {}, anchoring('EACCES')).check?.() as Promise<unknown>)).toEqual(['permission', '']);
+    expect(byPathBelowRoot).toEqual([]);
+  });
+
+  it('without anchoring (no /.vol on the volume, no /proc) the folder is unanchored, unless the receiver says it is a private copy', async () => {
+    const dir = delivery({ 'sub/a.pdf': 'a' });
+    // Con anclaje, la copia privada no cambia nada.
+    if (ANCHORED) {
+      expect(await folderResolver(dir, {}, FOLDER_OPS).check?.()).toBe('anchored');
+      expect(await folderResolver(dir, {}, FOLDER_OPS).check?.({ privateCopy: true })).toBe('anchored');
+    }
+    expect(await folderFailure(folderResolver(dir, {}, BY_PATH).check?.() as Promise<unknown>)).toEqual(['unanchored', '']);
+    expect(await folderFailure(folderResolver(dir, {}, BY_PATH).stat('sub/a.pdf'))).toEqual(['unanchored', '']);
+    const copy = folderResolver(dir, {}, BY_PATH);
+    expect(await copy.check?.({ privateCopy: true })).toBe('path');
+    expect(await copy.sha256('sub/a.pdf')).toBe(sha('a'));
+    // Demasiados archivos abiertos al mirar si se puede anclar es esa falla, no la falta de anclaje.
+    const crowded: FolderOps = {
+      ...FOLDER_OPS,
+      lstat: (path) => (path.toString().startsWith('/.vol/') ? Promise.reject(Object.assign(new Error('demasiados'), { code: 'EMFILE' })) : FOLDER_OPS.lstat(path)),
+      open: (path, flags) => (path.toString() === '/' ? Promise.reject(Object.assign(new Error('demasiados'), { code: 'EMFILE' })) : FOLDER_OPS.open(path, flags)),
+    };
+    if (ANCHORED) expect(await folderFailure(folderResolver(dir, {}, crowded).check?.({ privateCopy: true }) as Promise<unknown>)).toEqual(['tooManyOpenFiles', '']);
+  });
+
+  it('a folder on another device than its parent (a mount point) is other: listed as such and never entered', async () => {
+    const dir = delivery({ 'a.pdf': 'a', 'm/x.pdf': 'x' });
+    for (const base of [FOLDER_OPS, BY_PATH]) {
+      const mounted: FolderOps = { ...base, lstat: async (path) => (named(path, 'm') ? onAnotherDevice(await base.lstat(path)) : base.lstat(path)) };
+      const resolver = folderResolver(dir, {}, mounted);
+      if (base === BY_PATH) await resolver.check?.({ privateCopy: true });
+      expect(await listed(resolver)).toEqual([['a.pdf', 'file'], ['m', 'other']]);
+      expect(await resolver.stat('m')).toMatchObject({ type: 'other', path: 'm' });
+      expect(await resolver.stat('m/x.pdf')).toBeNull();
+    }
   });
 
   it('ignore hides matching files from list, not from stat or sha256', async () => {
@@ -547,13 +622,13 @@ describe('dirMediaResolver', () => {
  * del sistema (anclado a la carpeta ya vista) y en el que va por rutas.
  */
 describe('a folder that changes while it is read', () => {
-  /** Las de node:fs sin las rutas ancladas del sistema: todo por la ruta de cada entrada. */
-  const byPath: FolderOps = {
-    ...FOLDER_OPS,
-    lstat: (path) => (path.toString().startsWith('/.vol/') ? Promise.reject(Object.assign(new Error('sin rutas por id'), { code: 'ENOENT' })) : FOLDER_OPS.lstat(path)),
-    readlink: (path) => (path.startsWith('/proc/') ? Promise.reject(Object.assign(new Error('sin /proc'), { code: 'ENOENT' })) : FOLDER_OPS.readlink(path)),
-  };
-  const modes: [string, FolderOps][] = [['the anchored mode of this system', FOLDER_OPS], ['by path', byPath]];
+  const modes: [string, FolderOps][] = [['the anchored mode of this system', FOLDER_OPS], ['by path', BY_PATH]];
+  /** Un resolver en ese modo: por la ruta, solo con una copia privada. */
+  async function resolverIn(dir: string, ops: FolderOps, base: FolderOps): Promise<MediaResolver> {
+    const resolver = folderResolver(dir, {}, ops);
+    if (base === BY_PATH) await resolver.check?.({ privateCopy: true });
+    return resolver;
+  }
   /** Las operaciones de base con `open` o `lstat` cambiados para la entrada `name`, una sola vez. */
   function once(base: FolderOps, op: 'open' | 'lstat', name: string, change: () => void): FolderOps {
     let done = false;
@@ -579,7 +654,7 @@ describe('a folder that changes while it is read', () => {
           // Sin O_NONBLOCK, abrir un fifo para leer espera para siempre a quien escriba.
           else mkfifo(join(dir, 'a.pdf'));
         });
-        const resolver = folderResolver(dir, {}, ops);
+        const resolver = await resolverIn(dir, ops, base);
         expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 1 });
         expect(await folderFailure(resolver.sha256('a.pdf')), swap).toEqual(['modified', 'a.pdf']);
       }
@@ -592,20 +667,20 @@ describe('a folder that changes while it is read', () => {
         renameSync(join(dir, 'a.pdf'), join(dir, 'b.pdf'));
         symlinkSync('b.pdf', join(dir, 'a.pdf'));
       });
-      const resolver = folderResolver(dir, {}, ops);
+      const resolver = await resolverIn(dir, ops, base);
       expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 1 });
       expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     });
 
     it(`a file rewritten in place after its lstat, with another size or the same, is a change of the folder (${mode})`, async () => {
       const dir = delivery({ 'a.pdf': 'uno' });
-      const resolver = folderResolver(dir, {}, base);
+      const resolver = await resolverIn(dir, base, base);
       expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 3 });
       writeFileSync(join(dir, 'a.pdf'), 'otro largo');
       expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
       // Con el mismo tamaño, la fecha lo dice.
       const same = delivery({ 'a.pdf': 'uno' });
-      const again = folderResolver(same, {}, base);
+      const again = await resolverIn(same, base, base);
       expect(await again.stat('a.pdf')).toMatchObject({ type: 'file', size: 3 });
       writeFileSync(join(same, 'a.pdf'), 'dos');
       utimesSync(join(same, 'a.pdf'), new Date(), new Date(Date.now() + 60_000));
@@ -630,7 +705,7 @@ describe('a folder that changes while it is read', () => {
           });
         },
       };
-      expect(await folderFailure(folderResolver(dir, {}, growing).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+      expect(await folderFailure((await resolverIn(dir, growing, base)).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     });
 
     it(`the file opened has to be the one seen: another dev and ino, or something that is not a file with the same ones (${mode})`, async () => {
@@ -643,7 +718,7 @@ describe('a folder that changes while it is read', () => {
           return named(path, 'a.pdf') ? Object.assign(Object.create(Object.getPrototypeOf(stats) as object) as BigIntStats, stats, { ino: stats.ino + 1000n }) : stats;
         },
       };
-      expect(await folderFailure(folderResolver(dir, {}, other).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+      expect(await folderFailure((await resolverIn(dir, other, base)).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
       // Un fifo con el dev y el ino que se vieron (un ino que se reusó): no es un archivo regular.
       const reused = delivery({ 'a.pdf': 'a' });
       mkfifo(join(reused, 'tubo'));
@@ -659,7 +734,7 @@ describe('a folder that changes while it is read', () => {
           return base.open(path, flags);
         },
       };
-      expect(await folderFailure(folderResolver(reused, {}, asFile).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+      expect(await folderFailure((await resolverIn(reused, asFile, base)).sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     }, 10_000);
 
     it(`a folder swapped for another folder while it is listed is a change (${mode})`, async () => {
@@ -668,13 +743,13 @@ describe('a folder that changes while it is read', () => {
         renameSync(join(dir, 'sub'), join(dir, 'subD'));
         renameSync(join(dir, 'otra'), join(dir, 'sub'));
       };
-      const resolver = folderResolver(dir, {}, once(base, 'lstat', 'sub', swap));
+      const resolver = await resolverIn(dir, once(base, 'lstat', 'sub', swap), base);
       expect(await folderFailure(resolver.stat('sub/a.pdf'))).toEqual(['modified', 'sub']);
     });
 
     it(`an entry that is no longer what its folder listed is a change (${mode})`, async () => {
       const dir = delivery({ 'a.pdf': 'a', 'b.pdf': 'b' });
-      const resolver = folderResolver(dir, {}, base);
+      const resolver = await resolverIn(dir, base, base);
       expect(await resolver.stat('b.pdf')).toMatchObject({ type: 'file' });
       // La carpeta ya se listó con a.pdf como archivo; ahora es un enlace.
       rmSync(join(dir, 'a.pdf'));
@@ -690,14 +765,14 @@ describe('a folder that changes while it is read', () => {
         symlinkSync(outside, join(dir, 'sub'));
       };
       const listedPaths: string[] = [];
-      const list = folderResolver(dir, {}, once(base, 'lstat', 'sub', swap));
+      const list = await resolverIn(dir, once(base, 'lstat', 'sub', swap), base);
       const failure = await folderFailure((async () => { for await (const e of list.list()) listedPaths.push(e.path); })());
       expect(failure).toEqual(['modified', 'sub']);
       expect(listedPaths.filter((p) => p.includes('solo-afuera'))).toEqual([]);
       // Lo mismo buscando un path que pasa por ella.
       rmSync(join(dir, 'sub'));
       renameSync(join(dir, 'subD'), join(dir, 'sub'));
-      const stat = folderResolver(dir, {}, once(base, 'lstat', 'sub', swap));
+      const stat = await resolverIn(dir, once(base, 'lstat', 'sub', swap), base);
       expect(await folderFailure(stat.sha256('sub/a.pdf'))).toEqual(['modified', 'sub']);
     });
   }

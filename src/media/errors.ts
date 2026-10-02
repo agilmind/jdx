@@ -9,18 +9,19 @@
  * adentro (`permission`); una ruta es más larga de lo que admite el sistema
  * (`tooLong`); tiene más entradas de las que se leen (`tooManyEntries`,
  * 100 000 contando las carpetas); hay demasiados archivos abiertos
- * (`tooManyOpenFiles`, EMFILE o ENFILE); otra falla del disco (`io`); o la
- * carpeta cambió mientras se leía (`modified`). `path` es dónde, relativo a la
- * carpeta ('' es la carpeta misma), como lo da list().
+ * (`tooManyOpenFiles`, EMFILE o ENFILE); otra falla del disco (`io`); la
+ * carpeta cambió mientras se leía (`modified`); o el sistema no deja anclarla
+ * y el receptor no dijo que es una copia privada (`unanchored`). `path` es
+ * dónde, relativo a la carpeta ('' es la carpeta misma), como lo da list().
  *
  * Un MediaResolver propio la lanza igual: validate la toma en el paso de
  * entorno (MediaResolver.check) o mientras corren las reglas.
  */
 
-export type MediaFolderCause = 'missingDir' | 'notDirectory' | 'permission' | 'tooLong' | 'tooManyEntries' | 'tooManyOpenFiles' | 'io' | 'modified';
+export type MediaFolderCause = 'missingDir' | 'notDirectory' | 'permission' | 'tooLong' | 'tooManyEntries' | 'tooManyOpenFiles' | 'io' | 'modified' | 'unanchored';
 
 /** Las causas, en el orden del catálogo. */
-export const MEDIA_FOLDER_CAUSES: readonly MediaFolderCause[] = Object.freeze(['missingDir', 'notDirectory', 'permission', 'tooLong', 'tooManyEntries', 'tooManyOpenFiles', 'io', 'modified']);
+export const MEDIA_FOLDER_CAUSES: readonly MediaFolderCause[] = Object.freeze(['missingDir', 'notDirectory', 'permission', 'tooLong', 'tooManyEntries', 'tooManyOpenFiles', 'io', 'modified', 'unanchored']);
 
 const MESSAGES: Readonly<Record<MediaFolderCause, string>> = Object.freeze({
   missingDir: 'no existe',
@@ -31,6 +32,7 @@ const MESSAGES: Readonly<Record<MediaFolderCause, string>> = Object.freeze({
   tooManyOpenFiles: 'hay demasiados archivos abiertos',
   io: 'falla el acceso al disco',
   modified: 'cambió mientras se leía',
+  unanchored: 'no se puede anclar y no se dijo que es una copia privada',
 });
 
 export class MediaFolderError extends Error {

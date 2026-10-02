@@ -29,9 +29,13 @@
         "failOn": { "type": "string", "enum": ["error", "warning"] },
         "receivedAt": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|[+-]\\d{2}:\\d{2})$" },
         "dir": { "type": "boolean" },
+        "dirLookup": {
+          "$comment": "Cómo se buscó en la carpeta de la entrega: anchored, cada entrada desde su carpeta ya identificada; path, por su ruta, solo con una copia privada; null sin carpeta, si la carpeta no se pudo usar o si su resolver no lo dice.",
+          "type": ["string", "null"], "enum": ["anchored", "path", null]
+        },
         "lang": { "type": "string", "enum": ["es", "pt", "en"] }
       },
-      "required": ["env", "profile", "signature", "failOn", "receivedAt", "dir", "lang"],
+      "required": ["env", "profile", "signature", "failOn", "receivedAt", "dir", "dirLookup", "lang"],
       "additionalProperties": false
     },
     "document": { "$ref": "#/$defs/Document" },

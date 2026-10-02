@@ -1957,9 +1957,9 @@
       "implemented": true,
       "level": "error",
       "predicate": {
-        "es": "La carpeta de la entrega no se puede usar: no existe (missingDir) o no es una carpeta (notDirectory), falta permiso para leer algo de adentro (permission), una ruta es más larga de lo que admite el sistema (tooLong), tiene más de 100 000 entradas, contando las carpetas (tooManyEntries), hay demasiados archivos abiertos (tooManyOpenFiles), falla el disco (io) o la carpeta cambió mientras se leía (modified). params.cause dice cuál y params.path, dónde, relativo a la carpeta (vacío si es la carpeta misma).",
-        "pt": "A pasta da entrega não pode ser usada: não existe (missingDir) ou não é uma pasta (notDirectory), falta permissão para ler algo de dentro (permission), um caminho é mais longo do que o sistema admite (tooLong), tem mais de 100 000 entradas, contando as pastas (tooManyEntries), há arquivos abertos demais (tooManyOpenFiles), o disco falha (io) ou a pasta mudou durante a leitura (modified). params.cause diz qual e params.path, onde, relativo à pasta (vazio se é a própria pasta).",
-        "en": "The delivery folder cannot be used: it does not exist (missingDir) or is not a folder (notDirectory), something inside cannot be read for lack of permission (permission), a path is longer than the system allows (tooLong), it has more than 100,000 entries, counting folders (tooManyEntries), too many files are open (tooManyOpenFiles), the disk fails (io) or the folder changed while it was being read (modified). params.cause says which and params.path where, relative to the folder (empty for the folder itself)."
+        "es": "La carpeta de la entrega no se puede usar: no existe (missingDir) o no es una carpeta (notDirectory), falta permiso para leer algo de adentro (permission), una ruta es más larga de lo que admite el sistema (tooLong), tiene más de 100 000 entradas, contando las carpetas (tooManyEntries), hay demasiados archivos abiertos (tooManyOpenFiles), falla el disco (io), la carpeta cambió mientras se leía (modified), o el sistema no deja anclarla y el receptor no dijo que es una copia privada (unanchored). params.cause dice cuál y params.path, dónde, relativo a la carpeta (vacío si es la carpeta misma).",
+        "pt": "A pasta da entrega não pode ser usada: não existe (missingDir) ou não é uma pasta (notDirectory), falta permissão para ler algo de dentro (permission), um caminho é mais longo do que o sistema admite (tooLong), tem mais de 100 000 entradas, contando as pastas (tooManyEntries), há arquivos abertos demais (tooManyOpenFiles), o disco falha (io), a pasta mudou durante a leitura (modified), ou o sistema não permite ancorá-la e o receptor não disse que é uma cópia privada (unanchored). params.cause diz qual e params.path, onde, relativo à pasta (vazio se é a própria pasta).",
+        "en": "The delivery folder cannot be used: it does not exist (missingDir) or is not a folder (notDirectory), something inside cannot be read for lack of permission (permission), a path is longer than the system allows (tooLong), it has more than 100,000 entries, counting folders (tooManyEntries), too many files are open (tooManyOpenFiles), the disk fails (io), the folder changed while it was being read (modified), or the system cannot anchor it and the receiver did not state that it is a private copy (unanchored). params.cause says which and params.path where, relative to the folder (empty for the folder itself)."
       },
       "message": {
         "es": "La carpeta de la entrega no se puede usar{cause:reason}{path:paren}.",
@@ -1983,7 +1983,8 @@
               "tooManyEntries",
               "tooManyOpenFiles",
               "io",
-              "modified"
+              "modified",
+              "unanchored"
             ]
           },
           "path": {

@@ -41,7 +41,7 @@ const REPORT: Obj = {
   jdxReport: '1.0', valid: true, disposition: 'ingest', exitCode: 0,
   validator: { name: 'jdx', version: '1.0.3', catalog: '1.0' },
   options: { env: 'production', profile: 'sadaic/0.1', signature: 'optional',
-             failOn: 'error', receivedAt: '2026-09-30T09:12:00-03:00', dir: true, lang: 'es' },
+             failOn: 'error', receivedAt: '2026-09-30T09:12:00-03:00', dir: true, dirLookup: 'anchored', lang: 'es' },
   document: { fileName: '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r2.jdx.json',
               declarationId: '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13', revision: 2, jdx: '1.0',
               sha256: 'ee53610fc89012e5b1eea19cc3ae8a81932981146afa63920a027d2a42222787',

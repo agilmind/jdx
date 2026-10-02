@@ -55,7 +55,7 @@ const stage = (doc: Doc | string, profile: Profile = sadaicProfile()): SchemaSta
 function reportOf(bytes: Uint8Array, findings: readonly Finding[]): Report {
   return buildReport({
     validator: { name: 'jdx', version: '1.0.0', catalog: '1.0' },
-    options: { env: 'sandbox', profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: '2026-09-30T09:12:00-03:00', dir: false, lang: 'es' },
+    options: { env: 'sandbox', profile: 'sadaic/0.1', signature: 'optional', failOn: 'error', receivedAt: '2026-09-30T09:12:00-03:00', dir: false, dirLookup: null, lang: 'es' },
     document: documentFacts({ bytes, fileName: NAME }, null, false),
     appliedProfiles: ['https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0'],
     outcome: 'completed',

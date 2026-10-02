@@ -140,11 +140,21 @@ Con `--dir`, el validador compara la carpeta de la entrega con `media`:
   doble no cubre nada.
 
 La carpeta no puede cambiar mientras se valida: lo seguro es validar una
-copia. Una carpeta que no se puede usar (no existe, algo de adentro no se
-puede leer, tiene más de 100 000 entradas que la declaración no pide o cambió
-durante la validación) da `JDX-ENV-011`, con la causa y el lugar. Es una falla
-del entorno (código de resultado 2) y no un rechazo, porque lo que no se pudo
-leer podría esconder archivos.
+copia. Una carpeta que no se puede usar da `JDX-ENV-011`, con la causa y el
+lugar: no existe (`missingDir`), no es una carpeta (`notDirectory`), algo de
+adentro no se puede leer (`permission`), una ruta es más larga de lo que admite
+el sistema (`tooLong`), tiene más de 100 000 entradas que la declaración no pide
+(`tooManyEntries`), hay demasiados archivos abiertos (`tooManyOpenFiles`), falla
+el disco (`io`), cambió durante la validación (`modified`) o no se puede anclar
+(`unanchored`). Es una falla del entorno (código de resultado 2) y no un
+rechazo, porque lo que no se pudo leer podría esconder archivos.
+
+El validador ancla la carpeta: mira cada archivo desde la carpeta que lo
+contiene, así nada de afuera entra aunque la carpeta cambie. Puede en Linux y
+en macOS con un volumen APFS o HFS+. Donde no puede (otro sistema, o en macOS
+un volumen como el de una memoria USB), la sociedad que valida una copia que
+solo ella escribe lo dice con `--private-copy`, y el validador busca por la
+ruta; el reporte dice cómo buscó (`options.dirLookup`).
 
 ## 4. Cómo se lee el resultado
 

@@ -11,7 +11,7 @@ import { files } from '../../../src/generated/data.js';
 import { VERSION } from '../../../src/generated/version.js';
 import { MAX_FAILURE_POINTER_CHARS, MAX_FAILURES } from '../../../src/json/parse.js';
 import { bundledProfiles, resolveProfile } from '../../../src/profile/resolve.js';
-import { capFindings, MAX_RESULT_CHARS, MAX_RESULTS_PER_RULE, sortResults, toResult } from '../../../src/report/results.js';
+import { capFindings, firstFindings, MAX_RESULT_CHARS, MAX_RESULTS_PER_RULE, sortResults, toResult } from '../../../src/report/results.js';
 import { MAX_SCHEMA_ERROR_CHARS, MAX_SCHEMA_ERRORS } from '../../../src/schema/ajv.js';
 import { defaultValidators } from '../../../src/schema/validators.js';
 import type { Finding, JsonValue, Profile, ResolvedProfile, Result } from '../../../src/types.js';
@@ -214,6 +214,24 @@ describe('el tope de resultados', () => {
     expect(capFindings([nested(0), nested(1), nested(2)], ctx).omitted).toEqual([{ ruleId: 'JDX-SCH-001', level: 'error', count: 1 }]);
     // Uno solo que pasa el tope se lista igual: cada código lista al menos uno.
     expect(capFindings([ref(`/${'k'.repeat(2_000_000)}`)], ctx).listed).toHaveLength(1);
+  });
+
+  it('firstFindings keeps what capFindings lists of a code and counts the rest, without keeping them', () => {
+    // Una regla que da muchos (los archivos de una carpeta) guarda solo los primeros en el orden del reporte.
+    fc.assert(
+      fc.property(fc.array(fc.string({ maxLength: 6 }), { maxLength: 400 }), fc.nat(5), (paths, long) => {
+        const all = paths.map((p, i): Finding => ({ ruleId: 'JDX-MED-003', instanceLocation: '', params: { path: i < long ? `${p}${'x'.repeat(400_000)}` : p } }));
+        const first = firstFindings();
+        for (const f of all) first.add(f);
+        const kept = first.result();
+        expect(kept.findings.length).toBe(Math.min(all.length, MAX_RESULTS_PER_RULE));
+        expect(kept.findings.length + kept.omitted).toBe(all.length);
+        // Con lo que guardó y cuántos más, el reporte lista y cuenta lo mismo que con todos.
+        expect(capFindings(kept.findings, ctx, [{ ruleId: 'JDX-MED-003', count: kept.omitted }])).toEqual(capFindings(all, ctx));
+      }),
+      { numRuns: 200 },
+    );
+    expect(firstFindings().result()).toEqual({ findings: [], omitted: 0 });
   });
 
   it('capFindings keeps, of each code, a prefix of the report order', () => {

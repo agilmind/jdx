@@ -19,7 +19,8 @@
  * - El tope, igual para todo código: el reporte lista de cada uno a lo sumo
  *   MAX_RESULTS_PER_RULE resultados, los primeros en ese orden, y menos si sus
  *   lugares y los textos de sus params llegan a MAX_RESULT_CHARS caracteres
- *   (capFindings). Los demás no se arman: se cuentan.
+ *   (capFindings). Los demás no se arman: se cuentan. Una regla que puede
+ *   encontrar muchos más guarda solo los primeros (firstFindings).
  *
  * Un hallazgo de una regla que no está en el catálogo, o de una regla de perfil
  * sin perfil aplicado, es un error de programación y lanza.
@@ -105,7 +106,7 @@ export function compareCodes(a: RuleId, b: RuleId, catalog: Catalog): number {
  * demás se cuentan por nivel y no se arman: de un código con muchos, solo se
  * ordenan los que quedan, y los otros solo se comparan con ellos.
  */
-export function capFindings(findings: readonly Finding[], c: ResultContext): CappedFindings {
+export function capFindings(findings: readonly Finding[], c: ResultContext, more: readonly { ruleId: RuleId; count: number }[] = []): CappedFindings {
   const byRule = new Map<RuleId, Finding[]>();
   for (const f of findings) {
     const list = byRule.get(f.ruleId);
@@ -138,7 +139,65 @@ export function capFindings(findings: readonly Finding[], c: ResultContext): Cap
     });
     for (const [level, count] of counts) omitted.push({ ruleId, level, count });
   }
+  // Los que una regla encontró y no armó (firstFindings) tienen el nivel de la regla.
+  for (const { ruleId, count } of more) {
+    if (count <= 0) continue;
+    const level = ruleDefaults(catalogRule(c.catalog, ruleId), c).level;
+    if (level === undefined) throw new Error(`${ruleId}: regla de perfil que el perfil aplicado no trae`);
+    const same = omitted.find((o) => o.ruleId === ruleId && o.level === level);
+    if (same === undefined) omitted.push({ ruleId, level, count });
+    else same.count += count;
+  }
   return { listed, omitted };
+}
+
+/**
+ * Los primeros MAX_RESULTS_PER_RULE hallazgos de una regla en el orden del
+ * reporte, y cuántos más, sin guardarlos: para una regla que puede encontrar
+ * muchos más que los que se listan (los archivos de una carpeta). Los
+ * hallazgos son todos del mismo código y con el nivel de la regla; capFindings
+ * los lista y cuenta como si tuviera todos.
+ */
+export function firstFindings(): { add(f: Finding): void; result(): { findings: Finding[]; omitted: number } } {
+  // El montículo tiene arriba el mayor de los que quedan.
+  const heap: Finding[] = [];
+  let omitted = 0;
+  const after = (a: Finding, b: Finding) => compareFindings(a, 'error', b, 'error') > 0;
+  const down = (from: number): void => {
+    for (let i = from; ;) {
+      const l = 2 * i + 1;
+      const r = l + 1;
+      let top = i;
+      if (l < heap.length && after(heap[l] as Finding, heap[top] as Finding)) top = l;
+      if (r < heap.length && after(heap[r] as Finding, heap[top] as Finding)) top = r;
+      if (top === i) return;
+      [heap[i], heap[top]] = [heap[top] as Finding, heap[i] as Finding];
+      i = top;
+    }
+  };
+  const up = (from: number): void => {
+    for (let i = from; i > 0; ) {
+      const parent = (i - 1) >> 1;
+      if (!after(heap[i] as Finding, heap[parent] as Finding)) return;
+      [heap[i], heap[parent]] = [heap[parent] as Finding, heap[i] as Finding];
+      i = parent;
+    }
+  };
+  return {
+    add(f) {
+      if (heap.length < MAX_RESULTS_PER_RULE) {
+        heap.push(f);
+        up(heap.length - 1);
+        return;
+      }
+      omitted++;
+      if (after(heap[0] as Finding, f)) {
+        heap[0] = f;
+        down(0);
+      }
+    },
+    result: () => ({ findings: [...heap].sort((a, b) => compareFindings(a, 'error', b, 'error')), omitted }),
+  };
 }
 
 /** La fuente de los resultados de una regla y el nivel que le da el perfil o el catálogo. */

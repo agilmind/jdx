@@ -10,12 +10,12 @@ import { RULES } from '../../../../src/rules/registry.js';
 import type { Finding, JsonValue } from '../../../../src/types.js';
 import { type DocBuilder, docBuilder } from '../../../helpers/docBuilder.js';
 import { type Doc, flood, measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
-import { findingProblems, makeRuleContext, testDeps, validateExample } from '../../../helpers/ruleContext.js';
+import { findingProblems, findingsOf, makeRuleContext, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 
 /** Los hallazgos de las dos reglas sobre una variante, controlados contra el catálogo. */
 async function numbers(document: DocBuilder = docBuilder()): Promise<Finding[]> {
   const ctx = await makeRuleContext({ document });
-  const found = [...(await NUM_001.evaluate(ctx, {})), ...(await NUM_002.evaluate(ctx, {}))];
+  const found = [...findingsOf(await NUM_001.evaluate(ctx, {})), ...findingsOf(await NUM_002.evaluate(ctx, {}))];
   expect(findingProblems(found)).toEqual([]);
   return found;
 }

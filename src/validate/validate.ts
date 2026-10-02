@@ -22,7 +22,8 @@
  * una falla del entorno, con su JDX-ENV-011, y lo demás queda notEvaluated.
  *
  * El reporte sale de buildReport, con el tope de cada código (capFindings): de
- * cada uno, a lo sumo 100 resultados, y los demás se cuentan sin armarlos. Una
+ * cada uno, a lo sumo 100 resultados, y los demás se cuentan sin armarlos (una
+ * regla puede dar solo sus primeros y cuántos más encontró). Una
  * regla registrada que no está en el catálogo, retirada, sin implementar, de
  * otra capa o con un código que da un paso de la validación es un error de
  * programación y lanza, como una excepción de una regla o del estado.
@@ -57,14 +58,14 @@ const ABSENT: ReportSignature = Object.freeze({ status: 'absent', kid: null, iss
 export async function validateWithDeps(input: ValidateInput, opts: ValidateOptions, deps: ValidatorDeps): Promise<Report> {
   const prepared = await prepareRules(input, opts, deps);
   if (!prepared.ok) return prepared.report;
-  let found: Finding[];
+  let found: RulesOutcome;
   try {
     found = await runRules(prepared.ctx, deps);
   } catch (error) {
     if (error instanceof MediaFolderError) return prepared.environment([folderFinding(error)]);
     throw error;
   }
-  return prepared.finish([...prepared.findings, ...found]);
+  return prepared.finish([...prepared.findings, ...found.findings], found.more);
 }
 
 /**
@@ -77,7 +78,7 @@ export type PreparedRules =
   | { ok: false; report: Report }
   | {
       ok: true; ctx: RuleContext; findings: readonly Finding[];
-      finish: (findings: readonly Finding[]) => Report;
+      finish: (findings: readonly Finding[], more?: readonly MoreFindings[]) => Report;
       environment: (findings: readonly Finding[]) => Report;
     };
 
@@ -162,16 +163,21 @@ export async function prepareRules(input: ValidateInput, opts: ValidateOptions, 
     ok: true,
     ctx,
     findings: [...schema.findings, ...docIndex.findings, ...signature.findings],
-    finish: (findings) => finish({ ...base, document, outcome: 'completed', evaluated, signature: signature.report, findings }),
+    finish: (findings, more = []) => finish({ ...base, document, outcome: 'completed', evaluated, signature: signature.report, findings, more }),
     environment: (findings) => environment(env.profile, findings),
   };
 }
 
+/** Cuántos hallazgos más encontró una regla que dio solo los primeros. */
+type MoreFindings = { ruleId: RuleId; count: number };
+type RulesOutcome = { findings: Finding[]; more: MoreFindings[] };
+
 /** Las reglas del registro que aplican, en su orden, con sus params. */
-async function runRules(ctx: RuleContext, deps: ValidatorDeps): Promise<Finding[]> {
+async function runRules(ctx: RuleContext, deps: ValidatorDeps): Promise<RulesOutcome> {
   const applied = new Map(ctx.profile.rules.map((r) => [r.ruleId, r] as const));
   const available = { state: ctx.state !== null, media: ctx.media !== null, account: ctx.account !== null };
   const out: Finding[] = [];
+  const more: MoreFindings[] = [];
   for (const [id, rule] of deps.rules) {
     const entry = catalogRule(deps.catalog, id);
     if (entry.status !== 'active') throw new Error(`${id}: está registrada y el catálogo la da como retirada`);
@@ -188,9 +194,11 @@ async function runRules(ctx: RuleContext, deps: ValidatorDeps): Promise<Finding[
     }
     if (rule.requires?.some((need) => !available[need]) === true) continue;
     // Uno por uno: una regla puede dar cientos de miles, y push(...lista) desborda la pila.
-    for (const f of await rule.evaluate(ctx, params)) out.push(f);
+    const got = await rule.evaluate(ctx, params);
+    for (const f of Array.isArray(got) ? got : got.findings) out.push(f);
+    if (!Array.isArray(got) && got.omitted > 0) more.push({ ruleId: id, count: got.omitted });
   }
-  return out;
+  return { findings: out, more };
 }
 
 interface Finish {
@@ -202,13 +210,14 @@ interface Finish {
   signature: ReportSignature;
   trustList: ReportParts['trustList'];
   findings: readonly Finding[];
+  more?: readonly MoreFindings[];
   stopped?: readonly RuleId[];
   profile: ResolvedProfile | null;
 }
 
 function report(deps: ValidatorDeps, options: Report['options'], parts: Finish): Report {
   const c = { catalog: deps.catalog, profile: parts.profile, lang: options.lang };
-  const capped = capFindings(parts.findings, c);
+  const capped = capFindings(parts.findings, c, parts.more);
   return buildReport({
     validator: { name: 'jdx', version: deps.validatorVersion, catalog: deps.catalog.catalog },
     options,

@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import fc from 'fast-check';
 import { afterEach, describe, expect, it } from 'vitest';
-import { caseVariant, dirMediaResolver, FOLDER_OPS, type FolderOps, folderResolver } from '../../../src/media/dirMediaResolver.js';
+import { caseVariant, dirMediaResolver, FOLDER_OPS, type FolderOps, folderResolver, MAX_FOLDER_ENTRIES } from '../../../src/media/dirMediaResolver.js';
 import { MediaFolderError } from '../../../src/media/errors.js';
 import { shownName } from '../../../src/media/path.js';
 import type { MediaResolver } from '../../../src/types.js';
@@ -51,10 +51,11 @@ function chmodTree(dir: string): void {
   chmodSync(dir, 0o755);
   for (const entry of readdirSync(dir, { withFileTypes: true })) if (entry.isDirectory()) chmodTree(join(dir, entry.name));
 }
+/** Lo que da list(), en orden de ruta (list da el orden del sistema de archivos). */
 async function listed(resolver: MediaResolver): Promise<[string, string][]> {
   const out: [string, string][] = [];
   for await (const entry of resolver.list()) out.push([entry.path, entry.type]);
-  return out;
+  return out.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 }
 const sha = (text: string | Uint8Array) => createHash('sha256').update(text).digest('hex');
 /** La causa y el lugar de la falla de la carpeta con que termina la promesa. */
@@ -376,6 +377,21 @@ describe('dirMediaResolver', () => {
     expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file' });
     rmSync(join(dir, 'sub'), { recursive: true });
     expect(await folderFailure(resolver.stat('sub/b.pdf'))).toEqual(['modified', 'sub']);
+  });
+
+  it('a folder with more entries than the limit is a folder failure, and each folder counts once', async () => {
+    // Siete entradas: a, b, c y sub en la raíz, y d, e y f en sub.
+    const dir = delivery({ 'a': '1', 'b': '2', 'c': '3', 'sub/d': '4', 'sub/e': '5', 'sub/f': '6' });
+    expect(MAX_FOLDER_ENTRIES).toBe(100_000);
+    const atSeven = folderResolver(dir, {}, FOLDER_OPS, 7);
+    // Buscar paths y listar leen las mismas carpetas: se cuentan una vez.
+    expect(await atSeven.stat('sub/d')).toMatchObject({ type: 'file' });
+    expect(await listed(atSeven)).toHaveLength(6);
+    expect(await listed(atSeven)).toHaveLength(6);
+    expect(await folderFailure(listed(folderResolver(dir, {}, FOLDER_OPS, 6)))).toEqual(['tooManyEntries', 'sub']);
+    expect(await folderFailure(folderResolver(dir, {}, FOLDER_OPS, 3).stat('a'))).toEqual(['tooManyEntries', '']);
+    // Lo que no se lee no cuenta: buscar un path de la raíz no lee sub.
+    expect(await folderResolver(dir, {}, FOLDER_OPS, 4).stat('a')).toMatchObject({ type: 'file' });
   });
 
   it('ignore hides matching files from list, not from stat or sha256', async () => {

@@ -22,7 +22,7 @@ import { segmentsOf } from '../../src/json/pointer.js';
 import { catalogRule } from '../../src/report/results.js';
 import { defaultDeps } from '../../src/validate/deps.js';
 import { prepareRules, validateWithDeps } from '../../src/validate/validate.js';
-import type { Finding, JsonValue, Report, RuleContext, SignatureOutcome, State, StateStore, ValidateOptions, ValidatorDeps, ValueLists } from '../../src/types.js';
+import type { Finding, JsonValue, Report, RuleContext, RuleFindings, SignatureOutcome, State, StateStore, ValidateOptions, ValidatorDeps, ValueLists } from '../../src/types.js';
 import { type DocBuilder, docBuilder, EXAMPLE_NAME } from './docBuilder.js';
 import { TEST_NOW, TEST_ROOTS } from './trustFixtures.js';
 
@@ -130,4 +130,11 @@ function memoryState(state: State): StateStore {
 function bytesOf(document: TestDocument): Uint8Array {
   if (document instanceof Uint8Array) return document;
   return new TextEncoder().encode(typeof document === 'string' ? document : document.text);
+}
+
+/** Los hallazgos de una regla como lista: los que da, o los primeros que guardó si no contó otros. */
+export function findingsOf(result: RuleFindings): Finding[] {
+  if (Array.isArray(result)) return result;
+  if (result.omitted !== 0) throw new Error(`la regla guardó ${result.findings.length} hallazgos y contó ${result.omitted} más`);
+  return result.findings;
 }

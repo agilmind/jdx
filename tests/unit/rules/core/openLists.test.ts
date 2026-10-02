@@ -11,11 +11,11 @@ import { RULES } from '../../../../src/rules/registry.js';
 import type { Finding, JsonValue, OpenValueList, ValueLists } from '../../../../src/types.js';
 import { type DocBuilder, docBuilder } from '../../../helpers/docBuilder.js';
 import { type Doc, flood, measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
-import { findingProblems, makeRuleContext, type RuleContextOverrides, testDeps, validateExample } from '../../../helpers/ruleContext.js';
+import { findingProblems, findingsOf, makeRuleContext, type RuleContextOverrides, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 
 /** Los hallazgos de la regla sobre una variante, controlados contra el catálogo. */
 async function openLists(document: DocBuilder = docBuilder(), more: RuleContextOverrides = {}): Promise<Finding[]> {
-  const found = await VER_004.evaluate(await makeRuleContext({ document, ...more }), {});
+  const found = findingsOf(await VER_004.evaluate(await makeRuleContext({ document, ...more }), {}));
   expect(findingProblems(found)).toEqual([]);
   return found;
 }

@@ -209,6 +209,19 @@ describe('validateWithDeps', () => {
     expect(asError.results.map((r) => [r.level, r.source])).toEqual([['error', 'profile:sadaic/0.1@0.1.0+local'], ['error', 'profile:sadaic/0.1@0.1.0+local']]);
   });
 
+  it('a rule may give only its first results and how many more it found: the report counts them all', async () => {
+    const first: Rule = {
+      id: 'JDX-MED-003',
+      requires: ['media'],
+      evaluate: () => ({ findings: [{ ruleId: 'JDX-MED-003', instanceLocation: '', params: { path: 'a.bin' } }], omitted: 999 }),
+    };
+    const media: MediaResolver = { list: async function* () {}, stat: async () => null, sha256: async () => '' };
+    const report = await validateExample({ options: { media }, deps: { rules: ruleMap([first]) } });
+    expect(reportErrors(report)).toEqual([]);
+    expect(report.results.map((r) => [r.ruleId, r.params])).toEqual([['JDX-MED-003', { path: 'a.bin' }]]);
+    expect(report).toMatchObject({ omitted: [{ ruleId: 'JDX-MED-003', count: 999 }], summary: { warning: 1000 }, checks: { media: 'warning' }, exitCode: 0 });
+  });
+
   it('a rule that requires state is skipped without state', async () => {
     const needsState = perWork('JDX-DEC-005', { requires: ['state'], params: { revision: 1, lastIngestedRevision: 1 } });
     const needsMedia = perWork('JDX-MED-007', { requires: ['media'], params: { path: 'x.pdf' } });

@@ -18,9 +18,12 @@
  *   regular que resuelve el path, o uno con su tamaño y su sha256. Así una
  *   variante de mayúsculas con otros bytes nunca pasa por declarada, aunque
  *   el receptor ignore la exacta.
- * Cada una de las demás da un resultado en `''`, con params.path.
+ * Cada una de las demás da un resultado en `''`, con params.path. Guarda solo
+ * los primeros que lista el reporte y cuenta los demás (firstFindings): la
+ * memoria no crece con los archivos de la carpeta.
  */
 import { foldCase } from '../../media/path.js';
+import { firstFindings } from '../../report/results.js';
 import type { Finding, MediaResolver, Rule } from '../../types.js';
 import { locate } from '../core/mediaDir.js';
 
@@ -54,23 +57,25 @@ export const MED_003: Rule = {
       }
     }
 
-    const out: Finding[] = [];
+    // De los no declarados se guardan solo los primeros en el orden del reporte; los demás se cuentan.
+    const out = firstFindings();
     const pending: Promise<void>[] = [];
     const judge = async (entry: Entry): Promise<void> => {
-      if (!(await sameFileAs(resolver, entry, targets.get(foldCase(entry.path)) ?? []))) out.push(finding(entry));
+      if (!(await sameFileAs(resolver, entry, targets.get(foldCase(entry.path)) ?? []))) out.add(finding(entry));
     };
     for await (const entry of resolver.list()) {
       if (declared.has(entry.path) || isArtifact(entry)) continue;
       if (entry.type !== 'file') {
-        if (!stops.has(entry.path)) out.push(finding(entry));
-        continue;
+        if (!stops.has(entry.path)) out.add(finding(entry));
+      } else if (targets.has(foldCase(entry.path))) {
+        pending.push(judge(entry));
+        if (pending.length >= AT_ONCE) await Promise.all(pending.splice(0));
+      } else {
+        out.add(finding(entry));
       }
-      pending.push(judge(entry));
-      if (pending.length >= AT_ONCE) await Promise.all(pending.splice(0));
     }
     await Promise.all(pending);
-    // Las variantes se comparan a la vez: el orden es el de las rutas.
-    return out.sort((a, b) => ((a.params?.path as string) < (b.params?.path as string) ? -1 : 1));
+    return out.result();
   },
 };
 

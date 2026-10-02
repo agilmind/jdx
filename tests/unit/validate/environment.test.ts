@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadCatalog } from '../../../src/catalog/load.js';
 import { dirMediaResolver } from '../../../src/media/dirMediaResolver.js';
-import { MediaFolderError } from '../../../src/media/errors.js';
+import { MEDIA_FOLDER_CAUSES, MediaFolderError } from '../../../src/media/errors.js';
 import { files } from '../../../src/generated/data.js';
 import { VERSION } from '../../../src/generated/version.js';
 import { bundledProfiles } from '../../../src/profile/resolve.js';
@@ -105,6 +105,11 @@ function stateDir(): string {
 }
 
 describe('entorno', () => {
+  it('the causes of a folder that cannot be used are those of ENV-011 in the catalog, in its order', () => {
+    const rule = catalog.rules.find((r) => r.id === 'JDX-ENV-011');
+    expect((rule?.resultParamsSchema as { properties: { cause: { enum: string[] } } }).properties.cause.enum).toEqual(MEDIA_FOLDER_CAUSES);
+  });
+
   it('the delivery folder: one that is missing, is not a folder or fails its check → ENV-011 with the cause and the place', async () => {
     const dir = stateDir();
     writeFileSync(join(dir, 'a.pdf'), 'a');

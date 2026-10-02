@@ -380,10 +380,16 @@ export interface RuleContext {
   signature: SignatureOutcome;
   trust: VerifiedTrustList | null;
 }
+/**
+ * Lo que da una regla: sus hallazgos, o, si pueden ser muchos más que los que
+ * lista el reporte, los primeros en el orden del reporte (firstFindings) y
+ * cuántos más encontró, todos con el nivel de la regla.
+ */
+export type RuleFindings = Finding[] | { findings: Finding[]; omitted: number };
 export interface Rule<P extends { [k: string]: JsonValue } = { [k: string]: JsonValue }> {
   id: RuleId;
   requires?: readonly ('state' | 'media' | 'account')[];   // si falta alguno, la regla no se evalúa y no da hallazgos
-  evaluate(ctx: RuleContext, params: P): Finding[] | Promise<Finding[]>;
+  evaluate(ctx: RuleContext, params: P): RuleFindings | Promise<RuleFindings>;
 }
 
 // ───────────── Entorno y etapas ─────────────

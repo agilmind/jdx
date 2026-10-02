@@ -13,7 +13,7 @@ import { RULES } from '../../../../src/rules/registry.js';
 import type { Finding, JsonValue } from '../../../../src/types.js';
 import { type DocBuilder, docBuilder } from '../../../helpers/docBuilder.js';
 import { type Doc, flood, measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
-import { findingProblems, makeRuleContext, testDeps, validateExample } from '../../../helpers/ruleContext.js';
+import { findingProblems, findingsOf, makeRuleContext, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 
 const OTHER_SHA = 'ee53610fc89012e5b1eea19cc3ae8a81932981146afa63920a027d2a42222787';
 const MEDIA_CODES = ['JDX-MED-001', 'JDX-MED-004', 'JDX-MED-009'] as const;
@@ -21,7 +21,7 @@ const MEDIA_CODES = ['JDX-MED-001', 'JDX-MED-004', 'JDX-MED-009'] as const;
 /** Los hallazgos de las tres reglas sobre una variante, controlados contra el catálogo. */
 async function media(document: DocBuilder = docBuilder()): Promise<Finding[]> {
   const ctx = await makeRuleContext({ document });
-  const found = [...(await MED_001.evaluate(ctx, {})), ...(await MED_004.evaluate(ctx, {})), ...(await MED_009.evaluate(ctx, {}))];
+  const found = [...findingsOf(await MED_001.evaluate(ctx, {})), ...findingsOf(await MED_004.evaluate(ctx, {})), ...findingsOf(await MED_009.evaluate(ctx, {}))];
   expect(findingProblems(found)).toEqual([]);
   return found;
 }

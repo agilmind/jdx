@@ -238,6 +238,11 @@
         "pt": ": um caminho é mais longo do que o sistema admite",
         "en": ": a path is longer than the system allows"
       },
+      "tooManyEntries": {
+        "es": ": tiene más de 100 000 entradas",
+        "pt": ": tem mais de 100 000 entradas",
+        "en": ": it has more than 100,000 entries"
+      },
       "modified": {
         "es": ": cambió mientras se leía",
         "pt": ": mudou durante a leitura",

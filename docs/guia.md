@@ -88,9 +88,10 @@ el nombre, con `/` la ruta desde la raíz; `*` no cruza carpetas y `**` cubre
 cero o más.
 
 La carpeta no puede cambiar mientras se valida: se valida una copia. Una
-carpeta que no se puede usar (no existe, algo de adentro no se puede leer o
-cambió durante la validación) da `JDX-ENV-011` con la causa y el lugar: es una
-falla del entorno (salida 2), porque lo que no se lee podría esconder archivos.
+carpeta que no se puede usar (no existe, algo de adentro no se puede leer,
+tiene más de 100 000 entradas o cambió durante la validación) da
+`JDX-ENV-011` con la causa y el lugar: es una falla del entorno (salida 2),
+porque lo que no se lee podría esconder archivos.
 
 | Capa | Qué controla | Qué da |
 |---|---|---|

@@ -110,7 +110,10 @@ function memoryFolder(entries: Record<string, Entry>, ignore: readonly string[] 
 /** Los MED-003 de una carpeta contra una variante, controlados contra el catálogo. */
 async function undeclared(media: MediaResolver, document: DocBuilder = docBuilder()): Promise<string[]> {
   const ctx = await makeRuleContext({ document, options: { media } });
-  const found: Finding[] = await MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'));
+  const result = await MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'));
+  // MED-003 da sus primeros resultados y cuántos más encontró; acá nunca pasan del tope.
+  const found: Finding[] = Array.isArray(result) ? result : result.findings;
+  expect(Array.isArray(result) ? 0 : result.omitted).toBe(0);
   expect(findingProblems(found)).toEqual([]);
   expect(found.every((f) => f.instanceLocation === '' && f.context === undefined)).toBe(true);
   return found.map((f) => f.params?.path as string);
@@ -341,6 +344,17 @@ describe('hostile input through validateWithDeps', () => {
     expect(report.checks.media).toBe('warning');
     expect(chars).toBeLessThan(100_000);
     expect(ms).toBeLessThan(5_000);
+  });
+
+  it('MED-003 keeps only its first results in the report order and counts the others', async () => {
+    const files = withExample();
+    for (let i = 2999; i >= 0; i--) files[`extra/f${String(i).padStart(4, '0')}.bin`] = '';
+    const ctx = await makeRuleContext({ document: matching(), options: { media: dirMediaResolver(folder(files)) } });
+    const result = await MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'));
+    expect(Array.isArray(result)).toBe(false);
+    if (Array.isArray(result)) return;
+    expect(result.findings.map((f) => f.params?.path)).toEqual(Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => `extra/f${String(i).padStart(4, '0')}.bin`));
+    expect(result.omitted).toBe(3000 - MAX_RESULTS_PER_RULE);
   });
 
   it('two thousand files declared with other case are each compared once', async () => {

@@ -7,8 +7,9 @@
  *   muestra shownName: un byte que no es UTF-8 válido va como `\xHH`) y su
  *   tipo: `file` (un archivo regular), `symlink` (un enlace, que nunca se
  *   sigue, tampoco el que apunta a una carpeta) u `other` (un fifo, un socket
- *   o un dispositivo), en orden de nombre y en profundidad. Omite las que
- *   cumplen un patrón de `ignore` (matchDeliveryGlob).
+ *   o un dispositivo), en profundidad y en el orden en que las da el sistema.
+ *   Omite las que cumplen un patrón de `ignore` (matchDeliveryGlob). No guarda
+ *   lo que ya dio.
  * - stat y sha256 buscan el path segmento por segmento en los nombres de cada
  *   carpeta: el nombre exacto y, si no está, el único que coincide sin
  *   distinguir mayúsculas de A a Z (caseVariant). Así dan lo mismo en
@@ -21,9 +22,10 @@
  *   esperar (O_NOFOLLOW, O_NONBLOCK): nunca abre un fifo, un socket ni un
  *   dispositivo, ni lee un enlace que apareció después.
  *
- * Un resolver es una foto de la carpeta para una validación: cada carpeta se
- * lista una vez, cada entrada se mira una vez y cada archivo se lee una vez,
- * así el costo de buscar un path es el de sus segmentos. La carpeta no tiene
+ * Un resolver es una foto de la carpeta para una validación: cada carpeta en la
+ * que se busca se lista una vez, cada entrada se mira una vez y cada archivo
+ * se lee una vez, así el costo de buscar un path es el de sus segmentos. Lee a
+ * lo sumo MAX_FOLDER_ENTRIES entradas: con más, la carpeta no se puede usar. La carpeta no tiene
  * que cambiar mientras tanto; si cambia, lo que se lee no sale de ella:
  *
  * - Cada entrada se mira desde la carpeta que la listó, ya identificada por
@@ -40,7 +42,7 @@
  */
 import { createHash } from 'node:crypto';
 import { type BigIntStats, constants, type Dirent } from 'node:fs';
-import { type FileHandle, lstat, open, readdir, readlink, realpath, stat } from 'node:fs/promises';
+import { type FileHandle, lstat, open, opendir, readdir, readlink, realpath, stat } from 'node:fs/promises';
 import type { MediaResolver } from '../types.js';
 import { folderFailure, MediaFolderError } from './errors.js';
 import { matchDeliveryGlob } from './glob.js';
@@ -54,8 +56,16 @@ const CHUNK_BYTES = 1 << 20;
 
 const UNSAFE = /[\\:\u0000]/u;
 
-/** Cuántas entradas se miran a la vez. */
+/** Cuántas entradas se miran, y cuántas carpetas se leen, a la vez. */
 const AT_ONCE = 64;
+const FOLDERS_AT_ONCE = 32;
+
+/**
+ * El tamaño (st_size) de una carpeta que se lee de una vez: crece con sus
+ * entradas (unos 20 bytes cada una en tmpfs, 32 en APFS, 2 por letra en btrfs),
+ * así una de hasta 64 KiB tiene a lo sumo unas pocas decenas de miles.
+ */
+const SMALL_FOLDER_BYTES = 64n * 1024n;
 
 const SLASH = Buffer.from('/');
 const FILE_FLAGS = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
@@ -67,6 +77,7 @@ export interface FolderOps {
   lstat(path: Buffer): Promise<BigIntStats>;
   realpath(path: Buffer): Promise<Buffer>;
   readdir(path: Buffer): Promise<Dirent<Buffer>[]>;
+  opendir(path: Buffer): Promise<AsyncIterable<Dirent<Buffer>>>;
   open(path: Buffer, flags: number): Promise<FileHandle>;
   readlink(path: string): Promise<Buffer>;
 }
@@ -76,6 +87,8 @@ export const FOLDER_OPS: FolderOps = Object.freeze({
   lstat: (path: Buffer) => lstat(path, { bigint: true }),
   realpath: (path: Buffer) => realpath(path, { encoding: 'buffer' }),
   readdir: (path: Buffer) => readdir(path, { withFileTypes: true, encoding: 'buffer' }),
+  // Con encoding buffer, los nombres son Buffer (los tipos de node:fs no lo dicen).
+  opendir: (path: Buffer) => opendir(path, { encoding: 'buffer' as BufferEncoding, bufferSize: 128 }) as unknown as Promise<AsyncIterable<Dirent<Buffer>>>,
   open: (path: Buffer, flags: number) => open(path, flags),
   readlink: (path: string) => readlink(path, { encoding: 'buffer' }),
 });
@@ -96,28 +109,42 @@ interface Entry {
   /** La ruta desde la raíz ('' es la raíz) y la del sistema, armadas una vez. */
   path?: string;
   real?: Buffer;
-  stats?: Promise<BigIntStats>;
+  stats?: Promise<Seen>;
   listing?: Promise<Listing>;
   hash?: Promise<string>;
   /** En Linux, la carpeta abierta mientras alguien la usa. */
   opened?: { users: number; readonly handle: Promise<FileHandle> } | undefined;
+  /** Si sus entradas se están contando o ya se contaron (cada carpeta cuenta una vez). */
+  counted?: 'reading' | 'done';
 }
+
+/** Lo que se guarda del lstat de una entrada: su tipo, quién es y, de un archivo, su tamaño y su fecha. */
+interface Seen { readonly kind: Kind; readonly dev: bigint; readonly ino: bigint; readonly size: bigint; readonly mtimeNs: bigint }
 
 /** Las entradas de una carpeta, por nombre exacto y plegado. */
 interface Listing { readonly entries: readonly Entry[]; readonly exact: ReadonlyMap<string, Entry>; readonly folded: ReadonlyMap<string, Entry[]> }
+
+/**
+ * Las entradas que se leen de la carpeta de la entrega, como mucho, en una
+ * validación (contando las carpetas, cada una una vez): con más, la carpeta
+ * no se puede usar (tooManyEntries). En 2 MiB entran unos 33 000 archivos
+ * declarados.
+ */
+export const MAX_FOLDER_ENTRIES = 100_000;
 
 export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[] } = {}): MediaResolver {
   return folderResolver(dir, opts, FOLDER_OPS);
 }
 
-/** dirMediaResolver con otras operaciones del sistema de archivos (las de los tests). */
-export function folderResolver(dir: string, opts: { ignore?: readonly string[] }, ops: FolderOps): MediaResolver {
+/** dirMediaResolver con otras operaciones del sistema de archivos y otro tope de entradas (los de los tests). */
+export function folderResolver(dir: string, opts: { ignore?: readonly string[] }, ops: FolderOps, maxEntries = MAX_FOLDER_ENTRIES): MediaResolver {
   const ignore = [...(opts.ignore ?? [])];
+  let entriesRead = 0;
   const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir', path: '' };
   let anchor: Anchor = 'path';
 
   /** La raíz: tiene que existir y ser una carpeta (se sigue si es un enlace: la eligió quien llama). */
-  const rooted = async (): Promise<BigIntStats> => {
+  const rooted = async (): Promise<Seen> => {
     const given = Buffer.from(dir);
     let stats: BigIntStats;
     try {
@@ -128,7 +155,7 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       throw folderFailure(error, '', false);
     }
     anchor = await anchorOf(root.real, stats);
-    return stats;
+    return seenOf(stats);
   };
 
   /** Si se puede llegar a las entradas desde su carpeta ya identificada. */
@@ -158,10 +185,10 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
   const listingOf = (folder: Entry): Promise<Listing> => (folder.listing ??= readListing(folder));
 
   /** El lstat de una entrada, una vez, desde su carpeta; tiene que ser del tipo que dio su listado. La raíz, al empezar. */
-  const statsOf = (entry: Entry): Promise<BigIntStats> => (entry.stats ??= entry === root ? rooted() : lstatOf(entry));
+  const statsOf = (entry: Entry): Promise<Seen> => (entry.stats ??= entry === root ? rooted() : lstatOf(entry));
 
   /** El lstat de una entrada ahora, desde la carpeta que la listó, del tipo que dio su listado. */
-  async function lstatOf(entry: Entry, at?: Buffer): Promise<BigIntStats> {
+  async function lstatOf(entry: Entry, at?: Buffer): Promise<Seen> {
     const parent = entry.parent as Entry;
     let stats: BigIntStats;
     try {
@@ -175,14 +202,14 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       throw folderFailure(error, code === 'EACCES' || code === 'EPERM' ? pathOf(parent) : pathOf(entry), true);
     }
     if (kindOf(stats) !== entry.kind) throw new MediaFolderError('modified', pathOf(entry));
-    return stats;
+    return seenOf(stats);
   }
 
   /** El lstat de una carpeta ahora: la raíz por su ruta real, las demás desde la suya. */
-  async function lstatNow(folder: Entry): Promise<BigIntStats> {
+  async function lstatNow(folder: Entry): Promise<Seen> {
     if (folder.parent !== null) return lstatOf(folder);
     try {
-      return await ops.lstat(realOf(root));
+      return seenOf(await ops.lstat(realOf(root)));
     } catch (error) {
       throw folderFailure(error, '', true);
     }
@@ -196,16 +223,28 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
    * cierra el último.
    */
   async function withFolder<T>(folder: Entry, use: (at: Buffer) => Promise<T>): Promise<T> {
+    const lease = await leaseFolder(folder);
+    try {
+      return await use(lease.at);
+    } finally {
+      await lease.release();
+    }
+  }
+
+  async function leaseFolder(folder: Entry): Promise<{ at: Buffer; release: () => Promise<void> }> {
     const shared = (folder.opened ??= { users: 0, handle: openFolder(folder) });
     shared.users++;
-    try {
-      const handle = await shared.handle;
-      return await use(Buffer.from(`/proc/self/fd/${handle.fd}`));
-    } finally {
+    const release = async (): Promise<void> => {
       if (--shared.users === 0) {
         folder.opened = undefined;
         await shared.handle.then((h) => h.close(), () => undefined);
       }
+    };
+    try {
+      return { at: Buffer.from(`/proc/self/fd/${(await shared.handle).fd}`), release };
+    } catch (error) {
+      await release();
+      throw error;
     }
   }
 
@@ -227,32 +266,67 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
     }
   }
 
-  /**
-   * Las entradas de una carpeta, que tiene que ser la misma antes y después de
-   * leerla. En Linux se leen de la carpeta abierta y controlada, y las
-   * carpetas de adentro se miran desde ella, así se identifican sin volver a
-   * recorrer su ruta.
-   */
+  /** Las entradas de una carpeta, todas, para buscar paths en ella. */
   async function readListing(folder: Entry): Promise<Listing> {
+    return listingFrom(await collect(readEntries(folder)));
+  }
+
+  /**
+   * Las entradas de una carpeta, de a una, que tiene que ser la misma antes y
+   * después de leerla: en Linux se leen de la carpeta abierta y controlada, y
+   * las carpetas de adentro se identifican desde ella, sin volver a recorrer
+   * su ruta; en macOS, de la carpeta por su id; si no, por su ruta, con el
+   * lstat antes y después. Cuenta cada entrada contra el tope, una vez por
+   * carpeta.
+   */
+  async function* readEntries(folder: Entry): AsyncGenerator<Entry> {
     const seen = await statsOf(folder);
+    const counts = folder.counted === undefined;
+    if (counts) folder.counted = 'reading';
+    const lease = anchor === 'proc' ? await leaseFolder(folder) : null;
     try {
-      if (anchor === 'proc') {
-        return await withFolder(folder, async (at) => {
-          const listing = listingRead(folder, await ops.readdir(at));
-          const inner = listing.entries.filter((e) => e.kind === 'dir');
-          for (let start = 0; start < inner.length; start += AT_ONCE) {
-            await Promise.all(inner.slice(start, start + AT_ONCE).map((e) => (e.stats ??= lstatOf(e, at))));
-          }
-          return listing;
-        });
+      // Una carpeta chica se lee de una vez; una grande, de a partes, así se deja de leer en el tope.
+      let dir: Iterable<Dirent<Buffer>> | AsyncIterable<Dirent<Buffer>>;
+      const at = lease !== null ? lease.at : anchor === 'vol' ? volPath(seen) : realOf(folder);
+      try {
+        dir = seen.size > 0n && seen.size <= SMALL_FOLDER_BYTES ? await ops.readdir(at) : await ops.opendir(at);
+      } catch (error) {
+        throw folderFailure(error, pathOf(folder), folder.parent !== null);
       }
-      const dirents = await ops.readdir(anchor === 'vol' ? volPath(seen) : realOf(folder));
-      const after = await lstatNow(folder);
-      if (!after.isDirectory() || !same(after, seen)) throw new MediaFolderError('modified', pathOf(folder));
-      return listingRead(folder, dirents);
-    } catch (error) {
-      throw folderFailure(error, pathOf(folder), folder.parent !== null);
+      // Por la ruta, lo leído puede ser de otra carpeta hasta que se controla: se da después.
+      const held: Entry[] = [];
+      try {
+        for await (const d of dir) {
+          if (counts && ++entriesRead > maxEntries) throw new MediaFolderError('tooManyEntries', pathOf(folder));
+          const entry: Entry = { parent: folder, bytes: d.name, name: shownName(d.name), kind: d.isDirectory() ? 'dir' : typeOf(d) };
+          if (lease !== null && entry.kind === 'dir') {
+            held.push(entry);
+            if (held.length >= AT_ONCE) yield* identified(held.splice(0), lease.at);
+          } else if (anchor === 'path') {
+            held.push(entry);
+          } else {
+            yield entry;
+          }
+        }
+      } catch (error) {
+        throw folderFailure(error, pathOf(folder), true);
+      }
+      if (lease !== null) yield* identified(held, lease.at);
+      else {
+        const after = await lstatNow(folder);
+        if (after.kind !== 'dir' || !same(after, seen)) throw new MediaFolderError('modified', pathOf(folder));
+        yield* held;
+      }
+      if (counts) folder.counted = 'done';
+    } finally {
+      await lease?.release();
     }
+  }
+
+  /** Las carpetas de adentro, con su dev e ino mirados desde la carpeta abierta (Linux). */
+  async function* identified(folders: readonly Entry[], at: Buffer): AsyncGenerator<Entry> {
+    await Promise.all(folders.map((e) => (e.stats ??= lstatOf(e, at))));
+    yield* folders;
   }
 
   /** Abre el archivo desde su carpeta, sin seguir un enlace ni esperar. */
@@ -313,22 +387,19 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
 
   return {
     async *list() {
-      // En profundidad y en orden de nombre, con una pila (cada carpeta, sus entradas de atrás hacia adelante).
-      const stack: Entry[][] = [];
-      const enter = async (folder: Entry): Promise<void> => {
-        const { entries } = await listingOf(folder);
-        stack.push([...entries].sort((a, b) => (a.name < b.name ? 1 : a.name > b.name ? -1 : 0)));
-      };
-      await enter(root);
-      while (stack.length > 0) {
-        const entry = (stack[stack.length - 1] as Entry[]).pop();
-        if (entry === undefined) {
-          stack.pop();
-          continue;
+      // En profundidad, de a varias carpetas a la vez, sin guardar lo que ya dio: quedan pendientes solo las carpetas
+      // de adentro. Una carpeta que ya se listó para buscar paths no se vuelve a leer.
+      const pending: Entry[] = [root];
+      while (pending.length > 0) {
+        const wave = pending.splice(Math.max(0, pending.length - FOLDERS_AT_ONCE));
+        const read = await Promise.all(wave.map(async (folder) => (folder.listing === undefined ? collect(readEntries(folder)) : (await folder.listing).entries)));
+        for (const entries of read) {
+          for (const entry of entries) {
+            // Una carpeta se recorre; un enlace nunca se sigue.
+            if (entry.kind === 'dir') pending.push(entry);
+            else if (!ignored(pathOf(entry))) yield { path: pathOf(entry), type: entry.kind };
+          }
         }
-        // Una carpeta se recorre; un enlace nunca se sigue.
-        if (entry.kind === 'dir') await enter(entry);
-        else if (!ignored(pathOf(entry))) yield { path: pathOf(entry), type: entry.kind };
       }
     },
 
@@ -371,9 +442,10 @@ function pick(listing: Listing, segment: string): Entry | null {
   return variants?.length === 1 ? (variants[0] as Entry) : null;
 }
 
-/** Las entradas de una carpeta desde lo que dio readdir. */
-function listingRead(folder: Entry, dirents: readonly Dirent<Buffer>[]): Listing {
-  return listingFrom(dirents.map((d) => ({ parent: folder, bytes: d.name, name: shownName(d.name), kind: d.isDirectory() ? 'dir' : typeOf(d) })));
+async function collect<T>(items: AsyncIterable<T>): Promise<T[]> {
+  const out: T[] = [];
+  for await (const item of items) out.push(item);
+  return out;
 }
 
 function listingFrom(entries: readonly Entry[]): Listing {
@@ -404,12 +476,16 @@ function realOf(entry: Entry): Buffer {
 }
 
 /** La carpeta por su id en macOS. */
-function volPath(stats: BigIntStats): Buffer {
+function volPath(stats: { dev: bigint; ino: bigint }): Buffer {
   return Buffer.from(`/.vol/${stats.dev}/${stats.ino}`);
 }
 
-function same(a: BigIntStats, b: BigIntStats): boolean {
+function same(a: { dev: bigint; ino: bigint }, b: { dev: bigint; ino: bigint }): boolean {
   return a.dev === b.dev && a.ino === b.ino;
+}
+
+function seenOf(stats: BigIntStats): Seen {
+  return { kind: kindOf(stats), dev: stats.dev, ino: stats.ino, size: stats.size, mtimeNs: stats.mtimeNs };
 }
 
 function kindOf(stats: BigIntStats): Kind {

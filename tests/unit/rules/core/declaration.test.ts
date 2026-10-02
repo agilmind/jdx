@@ -10,7 +10,7 @@ import { emptyState } from '../../../../src/state/fileStateStore.js';
 import type { DeclarationState, Finding, JsonValue, Receipt, State, StateStore } from '../../../../src/types.js';
 import { docBuilder, EXAMPLE_NAME } from '../../../helpers/docBuilder.js';
 import { measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
-import { findingProblems, makeRuleContext, type RuleContextOverrides, testDeps, validateExample } from '../../../helpers/ruleContext.js';
+import { findingProblems, findingsOf, makeRuleContext, type RuleContextOverrides, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 
 const ID = '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13';
 const OTHER_SHA = 'ee53610fc89012e5b1eea19cc3ae8a81932981146afa63920a027d2a42222787';
@@ -20,7 +20,7 @@ const RULES_OF_STATE = [DEC_003, DEC_004, DEC_005];
 async function declaration(overrides: RuleContextOverrides = {}): Promise<Finding[]> {
   const ctx = await makeRuleContext(overrides);
   const found: Finding[] = [];
-  for (const rule of [DEC_002, ...RULES_OF_STATE]) found.push(...(await rule.evaluate(ctx, {})));
+  for (const rule of [DEC_002, ...RULES_OF_STATE]) found.push(...findingsOf(await rule.evaluate(ctx, {})));
   expect(findingProblems(found)).toEqual([]);
   return found;
 }
@@ -46,7 +46,7 @@ describe('DEC-002', () => {
 
   it('revision 2 named .r7. → DEC-002', async () => {
     const ctx = await makeRuleContext({ fileName: `${ID}.r7.jdx.json` });
-    const found = await DEC_002.evaluate(ctx, {});
+    const found = findingsOf(await DEC_002.evaluate(ctx, {}));
     expect(findingProblems(found)).toEqual([]);
     expect(brief(found)).toEqual([['JDX-DEC-002', '', { fileName: `${ID}.r7.jdx.json`, expected: EXAMPLE_NAME }]]);
   });
@@ -121,7 +121,7 @@ describe('DEC-003 to DEC-005', () => {
     expect(DEC_002.requires).toBeUndefined();
     const ctx = await makeRuleContext();
     expect(ctx.state).toBeNull();
-    for (const rule of RULES_OF_STATE) expect(await rule.evaluate(ctx, {})).toEqual([]);
+    for (const rule of RULES_OF_STATE) expect(findingsOf(await rule.evaluate(ctx, {}))).toEqual([]);
     // Un estado sin la declaración tampoco.
     expect(await declaration({ state: { ...emptyState('sandbox'), declarations: { otra: { receipts: [receipt(1, OTHER_SHA, 'rejected')], media: [], owner: 'otro-emisor', lastIngestedRevision: 9 } } } })).toEqual([]);
   });

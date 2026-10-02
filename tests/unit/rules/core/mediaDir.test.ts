@@ -18,7 +18,7 @@ import { emptyState } from '../../../../src/state/fileStateStore.js';
 import type { Finding, JsonValue, MediaRecord, MediaResolver, State, StateStore } from '../../../../src/types.js';
 import { type DocBuilder, docBuilder } from '../../../helpers/docBuilder.js';
 import { type Doc, flood, measured, omittedOf, resultsOf } from '../../../helpers/flood.js';
-import { findingProblems, makeRuleContext, type RuleContextOverrides, testDeps, validateExample } from '../../../helpers/ruleContext.js';
+import { findingProblems, findingsOf, makeRuleContext, type RuleContextOverrides, testDeps, validateExample } from '../../../helpers/ruleContext.js';
 
 const ID = '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13';
 const CODES = ['JDX-MED-002', 'JDX-MED-006', 'JDX-MED-007', 'JDX-MED-008'] as const;
@@ -72,7 +72,7 @@ async function mediaDir(overrides: RuleContextOverrides): Promise<Finding[]> {
   const found: Finding[] = [];
   for (const rule of [MED_002, MED_006, MED_007, MED_008]) {
     if (rule.requires?.some((need) => ctx[need] === null) === true) continue;
-    found.push(...(await rule.evaluate(ctx, {})));
+    found.push(...findingsOf(await rule.evaluate(ctx, {})));
   }
   expect(findingProblems(found)).toEqual([]);
   return found;

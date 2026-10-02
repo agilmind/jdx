@@ -14,6 +14,8 @@
  *   pide x-jdx-ref-type lo controla el perfil.
  * - `unresolved(puntero)` dice si dentro de ese lugar hay una referencia que no
  *   resuelve: una regla que depende de una referencia no evalúa ese objeto.
+ * - contextAt y valuesAt dan a las reglas el context de un lugar y los valores
+ *   de los lugares de un patrón, con el mismo recorrido que las referencias.
  *
  * Recibe un documento que ya cumple su schema.
  */
@@ -96,37 +98,52 @@ export function contextAt(doc: JdxDocument | JsonValue, pointer: JsonPointer): F
   return isObject(obj) && typeof obj.id === 'string' ? { [CONTEXT_KEY[list]]: obj.id } : undefined;
 }
 
+/**
+ * Cada valor de los lugares de un patrón del índice del schema (`*` es un
+ * segmento cualquiera), en el orden del documento: su puntero, el context del
+ * objeto de la lista raíz que lo contiene (el de contextAt) y el objeto o la
+ * lista que lo tiene. Baja solo por el camino del patrón, así cada puntero es
+ * corto aunque el documento tenga claves largas en otro lugar.
+ */
+export function valuesAt(
+  doc: JdxDocument | JsonValue,
+  pattern: string,
+  visit: (pointer: JsonPointer, value: JsonValue, context: FindingContext | undefined, container: JsonValue) => void,
+): void {
+  visitPattern(doc as unknown as JsonValue, segmentsOf(pattern), (pointer, value, context, _parent, container) => visit(pointer, value, context, container));
+}
+
 function listOf(root: JsonValue, list: RootList): readonly JsonValue[] {
   const value = isObject(root) && Object.hasOwn(root, list) ? root[list] : undefined;
   return Array.isArray(value) ? value : [];
 }
 
-type Visit = (pointer: JsonPointer, value: JsonValue, context: FindingContext | undefined, parent: JsonPointer) => void;
+type Visit = (pointer: JsonPointer, value: JsonValue, context: FindingContext | undefined, parent: JsonPointer, container: JsonValue) => void;
 
 /**
  * Cada valor de los lugares de un patrón (`*` es un segmento cualquiera), en el
  * orden del documento, con el context del objeto de la lista raíz que lo
- * contiene (el de contextAt, armado una vez por objeto) y el puntero de su
- * padre (el mismo texto para todos los de un mismo lugar).
+ * contiene (el de contextAt, armado una vez por objeto), el puntero de su
+ * padre (el mismo texto para todos los de un mismo lugar) y el padre mismo.
  */
 function visitPattern(root: JsonValue, pattern: readonly string[], visit: Visit): void {
   const list = ROOT_LISTS.find((l) => l === pattern[0]);
-  const step = (node: JsonValue, at: number, pointer: JsonPointer, parent: JsonPointer, context: FindingContext | undefined): void => {
+  const step = (node: JsonValue, at: number, pointer: JsonPointer, parent: JsonPointer, container: JsonValue, context: FindingContext | undefined): void => {
     if (at === 2 && list !== undefined && isObject(node) && typeof node.id === 'string') context = { [CONTEXT_KEY[list]]: node.id };
     if (at === pattern.length) {
-      visit(pointer, node, context, parent);
+      visit(pointer, node, context, parent, container);
       return;
     }
     const segment = pattern[at] as string;
     if (Array.isArray(node)) {
-      if (segment === '*') for (let i = 0; i < node.length; i++) step(node[i] as JsonValue, at + 1, `${pointer}/${i}`, pointer, context);
-      else if (INDEX.test(segment) && Number(segment) < node.length) step(node[Number(segment)] as JsonValue, at + 1, `${pointer}/${segment}`, pointer, context);
+      if (segment === '*') for (let i = 0; i < node.length; i++) step(node[i] as JsonValue, at + 1, `${pointer}/${i}`, pointer, node, context);
+      else if (INDEX.test(segment) && Number(segment) < node.length) step(node[Number(segment)] as JsonValue, at + 1, `${pointer}/${segment}`, pointer, node, context);
     } else if (isObject(node)) {
       const keys = segment === '*' ? Object.keys(node) : Object.hasOwn(node, segment) ? [segment] : [];
-      for (const key of keys) step(node[key] as JsonValue, at + 1, `${pointer}/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`, pointer, context);
+      for (const key of keys) step(node[key] as JsonValue, at + 1, `${pointer}/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`, pointer, node, context);
     }
   };
-  step(root, 0, '', '', undefined);
+  step(root, 0, '', '', root, undefined);
 }
 
 /**

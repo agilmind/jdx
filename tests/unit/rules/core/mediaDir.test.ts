@@ -309,14 +309,33 @@ describe('MED-006', () => {
 
 describe('hostile input through validateWithDeps', () => {
   /** Un archivo con un path propio, de un mismo largo: `a00000.pdf`, … */
-  const mediaItem = (more: string) => (i: number) => `{"id":"m${i.toString(36).padStart(5, '0')}","kind":"audio","path":"a${i.toString(36).padStart(5, '0')}.pdf",${more}}`;
-  const mediaFlood = (more: string, base?: string) => flood((d, marker) => {
+  const mediaItem = (more: string, path = (i: number) => `a${i.toString(36).padStart(5, '0')}.pdf`) => (i: number) =>
+    `{"id":"m${i.toString(36).padStart(5, '0')}","kind":"audio","path":"${path(i)}",${more}}`;
+  const mediaFlood = (more: string, base?: string, path?: (i: number) => string) => flood((d, marker) => {
     delete (d.edition as Doc).deposit;
     delete (d.edition as Doc).media;
     delete (d.recordings as Doc[])[0]!.media;
     delete (d.agreements as Doc[])[0]!.media;
     d.media = marker;
-  }, mediaItem(more), base);
+  }, mediaItem(more, path), base);
+
+  it('a chain of folders as deep as the system allows, with 2 MiB of files declared at its bottom, is looked up quickly', async () => {
+    // Cada path pasa por toda la cadena: buscarlo no puede costar el largo de la cadena por cada segmento.
+    const dir = folder();
+    const pathMax = process.platform === 'darwin' ? 1024 : 4096;
+    const depth = Math.floor((pathMax - dir.length - 20) / 2);
+    const chain = 'a/'.repeat(depth);
+    mkdirSync(join(dir, chain), { recursive: true });
+    const name = (i: number) => `f${String(i).padStart(5, '0')}.pdf`;
+    const { text, count } = mediaFlood('"delivery":1,"size":1', undefined, (i) => `${chain}${name(i)}`);
+    for (let i = 0; i < count; i++) writeFileSync(join(dir, chain, name(i)), 'x');
+    const { report, ms } = await measured({ document: text, options: { media: dirMediaResolver(dir) } });
+    expect(reportErrors(report)).toEqual([]);
+    expect(resultsOf(report, ...CODES)).toEqual([]);
+    expect(report.checks.media).toBe('passed');
+    expect(count).toBeGreaterThan(400);
+    expect(ms).toBeLessThan(5_000);
+  });
 
   it('registers MED-002, MED-006, MED-007 and MED-008', () => {
     expect(CODES.map((id) => RULES.get(id))).toEqual([MED_002, MED_006, MED_007, MED_008]);

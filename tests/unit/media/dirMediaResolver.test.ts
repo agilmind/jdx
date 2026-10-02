@@ -238,24 +238,27 @@ describe('dirMediaResolver', () => {
     await expect(resolver.sha256('secreto.txt')).rejects.toThrow('no es un archivo regular de la entrega');
   });
 
-  it('a file replaced by a link after stat is not followed by sha256', async () => {
+  it('a file replaced by a link between stat and sha256 is never read: the folder changed', async () => {
     const outside = delivery({ 'secreto.txt': 'no' });
     const dir = delivery({ 'a.pdf': 'a' });
     const resolver = dirMediaResolver(dir);
     expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 1 });
     rmSync(join(dir, 'a.pdf'));
     symlinkSync(join(outside, 'secreto.txt'), join(dir, 'a.pdf'));
-    await expect(resolver.sha256('a.pdf')).rejects.toThrow('no es un archivo regular de la entrega');
+    // El resolver ya vio un archivo regular: abre sin seguir el enlace, y la falla es que la carpeta cambió.
+    expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
   });
 
-  it('a file put in the place of one already hashed is hashed again', async () => {
-    const dir = delivery({ 'a.pdf': 'uno', 'b.pdf': 'dos' });
+  it('a file put in the place of one already looked up is a change of the folder, and a file is read once', async () => {
+    const dir = delivery({ 'a.pdf': 'uno', 'b.pdf': 'dos', 'c.pdf': 'tres' });
     const resolver = dirMediaResolver(dir);
-    expect(await resolver.sha256('a.pdf')).toBe(sha('uno'));
-    expect(await resolver.sha256('A.PDF')).toBe(sha('uno'));
-    // Otro archivo en el mismo nombre es otro archivo: se lee.
+    expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 3 });
     renameSync(join(dir, 'b.pdf'), join(dir, 'a.pdf'));
-    expect(await resolver.sha256('a.pdf')).toBe(sha('dos'));
+    expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
+    // Uno que ya se leyó no se vuelve a leer: el resolver es una foto de la carpeta.
+    expect(await resolver.sha256('c.pdf')).toBe(sha('tres'));
+    rmSync(join(dir, 'c.pdf'));
+    expect(await resolver.sha256('C.PDF')).toBe(sha('tres'));
   });
 
   it('check refuses a root that is missing, is not a folder or cannot be read', async () => {

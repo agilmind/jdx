@@ -17,6 +17,7 @@ import { MAX_DOCUMENT_BYTES } from '../../../src/validate/jsonStage.js';
 import type { Finding, JsonValue, MediaResolver, Report, Rule, RuleContext, State, StateStore, ValidatorDeps } from '../../../src/types.js';
 import { docBuilder, EXAMPLE_NAME, exampleText } from '../../helpers/docBuilder.js';
 import { findingProblems, makeRuleContext, RECEIVED_AT, testDeps, validateExample } from '../../helpers/ruleContext.js';
+import { validateWithDeps } from '../../../src/validate/validate.js';
 import { sadaicProfile } from '../../helpers/sadaicProfile.js';
 import { signTestTrustList, TEST_NOW, TEST_ROOT_KEYS, trustListExample } from '../../helpers/trustFixtures.js';
 
@@ -307,6 +308,47 @@ describe('registry and deps', () => {
       .toEqual(['1.0', 79, ['https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0'], '2026-10', ['1.0'], '1.0.0']);
     expect([one.roots.production, one.roots.sandbox]).toEqual([[], []]);
     expect(Math.abs(one.clock().getTime() - Date.now())).toBeLessThan(5_000);
+  });
+});
+
+describe('a file over the size cap, given without its bytes', () => {
+  const OVER = MAX_DOCUMENT_BYTES + 1;
+  const bytes = new Uint8Array(OVER).fill(0x20);
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const opts = { profile: 'sadaic/0.1', env: 'sandbox' as const, receivedAt: RECEIVED_AT };
+
+  it('gives JDX-JSN-001 size after the environment step, as with its bytes', async () => {
+    const withoutBytes = await validateWithDeps({ fileName: EXAMPLE_NAME, size: OVER, sha256 }, opts, deps);
+    expect(reportErrors(withoutBytes)).toEqual([]);
+    expect(withoutBytes).toMatchObject({
+      valid: false, disposition: 'reject', exitCode: 1,
+      checks: { environment: 'passed', json: 'failed', schema: 'notEvaluated', core: 'notEvaluated', signature: 'notEvaluated' },
+      document: { fileName: EXAMPLE_NAME, declarationId: null, revision: null, jdx: null, sha256, size: OVER, declaredProfiles: null, issuer: null, media: null },
+      results: [{ ruleId: 'JDX-JSN-001', instanceLocation: '', params: { reason: 'size', offset: MAX_DOCUMENT_BYTES } }],
+      omitted: [],
+    });
+    // El mismo reporte que con los bytes.
+    expect(withoutBytes).toEqual(await validateWithDeps({ fileName: EXAMPLE_NAME, bytes }, opts, deps));
+    // El entorno va primero: con una opción que falta, salida 2 y ningún JDX-JSN-001.
+    const environment = await validateWithDeps({ fileName: EXAMPLE_NAME, size: OVER, sha256 }, { ...opts, receivedAt: '' }, deps);
+    expect(reportErrors(environment)).toEqual([]);
+    expect(environment).toMatchObject({ exitCode: 2, document: { sha256, size: OVER }, results: [{ ruleId: 'JDX-ENV-010' }] });
+    expect(environment.results).toHaveLength(1);
+    // Con .jws, la lista del paso 1 sale en el reporte.
+    const list = signTestTrustList({ ...trustListExample(), env: 'sandbox' }, TEST_ROOT_KEYS.sandbox.slice(0, 2));
+    const signed = await validateWithDeps({ fileName: EXAMPLE_NAME, size: OVER, sha256, jws: 'eyJhbGciOiJFUzI1NiJ9..c2lnbmF0dXJh' }, { ...opts, trustList: list }, deps);
+    expect([signed.exitCode, signed.trustList, signed.signature.status]).toEqual([1, { seq: 1, expiresAt: '2026-12-29T00:00:00-03:00' }, 'notEvaluated']);
+  });
+
+  it('is only for a file over the cap, with a size and a sha256 that can be', async () => {
+    const run = (input: object) => validateWithDeps(input as Parameters<typeof validateWithDeps>[0], opts, deps);
+    await expect(run({ fileName: EXAMPLE_NAME, size: MAX_DOCUMENT_BYTES, sha256 })).rejects.toThrow(
+      `sin bytes, solo un archivo de más de ${MAX_DOCUMENT_BYTES} bytes, con un size entero y un sha256 en hexadecimal: size ${MAX_DOCUMENT_BYTES}`,
+    );
+    await expect(run({ fileName: EXAMPLE_NAME, size: OVER + 0.5, sha256 })).rejects.toThrow('sin bytes, solo un archivo');
+    await expect(run({ fileName: EXAMPLE_NAME, size: OVER, sha256: sha256.toUpperCase() })).rejects.toThrow('sin bytes, solo un archivo');
+    await expect(run({ fileName: EXAMPLE_NAME, size: OVER, sha256, bytes })).rejects.toThrow('la entrada trae bytes y también size o sha256');
+    await expect(run({ fileName: EXAMPLE_NAME })).rejects.toThrow('la entrada no trae bytes ni size y sha256');
   });
 });
 

@@ -396,7 +396,13 @@ export type SchemaStageOutcome =
 
 // ───────────── Librería ─────────────
 
-export interface ValidateInput { bytes: Uint8Array; fileName: string; jws?: string }
+/**
+ * El archivo a validar: sus bytes, o, para uno de más de MAX_DOCUMENT_BYTES, solo su tamaño y su sha256, así quien
+ * lo valida no lo lee entero (da JDX-JSN-001 `size` igual que con los bytes).
+ */
+export type ValidateInput =
+  | { bytes: Uint8Array; fileName: string; jws?: string }
+  | { size: number; sha256: string; fileName: string; jws?: string };
 export interface ValidateOptions {
   profile: string | Profile;
   env: Env;

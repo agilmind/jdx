@@ -100,7 +100,8 @@ describe('src/types.ts', () => {
   });
 
   it('ValidateInput and ValidateOptions have the documented shape', () => {
-    type SpecInput = { bytes: Uint8Array; fileName: string; jws?: string };
+    // Un archivo de más del tope se puede pasar sin leerlo, con su tamaño y su sha256.
+    type SpecInput = { bytes: Uint8Array; fileName: string; jws?: string } | { size: number; sha256: string; fileName: string; jws?: string };
     type SpecOptions = {
       profile: string | Profile;
       env: 'production' | 'sandbox';

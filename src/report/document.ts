@@ -2,7 +2,8 @@
  * Lo que el reporte dice del documento validado (`document`).
  *
  * - `fileName`, `sha256` y `size` salen de la entrada: el nombre tal como
- *   llegó y los bytes, también cuando el JSON no se puede leer.
+ *   llegó y los bytes, también cuando el JSON no se puede leer. Un archivo de
+ *   más del tope puede llegar sin sus bytes, con su tamaño y su sha256.
  * - Con JSON ilegible no hay valor (el parser no da uno parcial): todo lo que
  *   se lee del contenido es null.
  * - `declarationId`, `revision` y `jdx` son null solo si no cumplen su patrón
@@ -20,8 +21,9 @@ import type { JsonValue, MediaRecord, ParsedJson, ReportDocument, ValidateInput 
 
 export function documentFacts(input: ValidateInput, json: ParsedJson | null, schemaPassed: boolean): ReportDocument {
   const fileName = input.fileName;
-  const sha256 = createHash('sha256').update(input.bytes).digest('hex');
-  const size = input.bytes.length;
+  const bytes = 'bytes' in input ? input.bytes : undefined;
+  const sha256 = bytes !== undefined ? createHash('sha256').update(bytes).digest('hex') : (input as { sha256: string }).sha256;
+  const size = bytes !== undefined ? bytes.length : (input as { size: number }).size;
   if (json === null) {
     return { fileName, declarationId: null, revision: null, jdx: null, sha256, size, declaredProfiles: null, issuer: null, media: null };
   }

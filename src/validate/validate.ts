@@ -5,6 +5,8 @@
  * 1. El entorno (evaluateEnvironment). Si falla: salida 2, un JDX-ENV-* por
  *    falla y, del documento, lo que se pueda leer del archivo.
  * 2. El JSON (jsonStage). Si falla: sus JDX-JSN-001, y lo demás notEvaluated.
+ *    Un archivo de más de MAX_DOCUMENT_BYTES puede llegar sin sus bytes, con su
+ *    tamaño y su sha256: da el mismo JDX-JSN-001 `size`, después del entorno.
  * 3. La versión y el schema (schemaStage), con el perfil resuelto. Un perfil
  *    que no admite la versión es del entorno (salida 2); con errores, lo demás
  *    notEvaluated.
@@ -32,7 +34,7 @@ import type {
 } from '../types.js';
 import { buildDocIndex } from './docIndex.js';
 import { evaluateEnvironment } from './environment.js';
-import { jsonStage } from './jsonStage.js';
+import { jsonStageOf } from './jsonStage.js';
 import { schemaStage } from './schemaStage.js';
 
 const NOT_EVALUATED: ReportSignature = Object.freeze({ status: 'notEvaluated', kid: null, issuer: null, env: null, reason: null });
@@ -43,7 +45,7 @@ export async function validateWithDeps(input: ValidateInput, opts: ValidateOptio
   const finish = (parts: Finish): Report => report(deps, env.reportOptions, parts);
 
   if (!env.ok) {
-    const json = jsonStage(input.bytes);
+    const json = jsonStageOf(input);
     return finish({
       document: documentFacts(input, json.ok ? json.json : null, false), appliedProfiles: env.profile === null ? [] : [env.profile.applied],
       outcome: 'environment', evaluated: ['environment'], hasState: false, signature: NOT_EVALUATED, trustList: null,
@@ -55,7 +57,7 @@ export async function validateWithDeps(input: ValidateInput, opts: ValidateOptio
     trustList: env.trust === null ? null : { seq: env.trust.list.seq, expiresAt: env.trust.list.expiresAt },
   };
 
-  const json = jsonStage(input.bytes);
+  const json = jsonStageOf(input);
   if (!json.ok) {
     return finish({
       ...base, document: documentFacts(input, null, false), outcome: 'completed', evaluated: ['environment', 'json'], signature: NOT_EVALUATED,

@@ -16,7 +16,7 @@ import { defaultDeps } from '../../../src/validate/deps.js';
 import { MAX_DOCUMENT_BYTES } from '../../../src/validate/jsonStage.js';
 import type { Finding, JsonValue, MediaResolver, Report, Rule, RuleContext, State, StateStore, ValidatorDeps } from '../../../src/types.js';
 import { docBuilder, EXAMPLE_NAME, exampleText } from '../../helpers/docBuilder.js';
-import { findingProblems, makeRuleContext, RECEIVED_AT, testDeps, validateExample } from '../../helpers/ruleContext.js';
+import { type ExampleRun, findingProblems, makeRuleContext, RECEIVED_AT, testDeps, validateExample } from '../../helpers/ruleContext.js';
 import { validateWithDeps } from '../../../src/validate/validate.js';
 import { sadaicProfile } from '../../helpers/sadaicProfile.js';
 import { signTestTrustList, TEST_NOW, TEST_ROOT_KEYS, trustListExample } from '../../helpers/trustFixtures.js';
@@ -222,8 +222,37 @@ describe('validateWithDeps', () => {
     expect(report).toMatchObject({ exitCode: 1, checks: { core: 'failed', profile: 'warning' } });
   });
 
-  it('makeRuleContext builds from the example and the bundled data', () => {
-    const ctx = makeRuleContext();
+  it('makeRuleContext builds the context that validateWithDeps gives the rules', async () => {
+    // Una regla de prueba guarda el contexto que recibe; el helper tiene que dar el mismo, con las mismas opciones.
+    const captured = async (run: ExampleRun): Promise<RuleContext> => {
+      let seen: RuleContext | undefined;
+      const spy: Rule = { id: 'JDX-NUM-001', evaluate: (ctx) => { seen = ctx; return []; } };
+      await validateExample({ ...run, deps: { ...run.deps, rules: ruleMap([spy]) } });
+      if (seen === undefined) throw new Error('la regla no corrió');
+      return seen;
+    };
+    const comparable = (ctx: RuleContext) => ({
+      doc: ctx.doc, numbers: [...ctx.json.numberTexts], byId: [...ctx.index.byId], refs: ctx.index.refs, schemaIndex: ctx.schemaIndex, input: ctx.input,
+      options: ctx.options, now: ctx.now, profile: ctx.profile, values: ctx.values, world: ctx.territories.expand({ include: ['2136'] }).countries.size,
+      state: ctx.state, media: ctx.media, account: ctx.account, signature: ctx.signature, trust: ctx.trust,
+    });
+    const production = memoryState(emptyState('production'));
+    const runs: ExampleRun[] = [
+      {},
+      { options: { env: 'production', state: production } },
+      { options: { signature: 'required' } },
+      { options: { profile: { ...sadaicProfile(), signature: 'required' } } },
+      { document: docBuilder().set('/declaration/revision', 2), fileName: 'x.jdx.json', options: { lang: 'en', failOn: 'warning', media: emptyDir } },
+    ];
+    for (const run of runs) expect(comparable(await makeRuleContext(run)), JSON.stringify(run.options ?? {})).toEqual(comparable(await captured(run)));
+    // Lo que deriva la validación: la firma pedida por el entorno y el piso del perfil, y el reloj del validador.
+    const [byEnv, explicit, byFloor] = await Promise.all([captured(runs[1]!), captured(runs[2]!), captured(runs[3]!)]);
+    expect([byEnv.options.signature, byEnv.options.signatureExplicit, explicit.options.signatureExplicit, byFloor.options.signature]).toEqual(['required', false, true, 'required']);
+    expect([byEnv.now.text, byEnv.options.receivedAt.text]).toEqual([TEST_NOW.toISOString(), RECEIVED_AT]);
+  });
+
+  it('makeRuleContext builds from the example and the bundled data', async () => {
+    const ctx = await makeRuleContext();
     const bytes = new TextEncoder().encode(exampleText());
     expect(ctx.doc).toEqual(JSON.parse(exampleText()));
     expect(ctx.json.numberTexts.get('/works/0/shares/0/percent')).toBe('12.5');
@@ -235,12 +264,15 @@ describe('validateWithDeps', () => {
     expect(ctx.territories.expand({ include: ['2136'] }).countries.size).toBe(249);
     expect([ctx.state, ctx.media, ctx.account, ctx.trust, ctx.signature.report.status]).toEqual([null, null, null, null, 'absent']);
     // Cada parte se puede cambiar; un documento que no cumple el schema no da un contexto.
-    const other = makeRuleContext({
-      document: docBuilder().set('/declaration/revision', 2), input: { fileName: 'x.jdx.json' }, state: emptyState('sandbox'), media: emptyDir, options: { lang: 'en' },
+    const other = await makeRuleContext({
+      document: docBuilder().set('/declaration/revision', 2), fileName: 'x.jdx.json', state: emptyState('sandbox'), options: { media: emptyDir, lang: 'en' },
+      now: '2026-12-01T00:00:00Z',
     });
-    expect([other.doc.declaration.revision, other.input.fileName, other.state?.stateVersion, other.media, other.options.lang, other.options.dir]).toEqual([2, 'x.jdx.json', 1, emptyDir, 'en', true]);
-    expect(() => makeRuleContext({ document: docBuilder().remove('/declaration') })).toThrow(/JDX-SCH-001/);
-    expect(() => makeRuleContext({ document: '{' })).toThrow(/JDX-JSN-001/);
+    expect([other.doc.declaration.revision, other.input.fileName, other.state?.stateVersion, other.media, other.options.lang, other.options.dir, other.now.text])
+      .toEqual([2, 'x.jdx.json', 1, emptyDir, 'en', true, '2026-12-01T00:00:00.000Z']);
+    await expect(makeRuleContext({ document: docBuilder().remove('/declaration') })).rejects.toThrow(/JDX-SCH-001/);
+    await expect(makeRuleContext({ document: '{' })).rejects.toThrow(/JDX-JSN-001/);
+    await expect(makeRuleContext({ options: { env: 'production' } })).rejects.toThrow(/JDX-ENV-010/);
     // findingProblems controla los hallazgos contra el catálogo.
     expect(findingProblems([{ ruleId: 'JDX-REF-002', instanceLocation: '/works/0/shares/0/party', context: { work: 'w1' }, params: { value: 'p9', list: 'parties' } }])).toEqual([]);
     expect(findingProblems([

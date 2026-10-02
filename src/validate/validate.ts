@@ -41,16 +41,39 @@ const NOT_EVALUATED: ReportSignature = Object.freeze({ status: 'notEvaluated', k
 const ABSENT: ReportSignature = Object.freeze({ status: 'absent', kid: null, issuer: null, env: null, reason: null });
 
 export async function validateWithDeps(input: ValidateInput, opts: ValidateOptions, deps: ValidatorDeps): Promise<Report> {
+  const prepared = await prepareRules(input, opts, deps);
+  if (!prepared.ok) return prepared.report;
+  return prepared.finish([...prepared.findings, ...(await runRules(prepared.ctx, deps))]);
+}
+
+/**
+ * Hasta el paso de las reglas: o el reporte de una validación que terminó
+ * antes, o el contexto que reciben las reglas, los hallazgos que ya hay y cómo
+ * terminar el reporte con los de las reglas.
+ */
+export type PreparedRules =
+  | { ok: false; report: Report }
+  | { ok: true; ctx: RuleContext; findings: readonly Finding[]; finish: (findings: readonly Finding[]) => Report };
+
+/**
+ * Los pasos 1 a 3 y el índice del documento, y el contexto de las reglas
+ * armado de lo que dieron: el mismo para validateWithDeps y para los tests de
+ * reglas, que así reciben lo que reciben en una validación.
+ */
+export async function prepareRules(input: ValidateInput, opts: ValidateOptions, deps: ValidatorDeps): Promise<PreparedRules> {
   const env = await evaluateEnvironment(input, opts, deps);
   const finish = (parts: Finish): Report => report(deps, env.reportOptions, parts);
 
   if (!env.ok) {
     const json = jsonStageOf(input);
-    return finish({
-      document: documentFacts(input, json.ok ? json.json : null, false), appliedProfiles: env.profile === null ? [] : [env.profile.applied],
-      outcome: 'environment', evaluated: ['environment'], hasState: false, signature: NOT_EVALUATED, trustList: null,
-      findings: env.findings, profile: env.profile,
-    });
+    return {
+      ok: false,
+      report: finish({
+        document: documentFacts(input, json.ok ? json.json : null, false), appliedProfiles: env.profile === null ? [] : [env.profile.applied],
+        outcome: 'environment', evaluated: ['environment'], hasState: false, signature: NOT_EVALUATED, trustList: null,
+        findings: env.findings, profile: env.profile,
+      }),
+    };
   }
   const base = {
     appliedProfiles: [env.profile.applied], hasState: env.state !== null, profile: env.profile,
@@ -59,23 +82,32 @@ export async function validateWithDeps(input: ValidateInput, opts: ValidateOptio
 
   const json = jsonStageOf(input);
   if (!json.ok) {
-    return finish({
-      ...base, document: documentFacts(input, null, false), outcome: 'completed', evaluated: ['environment', 'json'], signature: NOT_EVALUATED,
-      findings: json.findings, stopped: json.capped === true ? ['JDX-JSN-001'] : [],
-    });
+    return {
+      ok: false,
+      report: finish({
+        ...base, document: documentFacts(input, null, false), outcome: 'completed', evaluated: ['environment', 'json'], signature: NOT_EVALUATED,
+        findings: json.findings, stopped: json.capped === true ? ['JDX-JSN-001'] : [],
+      }),
+    };
   }
   const schema = schemaStage(json.json, { bundle: deps.schemas, validators: deps.validators, profile: env.profile.profile });
   if (schema.kind === 'environment') {
-    return finish({
-      ...base, document: documentFacts(input, json.json, false), outcome: 'environment', evaluated: ['environment', 'json'],
-      hasState: false, signature: NOT_EVALUATED, trustList: null, findings: schema.findings,
-    });
+    return {
+      ok: false,
+      report: finish({
+        ...base, document: documentFacts(input, json.json, false), outcome: 'environment', evaluated: ['environment', 'json'],
+        hasState: false, signature: NOT_EVALUATED, trustList: null, findings: schema.findings,
+      }),
+    };
   }
   if (schema.kind === 'failed') {
-    return finish({
-      ...base, document: documentFacts(input, json.json, false), outcome: 'completed', evaluated: ['environment', 'json', 'schema'], signature: NOT_EVALUATED,
-      findings: schema.findings, stopped: schema.capped === true ? ['JDX-SCH-001'] : [],
-    });
+    return {
+      ok: false,
+      report: finish({
+        ...base, document: documentFacts(input, json.json, false), outcome: 'completed', evaluated: ['environment', 'json', 'schema'], signature: NOT_EVALUATED,
+        findings: schema.findings, stopped: schema.capped === true ? ['JDX-SCH-001'] : [],
+      }),
+    };
   }
 
   const document = documentFacts(input, json.json, true);
@@ -98,11 +130,15 @@ export async function validateWithDeps(input: ValidateInput, opts: ValidateOptio
     signature,
     trust: env.trust,
   };
-  const findings = [...schema.findings, ...docIndex.findings, ...signature.findings, ...(await runRules(ctx, deps))];
   const evaluated: CheckName[] = ['environment', 'json', 'schema', 'core', 'profile', 'policy'];
   if (signature.report.status !== 'notEvaluated') evaluated.push('signature');
   if (ctx.media !== null) evaluated.push('media');
-  return finish({ ...base, document, outcome: 'completed', evaluated, signature: signature.report, findings });
+  return {
+    ok: true,
+    ctx,
+    findings: [...schema.findings, ...docIndex.findings, ...signature.findings],
+    finish: (findings) => finish({ ...base, document, outcome: 'completed', evaluated, signature: signature.report, findings }),
+  };
 }
 
 /** Las reglas del registro que aplican, en su orden, con sus params. */

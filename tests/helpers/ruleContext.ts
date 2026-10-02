@@ -2,12 +2,13 @@
  * Lo que necesitan los tests de reglas, sobre el ejemplo y los datos
  * empaquetados.
  *
- * - makeRuleContext(overrides) arma el RuleContext de una validación en
- *   sandbox con sadaic/0.1: el documento (el ejemplo, o el que se pase) leído y
- *   validado con los mismos pasos que validateWithDeps (lanza si no se lee o
- *   no cumple el schema, con sus hallazgos), su índice, las listas de valores
- *   empaquetadas, el reloj TEST_NOW y la recepción RECEIVED_AT, sin estado,
- *   carpeta, cuenta, firma ni lista de confianza. Cada parte se puede cambiar.
+ * - makeRuleContext(overrides) da el RuleContext que recibirían las reglas en
+ *   validateExample con lo mismo: lo arma prepareRules, el mismo paso de
+ *   validateWithDeps, así las opciones efectivas (la firma pedida por el
+ *   entorno y el piso del perfil), el reloj y el índice son los de una
+ *   validación. Lanza si la validación termina antes de las reglas (el
+ *   entorno, el JSON o el schema fallan), con sus resultados. Solo la firma se
+ *   puede pasar hecha, hasta que la validación la evalúe.
  * - findingProblems(findings) dice qué tiene cada hallazgo fuera de su regla
  *   en el catálogo: el código, el lugar (un JSON Pointer), keywordLocation
  *   (solo JDX-SCH-001) y sus params y su context contra los schemas de la regla.
@@ -17,21 +18,11 @@
  *   documento que se pase) en sandbox, con sadaic/0.1 y RECEIVED_AT, con las
  *   opciones y las dependencias que se pasen encima.
  */
-import { createHash } from 'node:crypto';
-import { parseInstant } from '../../src/conventions/time.js';
 import { segmentsOf } from '../../src/json/pointer.js';
-import { resolveProfile } from '../../src/profile/resolve.js';
 import { catalogRule } from '../../src/report/results.js';
-import { territoryExpander } from '../../src/territory/expand.js';
 import { defaultDeps } from '../../src/validate/deps.js';
-import { buildDocIndex } from '../../src/validate/docIndex.js';
-import { jsonStage } from '../../src/validate/jsonStage.js';
-import { schemaStage } from '../../src/validate/schemaStage.js';
-import { validateWithDeps } from '../../src/validate/validate.js';
-import type {
-  Account, EffectiveOptions, Finding, Instant, JsonValue, MediaResolver, Profile, Report, ResolvedProfile, RuleContext, SignatureOutcome,
-  State, TerritoryExpander, ValidateOptions, ValidatorDeps, ValueLists, VerifiedTrustList,
-} from '../../src/types.js';
+import { prepareRules, validateWithDeps } from '../../src/validate/validate.js';
+import type { Finding, JsonValue, Report, RuleContext, SignatureOutcome, State, StateStore, ValidateOptions, ValidatorDeps, ValueLists } from '../../src/types.js';
 import { type DocBuilder, docBuilder, EXAMPLE_NAME } from './docBuilder.js';
 import { TEST_NOW, TEST_ROOTS } from './trustFixtures.js';
 
@@ -41,19 +32,20 @@ export const RECEIVED_AT = '2026-09-30T09:12:00-03:00';
 /** El documento de una prueba: un builder, su texto o sus bytes. */
 export type TestDocument = DocBuilder | string | Uint8Array;
 
-export interface RuleContextOverrides {
+export interface ExampleRun {
   document?: TestDocument;
-  input?: Partial<RuleContext['input']>;
-  options?: Partial<EffectiveOptions>;
-  profile?: string | Profile | ResolvedProfile;
-  now?: string;
-  values?: ValueLists;
-  territories?: TerritoryExpander;
-  state?: State | null;
-  media?: MediaResolver | null;
-  account?: Account | null;
-  signature?: SignatureOutcome;
-  trust?: VerifiedTrustList | null;
+  fileName?: string;
+  jws?: string;
+  options?: Partial<ValidateOptions>;
+  deps?: Partial<ValidatorDeps>;
+}
+
+/** Lo que se puede cambiar de una validación de prueba para armar el contexto de las reglas. */
+export interface RuleContextOverrides extends ExampleRun {
+  state?: State | null;                                    // un estado en memoria, que se lee como en una validación
+  now?: string;                                            // el reloj del validador (por defecto, TEST_NOW)
+  values?: ValueLists;                                     // las listas de valores (por defecto, las empaquetadas)
+  signature?: SignatureOutcome;                            // la firma, hasta que la validación la evalúe
 }
 
 /** La firma de un documento sin .jws. */
@@ -67,36 +59,20 @@ export function testDeps(more: Partial<ValidatorDeps> = {}): ValidatorDeps {
   return { ...defaultDeps(), clock: () => TEST_NOW, roots: TEST_ROOTS, ...more };
 }
 
-export function makeRuleContext(overrides: RuleContextOverrides = {}): RuleContext {
-  const deps = testDeps();
-  const bytes = bytesOf(overrides.document ?? docBuilder());
-  const profile = resolved(overrides.profile ?? 'sadaic/0.1', deps);
-  const json = jsonStage(bytes);
-  if (!json.ok) throw new Error(`makeRuleContext: el documento no se lee: ${JSON.stringify(json.findings)}`);
-  const schema = schemaStage(json.json, { bundle: deps.schemas, validators: deps.validators, profile: profile.profile });
-  if (schema.kind !== 'passed') throw new Error(`makeRuleContext: el documento no pasa el schema: ${JSON.stringify(schema.findings)}`);
-  const values = overrides.values ?? deps.values;
-  const media = overrides.media ?? null;
-  return {
-    doc: schema.doc,
-    json: json.json,
-    index: buildDocIndex(schema.doc, schema.schemaIndex).index,
-    schemaIndex: schema.schemaIndex,
-    input: { fileName: EXAMPLE_NAME, sha256: createHash('sha256').update(bytes).digest('hex'), size: bytes.length, ...overrides.input },
-    options: {
-      env: 'sandbox', profileShortId: profile.shortId, signature: 'optional', signatureExplicit: false, failOn: 'error',
-      receivedAt: instant(RECEIVED_AT), lang: 'es', dir: media !== null, ...overrides.options,
-    },
-    now: instant(overrides.now ?? TEST_NOW.toISOString()),
-    profile,
-    values,
-    territories: overrides.territories ?? territoryExpander(values.tis),
-    state: overrides.state ?? null,
-    media,
-    account: overrides.account ?? null,
-    signature: overrides.signature ?? ABSENT_SIGNATURE,
-    trust: overrides.trust ?? null,
+export async function makeRuleContext(overrides: RuleContextOverrides = {}): Promise<RuleContext> {
+  const { state, now, values, signature, ...run } = overrides;
+  const deps = {
+    ...run.deps,
+    ...(now === undefined ? {} : { clock: () => new Date(now) }),
+    ...(values === undefined ? {} : { values }),
   };
+  const options = { ...(state === undefined || state === null ? {} : { state: memoryState(state) }), ...run.options };
+  const prepared = await prepareRules(inputOf(run), optionsOf(options), testDeps(deps));
+  if (!prepared.ok) {
+    const results = prepared.report.results.map((r) => ({ ruleId: r.ruleId, instanceLocation: r.instanceLocation, params: r.params }));
+    throw new Error(`makeRuleContext: la validación termina antes de las reglas: ${JSON.stringify(results)}`);
+  }
+  return signature === undefined ? prepared.ctx : { ...prepared.ctx, signature };
 }
 
 export function findingProblems(findings: readonly Finding[]): string[] {
@@ -129,36 +105,29 @@ export function findingProblems(findings: readonly Finding[]): string[] {
   return problems;
 }
 
-export interface ExampleRun {
-  document?: TestDocument;
-  fileName?: string;
-  jws?: string;
-  options?: Partial<ValidateOptions>;
-  deps?: Partial<ValidatorDeps>;
+export function validateExample(run: ExampleRun = {}): Promise<Report> {
+  return validateWithDeps(inputOf(run), optionsOf(run.options), testDeps(run.deps));
 }
 
-export function validateExample(run: ExampleRun = {}): Promise<Report> {
-  return validateWithDeps(
-    { bytes: bytesOf(run.document ?? docBuilder()), fileName: run.fileName ?? EXAMPLE_NAME, ...(run.jws === undefined ? {} : { jws: run.jws }) },
-    { profile: 'sadaic/0.1', env: 'sandbox', receivedAt: RECEIVED_AT, ...run.options },
-    testDeps(run.deps),
-  );
+function inputOf(run: ExampleRun): { bytes: Uint8Array; fileName: string; jws?: string } {
+  return { bytes: bytesOf(run.document ?? docBuilder()), fileName: run.fileName ?? EXAMPLE_NAME, ...(run.jws === undefined ? {} : { jws: run.jws }) };
+}
+
+function optionsOf(options: Partial<ValidateOptions> = {}): ValidateOptions {
+  return { profile: 'sadaic/0.1', env: 'sandbox', receivedAt: RECEIVED_AT, ...options };
+}
+
+/** Un estado fijo, en memoria: se lee; escribirlo es un error de la prueba. */
+function memoryState(state: State): StateStore {
+  return {
+    read: async (fn) => fn(state),
+    update: async () => {
+      throw new Error('el contexto de las reglas no escribe el estado');
+    },
+  };
 }
 
 function bytesOf(document: TestDocument): Uint8Array {
   if (document instanceof Uint8Array) return document;
   return new TextEncoder().encode(typeof document === 'string' ? document : document.text);
-}
-
-function resolved(ref: string | Profile | ResolvedProfile, deps: ValidatorDeps): ResolvedProfile {
-  if (typeof ref === 'object' && 'shortId' in ref) return ref;
-  const outcome = resolveProfile(ref, { catalog: deps.catalog, bundled: deps.profiles, validatorVersion: deps.validatorVersion, validators: deps.validators });
-  if (!outcome.ok) throw new Error(`makeRuleContext: el perfil no resuelve: ${JSON.stringify(outcome.findings)}`);
-  return outcome.profile;
-}
-
-function instant(text: string): Instant {
-  const parsed = parseInstant(text);
-  if (parsed === null) throw new Error(`makeRuleContext: ${text} no es un instante`);
-  return parsed;
 }

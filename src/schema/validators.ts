@@ -14,7 +14,9 @@
  * corta (src/schema/ajv.ts): los errores son los juntados hasta ahí, si el
  * validador que se detiene en el primer error confirma que el valor no cumple.
  * Si cumple, los errores eran de ramas que se descartan, y no hay ninguno. Un
- * corte nunca sale de acá: ningún validador lanza por lo que dice el valor.
+ * corte nunca sale de acá: ningún validador lanza por lo que dice el valor. La
+ * lista de un corte, o la que se cortó en el tope, queda marcada
+ * (schemaErrorsCapped de src/schema/ajv.ts).
  *
  * defaultValidators es el de los datos empaquetados (src/generated/data.ts),
  * uno solo por proceso: lo usan las funciones públicas que no reciben deps.
@@ -22,7 +24,7 @@
 import type { Ajv2020, ValidateFunction } from 'ajv/dist/2020.js';
 import { files } from '../generated/data.js';
 import type { AuxSchemaName, JsonValue, SchemaBundle, SchemaError, SchemaValidators } from '../types.js';
-import { createAjv, cutErrors, toSchemaErrorsIn } from './ajv.js';
+import { createAjv, cutErrors, markSchemaErrorsCapped, toSchemaErrorsIn } from './ajv.js';
 import { schemaBundle } from './bundle.js';
 
 export function compileSchemas(bundle: SchemaBundle): SchemaValidators {
@@ -83,7 +85,7 @@ function compiler(create: () => Ajv2020, fails?: (schema: object, value: JsonVal
       if (fails !== undefined && !fails(schema, value)) return [];
       const errors = toSchemaErrorsIn(schema, cut);
       // Si todos eran de los que se descartan, el primero que no es un `if` dice dónde.
-      return errors.length > 0 ? errors : toSchemaErrorsIn(schema, cut.filter((e) => e.keyword !== 'if').slice(0, 1));
+      return markSchemaErrorsCapped(errors.length > 0 ? errors : toSchemaErrorsIn(schema, cut.filter((e) => e.keyword !== 'if').slice(0, 1)));
     }
   };
 }

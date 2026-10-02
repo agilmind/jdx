@@ -188,10 +188,15 @@ export interface Report {
   checks: Record<CheckName, CheckStatus>;
   signature: ReportSignature;
   trustList: { seq: number; expiresAt: string } | null;
-  summary: { error: number; warning: number; info: number };
+  summary: { error: number; warning: number; info: number };   // también los resultados que no se listan
   results: Result[];
+  omitted?: OmittedResult[];                               // opcional en el schema; el validador lo emite
   ack?: { status: AckStatus; at: string };
 }
+/** Un código con resultados que el reporte no lista: cuántos, o null si el paso dejó de buscar en el tope. */
+export interface OmittedResult { ruleId: RuleId; count: number | null }
+/** Hallazgos que no se listan, de un código y un nivel (para summary y checks). */
+export interface OmittedFindings { ruleId: RuleId; level: Level; count: number }
 export interface ReportParts {
   validator: Report['validator'];
   options: Report['options'];
@@ -203,6 +208,8 @@ export interface ReportParts {
   signature: ReportSignature;
   trustList: Report['trustList'];
   results: Result[];
+  omitted?: readonly OmittedFindings[];                    // los que no se listan; cuentan en summary y checks
+  stopped?: readonly RuleId[];                             // códigos cuyo paso dejó de buscar en el tope
   catalog: Catalog;                                        // bucket de cada ruleId
 }
 
@@ -384,7 +391,7 @@ export type EnvironmentOutcome =
   | { ok: false; reportOptions: Report['options']; profile: ResolvedProfile | null; findings: Finding[] };   // un ENV-* por falla
 export type SchemaStageOutcome =
   | { kind: 'passed'; doc: JdxDocument; minor: string; schemaIndex: SchemaIndex; findings: Finding[] }   // findings: VER-003
-  | { kind: 'failed'; findings: Finding[] }                                                             // VER-001/002, SCH-001
+  | { kind: 'failed'; findings: Finding[]; capped?: true }                                              // VER-001/002, SCH-001; capped: el schema dejó de buscar en el tope
   | { kind: 'environment'; findings: Finding[] };                                                       // ENV-006 jdxNotAdmitted
 
 // ───────────── Librería ─────────────

@@ -19,11 +19,13 @@
  *   el schema estricto de la menor más nueva, que dice qué está mal.
  * - Un JDX-SCH-001 por error del schema, como los da el validador (a lo sumo
  *   MAX_SCHEMA_ERRORS, src/schema/ajv.ts), con `keywordLocation` y la palabra
- *   del schema en `params.keyword`.
+ *   del schema en `params.keyword`. Si el validador dejó de buscar en su tope,
+ *   `capped`: puede haber más.
  * - Con un error, el resultado no trae el documento: lo que sigue no corre.
  */
 import type { JdxDocument } from '../generated/jdx-types.js';
 import { admitsJdx } from '../profile/resolve.js';
+import { schemaErrorsCapped } from '../schema/ajv.js';
 import type { Finding, JsonValue, ParsedJson, Profile, SchemaBundle, SchemaIndex, SchemaStageOutcome, SchemaValidators } from '../types.js';
 
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
@@ -66,12 +68,13 @@ export function schemaStage(json: ParsedJson, deps: SchemaStageDeps): SchemaStag
     }
   }
 
-  for (const e of deps.validators.validateDocument(minor, strict, value)) {
+  const errors = deps.validators.validateDocument(minor, strict, value);
+  for (const e of errors) {
     if (schemaUrlChecked && e.instanceLocation === '/$schema') continue;
     const params: { [k: string]: JsonValue } = { keyword: e.keyword, ...e.params };
     findings.push({ ruleId: 'JDX-SCH-001', instanceLocation: e.instanceLocation, keywordLocation: e.keywordLocation, params });
   }
-  if (findings.some((f) => f.ruleId !== 'JDX-VER-003')) return { kind: 'failed', findings };
+  if (findings.some((f) => f.ruleId !== 'JDX-VER-003')) return { kind: 'failed', findings, ...(schemaErrorsCapped(errors) ? { capped: true as const } : {}) };
   return { kind: 'passed', doc: value as unknown as JdxDocument, minor, schemaIndex: indexOf(deps.bundle, minor), findings };
 }
 

@@ -130,6 +130,9 @@ por qué. Un extracto:
 - Cada resultado dice la regla, el nivel, dónde está el dato (puntero JSON) y
   sus parámetros. Se decide por `disposition`, `ruleId` y `params`, nunca por
   el texto de `message`.
+- De cada regla se listan a lo sumo 100 resultados, los primeros en el orden
+  del reporte. `omitted` dice de cuáles quedaron afuera y cuántos; `summary`,
+  la salida y `checks` los cuentan a todos.
 - `jdx ack` registra la recepción en el estado de la sociedad y deja el
   reporte listo para devolverlo al emisor por el mismo canal.
 

@@ -4,14 +4,17 @@
  * o el perfil aplicado) y su mensaje en el idioma pedido, y salen en un orden
  * que no depende de cómo se juntaron.
  */
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { loadCatalog } from '../../../src/catalog/load.js';
 import { files } from '../../../src/generated/data.js';
 import { VERSION } from '../../../src/generated/version.js';
+import { MAX_FAILURE_POINTER_CHARS, MAX_FAILURES } from '../../../src/json/parse.js';
 import { bundledProfiles, resolveProfile } from '../../../src/profile/resolve.js';
-import { sortResults, toResult } from '../../../src/report/results.js';
+import { capFindings, MAX_RESULT_CHARS, MAX_RESULTS_PER_RULE, sortResults, toResult } from '../../../src/report/results.js';
+import { MAX_SCHEMA_ERROR_CHARS, MAX_SCHEMA_ERRORS } from '../../../src/schema/ajv.js';
 import { defaultValidators } from '../../../src/schema/validators.js';
-import type { Finding, JsonValue, Profile, ResolvedProfile } from '../../../src/types.js';
+import type { Finding, JsonValue, Profile, ResolvedProfile, Result } from '../../../src/types.js';
 import { sadaicProfile } from '../../helpers/sadaicProfile.js';
 
 const validators = defaultValidators();
@@ -140,5 +143,115 @@ describe('resultados', () => {
     (finding.params as { percent: number }).percent = 40;
     (finding.context as { agreement: string }).agreement = 'a2';
     expect([copy.params, copy.context]).toEqual([{ percent: 30, cap: 25 }, { agreement: 'a1' }]);
+  });
+});
+
+describe('el orden de los lugares', () => {
+  it('pointers compare by segments, with indexes as numbers before names and a prefix first', () => {
+    // La definición, partiendo los punteros: el orden de sortResults tiene que ser el mismo.
+    const isIndex = (s: string) => /^(?:0|[1-9]\d*)$/u.test(s);
+    const reference = (a: string, b: string): number => {
+      const as = a.split('/');
+      const bs = b.split('/');
+      for (let i = 0; i < Math.min(as.length, bs.length); i++) {
+        const x = as[i] as string;
+        const y = bs[i] as string;
+        if (x === y) continue;
+        if (isIndex(x) && isIndex(y)) return x.length - y.length || (x < y ? -1 : 1);
+        if (isIndex(x) !== isIndex(y)) return isIndex(x) ? -1 : 1;
+        return x < y ? -1 : 1;
+      }
+      return as.length - bs.length;
+    };
+    const segment = fc.oneof(fc.nat(30).map(String), fc.constantFrom('', '0', '00', '01', '1a', 'a', 'ab', 'b', '~1', 'ñ', '\u{1F600}'));
+    const pointer = fc.array(segment, { maxLength: 5 }).map((segments) => segments.map((s) => `/${s}`).join(''));
+    fc.assert(
+      fc.property(fc.array(pointer, { maxLength: 40 }), (pointers) => {
+        const results = pointers.map((p) => toResult({ ruleId: 'JDX-REF-002', instanceLocation: p, params: { value: 'p9', list: 'parties' } }, { catalog, profile: sadaic, lang: 'es' }));
+        expect(sortResults(results, catalog).map((r) => r.instanceLocation)).toEqual([...pointers].sort(reference));
+      }),
+      { numRuns: 500 },
+    );
+  });
+});
+
+describe('el tope de resultados', () => {
+  const ctx = { catalog, profile: sadaic, lang: 'es' as const };
+  const ref = (instanceLocation: string, value = 'p9'): Finding => ({
+    ruleId: 'JDX-REF-002', instanceLocation, context: { work: 'w1' }, params: { value, list: 'parties' },
+  });
+
+  it('capFindings lists at most MAX_RESULTS_PER_RULE of each code, the first in the report order', () => {
+    // El mismo tope para todo código, igual al de las fallas del parser y al de los errores de schema.
+    expect([MAX_RESULTS_PER_RULE, MAX_RESULT_CHARS]).toEqual([100, 1_000_000]);
+    expect([MAX_FAILURES, MAX_SCHEMA_ERRORS, MAX_FAILURE_POINTER_CHARS, MAX_SCHEMA_ERROR_CHARS]).toEqual([
+      MAX_RESULTS_PER_RULE, MAX_RESULTS_PER_RULE, MAX_RESULT_CHARS, MAX_RESULT_CHARS,
+    ]);
+    // 250 referencias desordenadas: quedan las 100 primeras en el orden del reporte (/works/2 antes que /works/10).
+    const refs = Array.from({ length: 250 }, (_, i) => ref(`/works/${(i * 37) % 250}/shares/0/party`));
+    const cmp: Finding[] = [{ ruleId: 'JDX-CMP-001', instanceLocation: '/works/3', context: { work: 'w4' } }, { ruleId: 'JDX-CMP-001', instanceLocation: '/works/1', context: { work: 'w2' } }];
+    const { listed, omitted } = capFindings([...refs, ...cmp], ctx);
+    expect(listed.filter((f) => f.ruleId === 'JDX-REF-002').map((f) => f.instanceLocation)).toEqual(
+      Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => `/works/${i}/shares/0/party`),
+    );
+    expect(listed.filter((f) => f.ruleId === 'JDX-CMP-001').map((f) => f.instanceLocation)).toEqual(['/works/1', '/works/3']);
+    expect(omitted).toEqual([{ ruleId: 'JDX-REF-002', level: 'error', count: 150 }]);
+    // Lo que se lista es el hallazgo mismo; lo que no, se cuenta por nivel.
+    expect(listed.every((f) => refs.includes(f) || cmp.includes(f))).toBe(true);
+    const warnings = Array.from({ length: 120 }, (_, i): Finding => ({ ...cmp[0]!, instanceLocation: `/works/${i}` }));
+    expect(capFindings(warnings, ctx).omitted).toEqual([{ ruleId: 'JDX-CMP-001', level: 'warning', count: 20 }]);
+    expect(capFindings([], ctx)).toEqual({ listed: [], omitted: [] });
+  });
+
+  it('the character budget of a code stops its list at the result that reaches MAX_RESULT_CHARS', () => {
+    // Cuentan el lugar y los textos de los params, también los de adentro de una lista.
+    const long = (i: number): Finding => ref(`/works/${i}/shares/0/party`, 'v'.repeat(300_000));
+    const { listed, omitted } = capFindings([5, 4, 3, 2, 1, 0].map(long), ctx);
+    // 300 022, 600 044, 900 066 y 1 200 088 caracteres: el cuarto llega al tope y es el último.
+    expect(listed.map((f) => f.instanceLocation)).toEqual([0, 1, 2, 3].map((i) => `/works/${i}/shares/0/party`));
+    expect(omitted).toEqual([{ ruleId: 'JDX-REF-002', level: 'error', count: 2 }]);
+    const nested = (i: number): Finding => ({ ruleId: 'JDX-SCH-001', instanceLocation: `/a${i}`, keywordLocation: '/enum', params: { keyword: 'enum', allowedValues: ['x'.repeat(600_000)] } });
+    expect(capFindings([nested(0), nested(1), nested(2)], ctx).omitted).toEqual([{ ruleId: 'JDX-SCH-001', level: 'error', count: 1 }]);
+    // Uno solo que pasa el tope se lista igual: cada código lista al menos uno.
+    expect(capFindings([ref(`/${'k'.repeat(2_000_000)}`)], ctx).listed).toHaveLength(1);
+  });
+
+  it('capFindings keeps, of each code, a prefix of the report order', () => {
+    // Contra sortResults de todos los resultados: el mismo prefijo de cada código, y los demás contados por nivel.
+    const segment = fc.oneof(fc.nat(150).map(String), fc.constantFrom('a', 'b', '0x', '01', ''));
+    const finding = fc.record({
+      code: fc.constantFrom('JDX-REF-002', 'JDX-CMP-001', 'JDX-SIG-001'),
+      at: fc.array(segment, { minLength: 0, maxLength: 3 }),
+      value: fc.constantFrom('p1', 'p2', 'x'.repeat(30_000)),
+      level: fc.constantFrom(undefined, 'warning', 'error'),
+    }).map(({ code, at, value, level }): Finding => ({
+      ruleId: code as Finding['ruleId'], instanceLocation: at.map((s) => `/${s}`).join(''),
+      ...(code === 'JDX-SIG-001' && level !== undefined ? { level: level as 'warning' | 'error' } : {}),
+      ...(code === 'JDX-CMP-001' ? { context: { work: value.slice(0, 2) } } : { params: { value, list: 'parties' } }),
+    }));
+    fc.assert(
+      fc.property(fc.array(finding, { maxLength: 400 }), (findings) => {
+        const all = sortResults(findings.map((f) => toResult(f, ctx)), catalog);
+        const expected: Result[] = [];
+        const counts = new Map<string, number>();
+        const chars = new Map<string, number>();
+        const dropped = new Map<string, number>();
+        for (const r of all) {
+          const n = counts.get(r.ruleId) ?? 0;
+          const used = chars.get(r.ruleId) ?? 0;
+          if (n < MAX_RESULTS_PER_RULE && used < MAX_RESULT_CHARS) {
+            expected.push(r);
+            counts.set(r.ruleId, n + 1);
+            chars.set(r.ruleId, used + r.instanceLocation.length + (typeof r.params?.value === 'string' ? r.params.value.length : 0) + (typeof r.params?.list === 'string' ? r.params.list.length : 0));
+          } else {
+            dropped.set(`${r.ruleId} ${r.level}`, (dropped.get(`${r.ruleId} ${r.level}`) ?? 0) + 1);
+          }
+        }
+        const capped = capFindings(findings, ctx);
+        expect(sortResults(capped.listed.map((f) => toResult(f, ctx)), catalog)).toEqual(expected);
+        expect(Object.fromEntries(capped.omitted.map((o) => [`${o.ruleId} ${o.level}`, o.count]))).toEqual(Object.fromEntries(dropped));
+      }),
+      { numRuns: 200 },
+    );
   });
 });

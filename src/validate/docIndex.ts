@@ -50,17 +50,22 @@ export function buildDocIndex(doc: JdxDocument, index: SchemaIndex): { index: Do
   }
 
   const refs: ResolvedRef[] = [];
-  const unresolved = new Set<JsonPointer>();
+  // Los lugares que contienen una referencia que no resuelve, y las referencias mismas: su conjunto se arma
+  // recién si una regla pregunta por una.
+  const containers = new Set<JsonPointer>();
+  const unresolvedRefs: JsonPointer[] = [];
+  let unresolvedSet: ReadonlySet<JsonPointer> | undefined;
   for (const site of index.refs) {
-    for (const { pointer, value } of valuesAt(root, segmentsOf(site.pattern))) {
-      if (typeof value !== 'string') continue;
-      const target = byList.get(site.list)?.get(value) ?? null;
+    const inList = byList.get(site.list) as ReadonlyMap<string, IndexedObject>;
+    visitPattern(root, segmentsOf(site.pattern), (pointer, value, context, parent) => {
+      if (typeof value !== 'string') return;
+      const target = inList.get(value) ?? null;
       refs.push({ pointer, value, site, target });
-      if (target !== null) continue;
-      const context = contextAt(root, pointer);
+      if (target !== null) return;
       findings.push({ ruleId: 'JDX-REF-002', instanceLocation: pointer, ...(context === undefined ? {} : { context }), params: { value, list: site.list } });
-      for (const prefix of prefixesOf(pointer)) unresolved.add(prefix);
-    }
+      unresolvedRefs.push(pointer);
+      markContainers(containers, parent);
+    });
   }
 
   return {
@@ -68,7 +73,7 @@ export function buildDocIndex(doc: JdxDocument, index: SchemaIndex): { index: Do
       byId,
       refs,
       get: (list, id) => byList.get(list)?.get(id),
-      unresolved: (pointerPrefix) => unresolved.has(pointerPrefix),
+      unresolved: (pointerPrefix) => containers.has(pointerPrefix) || (unresolvedSet ??= new Set(unresolvedRefs)).has(pointerPrefix),
     },
     findings,
   };
@@ -96,27 +101,47 @@ function listOf(root: JsonValue, list: RootList): readonly JsonValue[] {
   return Array.isArray(value) ? value : [];
 }
 
-/** Los valores de los lugares de un patrón (`*` es un segmento cualquiera), en el orden del documento. */
-function* valuesAt(value: JsonValue, pattern: readonly string[], at = 0, pointer = ''): Generator<{ pointer: JsonPointer; value: JsonValue }> {
-  if (at === pattern.length) {
-    yield { pointer, value };
-    return;
-  }
-  const segment = pattern[at] as string;
-  if (Array.isArray(value)) {
-    if (segment === '*') for (const [i, item] of value.entries()) yield* valuesAt(item, pattern, at + 1, `${pointer}/${i}`);
-    else if (INDEX.test(segment) && Number(segment) < value.length) yield* valuesAt(value[Number(segment)] as JsonValue, pattern, at + 1, `${pointer}/${segment}`);
-  } else if (isObject(value)) {
-    const keys = segment === '*' ? Object.keys(value) : Object.hasOwn(value, segment) ? [segment] : [];
-    for (const key of keys) yield* valuesAt(value[key] as JsonValue, pattern, at + 1, `${pointer}/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`);
-  }
+type Visit = (pointer: JsonPointer, value: JsonValue, context: FindingContext | undefined, parent: JsonPointer) => void;
+
+/**
+ * Cada valor de los lugares de un patrón (`*` es un segmento cualquiera), en el
+ * orden del documento, con el context del objeto de la lista raíz que lo
+ * contiene (el de contextAt, armado una vez por objeto) y el puntero de su
+ * padre (el mismo texto para todos los de un mismo lugar).
+ */
+function visitPattern(root: JsonValue, pattern: readonly string[], visit: Visit): void {
+  const list = ROOT_LISTS.find((l) => l === pattern[0]);
+  const step = (node: JsonValue, at: number, pointer: JsonPointer, parent: JsonPointer, context: FindingContext | undefined): void => {
+    if (at === 2 && list !== undefined && isObject(node) && typeof node.id === 'string') context = { [CONTEXT_KEY[list]]: node.id };
+    if (at === pattern.length) {
+      visit(pointer, node, context, parent);
+      return;
+    }
+    const segment = pattern[at] as string;
+    if (Array.isArray(node)) {
+      if (segment === '*') for (let i = 0; i < node.length; i++) step(node[i] as JsonValue, at + 1, `${pointer}/${i}`, pointer, context);
+      else if (INDEX.test(segment) && Number(segment) < node.length) step(node[Number(segment)] as JsonValue, at + 1, `${pointer}/${segment}`, pointer, context);
+    } else if (isObject(node)) {
+      const keys = segment === '*' ? Object.keys(node) : Object.hasOwn(node, segment) ? [segment] : [];
+      for (const key of keys) step(node[key] as JsonValue, at + 1, `${pointer}/${key.replace(/~/g, '~0').replace(/\//g, '~1')}`, pointer, context);
+    }
+  };
+  step(root, 0, '', '', undefined);
 }
 
-/** El puntero y cada uno de sus prefijos, hasta '' incluido. */
-function prefixesOf(pointer: JsonPointer): JsonPointer[] {
-  const out = [pointer];
-  for (let i = pointer.lastIndexOf('/'); i >= 0; i = i === 0 ? -1 : pointer.lastIndexOf('/', i - 1)) out.push(pointer.slice(0, i));
-  return out;
+/**
+ * Marca un lugar y cada uno de sus prefijos, hasta ''. Un prefijo que ya está
+ * tiene los suyos: con miles de referencias en el mismo lugar, cada una mira
+ * solo a su padre.
+ */
+function markContainers(set: Set<JsonPointer>, pointer: JsonPointer): void {
+  if (set.has(pointer)) return;
+  set.add(pointer);
+  for (let i = pointer.lastIndexOf('/'); i >= 0; i = i === 0 ? -1 : pointer.lastIndexOf('/', i - 1)) {
+    const prefix = pointer.slice(0, i);
+    if (set.has(prefix)) return;
+    set.add(prefix);
+  }
 }
 
 function isObject(value: JsonValue | undefined): value is JsonObject {

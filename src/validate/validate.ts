@@ -15,17 +15,19 @@
  *    corre sin ellos; el bucket media corre solo con carpeta. La firma: sin
  *    .jws, ausente; con .jws, todavía no se evalúa (notEvaluated).
  *
- * El reporte sale de buildReport. Una regla registrada que no está en el
- * catálogo, retirada, sin implementar o de otra capa es un error de
- * programación y lanza, como una excepción de una regla o del estado.
+ * El reporte sale de buildReport, con el tope de cada código (capFindings): de
+ * cada uno, a lo sumo 100 resultados, y los demás se cuentan sin armarlos. Una
+ * regla registrada que no está en el catálogo, retirada, sin implementar o de
+ * otra capa es un error de programación y lanza, como una excepción de una
+ * regla o del estado.
  */
 import { parseInstant } from '../conventions/time.js';
 import { buildReport } from '../report/build.js';
 import { documentFacts } from '../report/document.js';
-import { catalogRule, toResult } from '../report/results.js';
+import { capFindings, catalogRule, toResult } from '../report/results.js';
 import { territoryExpander } from '../territory/expand.js';
 import type {
-  CheckName, Finding, Instant, JsonValue, Report, ReportDocument, ReportParts, ReportSignature, ResolvedProfile, RuleContext,
+  CheckName, Finding, Instant, JsonValue, Report, ReportDocument, ReportParts, ReportSignature, ResolvedProfile, RuleContext, RuleId,
   SignatureOutcome, TerritoryExpander, ValidateInput, ValidateOptions, ValidatorDeps, ValueLists,
 } from '../types.js';
 import { buildDocIndex } from './docIndex.js';
@@ -55,7 +57,10 @@ export async function validateWithDeps(input: ValidateInput, opts: ValidateOptio
 
   const json = jsonStage(input.bytes);
   if (!json.ok) {
-    return finish({ ...base, document: documentFacts(input, null, false), outcome: 'completed', evaluated: ['environment', 'json'], signature: NOT_EVALUATED, findings: json.findings });
+    return finish({
+      ...base, document: documentFacts(input, null, false), outcome: 'completed', evaluated: ['environment', 'json'], signature: NOT_EVALUATED,
+      findings: json.findings, stopped: json.capped === true ? ['JDX-JSN-001'] : [],
+    });
   }
   const schema = schemaStage(json.json, { bundle: deps.schemas, validators: deps.validators, profile: env.profile.profile });
   if (schema.kind === 'environment') {
@@ -65,7 +70,10 @@ export async function validateWithDeps(input: ValidateInput, opts: ValidateOptio
     });
   }
   if (schema.kind === 'failed') {
-    return finish({ ...base, document: documentFacts(input, json.json, false), outcome: 'completed', evaluated: ['environment', 'json', 'schema'], signature: NOT_EVALUATED, findings: schema.findings });
+    return finish({
+      ...base, document: documentFacts(input, json.json, false), outcome: 'completed', evaluated: ['environment', 'json', 'schema'], signature: NOT_EVALUATED,
+      findings: schema.findings, stopped: schema.capped === true ? ['JDX-SCH-001'] : [],
+    });
   }
 
   const document = documentFacts(input, json.json, true);
@@ -113,7 +121,8 @@ async function runRules(ctx: RuleContext, deps: ValidatorDeps): Promise<Finding[
       throw new Error(`${id}: una regla de la capa ${entry.layer} no va en el registro`);
     }
     if (rule.requires?.some((need) => !available[need]) === true) continue;
-    out.push(...(await rule.evaluate(ctx, params)));
+    // Uno por uno: una regla puede dar cientos de miles, y push(...lista) desborda la pila.
+    for (const f of await rule.evaluate(ctx, params)) out.push(f);
   }
   return out;
 }
@@ -127,10 +136,13 @@ interface Finish {
   signature: ReportSignature;
   trustList: ReportParts['trustList'];
   findings: readonly Finding[];
+  stopped?: readonly RuleId[];
   profile: ResolvedProfile | null;
 }
 
 function report(deps: ValidatorDeps, options: Report['options'], parts: Finish): Report {
+  const c = { catalog: deps.catalog, profile: parts.profile, lang: options.lang };
+  const capped = capFindings(parts.findings, c);
   return buildReport({
     validator: { name: 'jdx', version: deps.validatorVersion, catalog: deps.catalog.catalog },
     options,
@@ -141,7 +153,9 @@ function report(deps: ValidatorDeps, options: Report['options'], parts: Finish):
     hasState: parts.hasState,
     signature: parts.signature,
     trustList: parts.trustList,
-    results: parts.findings.map((f) => toResult(f, { catalog: deps.catalog, profile: parts.profile, lang: options.lang })),
+    results: capped.listed.map((f) => toResult(f, c)),
+    omitted: capped.omitted,
+    stopped: parts.stopped ?? [],
     catalog: deps.catalog,
   });
 }

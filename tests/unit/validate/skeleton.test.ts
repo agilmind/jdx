@@ -8,10 +8,13 @@
  */
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { parseJson } from '../../../src/json/parse.js';
+import { MAX_RESULTS_PER_RULE } from '../../../src/report/results.js';
 import { RULES, ruleMap } from '../../../src/rules/registry.js';
 import { emptyState } from '../../../src/state/fileStateStore.js';
 import { defaultDeps } from '../../../src/validate/deps.js';
-import type { Finding, JsonValue, MediaResolver, Report, Rule, RuleContext, State, StateStore } from '../../../src/types.js';
+import { MAX_DOCUMENT_BYTES } from '../../../src/validate/jsonStage.js';
+import type { Finding, JsonValue, MediaResolver, Report, Rule, RuleContext, State, StateStore, ValidatorDeps } from '../../../src/types.js';
 import { docBuilder, EXAMPLE_NAME, exampleText } from '../../helpers/docBuilder.js';
 import { findingProblems, makeRuleContext, RECEIVED_AT, testDeps, validateExample } from '../../helpers/ruleContext.js';
 import { sadaicProfile } from '../../helpers/sadaicProfile.js';
@@ -304,5 +307,96 @@ describe('registry and deps', () => {
       .toEqual(['1.0', 79, ['https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0'], '2026-10', ['1.0'], '1.0.0']);
     expect([one.roots.production, one.roots.sandbox]).toEqual([[], []]);
     expect(Math.abs(one.clock().getTime() - Date.now())).toBeLessThan(5_000);
+  });
+});
+
+describe('hostile input through validateWithDeps', () => {
+  const encode = (text: string) => new TextEncoder().encode(text);
+  type Doc = { [k: string]: JsonValue };
+  /** El ejemplo con una lista de "x" en un lugar, tan larga como entra en MAX_DOCUMENT_BYTES: cada "x" es una referencia que no resuelve. */
+  function flood(change: (doc: Doc, marker: string) => void): { text: string; count: number } {
+    const doc = JSON.parse(exampleText()) as Doc;
+    change(doc, '@@');
+    const template = JSON.stringify(doc);
+    // Cada "x" con su coma suma 4 bytes; el marcador "@@" (4 bytes) deja lugar a los corchetes.
+    const count = Math.floor((MAX_DOCUMENT_BYTES - (encode(template).length - 4) - 2 + 1) / 4);
+    return { text: template.replace('"@@"', `[${Array<string>(count).fill('"x"').join(',')}]`), count };
+  }
+  /** Valida, escribe el reporte y lo vuelve a leer, como lo hará ack, con lo que tarda todo. */
+  async function run(document: string, deps?: Partial<ValidatorDeps>) {
+    const started = performance.now();
+    const report = await validateExample({ document, ...(deps === undefined ? {} : { deps }) });
+    const text = JSON.stringify(report, null, 2);
+    const back = parseJson(encode(text));
+    return { report, chars: text.length, readBack: back.ok, ms: performance.now() - started };
+  }
+  const FLOOD_CHECKS = { environment: 'passed', json: 'passed', schema: 'passed', core: 'failed', profile: 'passed', policy: 'passed', media: 'notEvaluated', signature: 'absent' };
+
+  it('a REF-002 flood in recordings[0].performers[0].members, about 2 MiB, lists 100 and counts the rest, quickly', async () => {
+    const { text, count } = flood((d, marker) => {
+      (d.recordings as Doc[])[0]!.performers = [{ party: 'p1', members: marker }];
+    });
+    expect(encode(text).length).toBeLessThanOrEqual(MAX_DOCUMENT_BYTES);
+    expect(encode(text).length).toBeGreaterThan(MAX_DOCUMENT_BYTES - 8);
+    const { report, chars, readBack, ms } = await run(text);
+    expect(reportErrors(report)).toEqual([]);
+    // Las 100 primeras en el orden del reporte, cada una con el context de su grabación.
+    expect(report.results.map((r) => [r.ruleId, r.instanceLocation, r.context])).toEqual(
+      Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => ['JDX-REF-002', `/recordings/0/performers/0/members/${i}`, { recording: 'r1' }]),
+    );
+    expect(report.omitted).toEqual([{ ruleId: 'JDX-REF-002', count: count - MAX_RESULTS_PER_RULE }]);
+    // Lo mismo que sin el tope: el resumen cuenta todas, y la salida, la disposición y los checks no cambian.
+    expect(report).toMatchObject({ valid: false, disposition: 'reject', exitCode: 1, summary: { error: count, warning: 0, info: 0 }, checks: FLOOD_CHECKS });
+    expect(count).toBeGreaterThan(500_000);
+    expect(chars).toBeLessThan(100_000);
+    expect(readBack).toBe(true);
+    expect(ms).toBeLessThan(5_000);
+  });
+
+  it('a REF-002 flood in edition.publishers, about 2 MiB, lists 100 and counts the rest, quickly', async () => {
+    const { text, count } = flood((d, marker) => {
+      (d.edition as Doc).publishers = marker;
+    });
+    const { report, chars, readBack, ms } = await run(text);
+    expect(reportErrors(report)).toEqual([]);
+    // Sin context: la edición no es una lista raíz.
+    expect(report.results.map((r) => [r.ruleId, r.instanceLocation, r.context])).toEqual(
+      Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => ['JDX-REF-002', `/edition/publishers/${i}`, undefined]),
+    );
+    expect(report.omitted).toEqual([{ ruleId: 'JDX-REF-002', count: count - MAX_RESULTS_PER_RULE }]);
+    expect(report).toMatchObject({ valid: false, disposition: 'reject', exitCode: 1, summary: { error: count, warning: 0, info: 0 }, checks: FLOOD_CHECKS });
+    expect(chars).toBeLessThan(100_000);
+    expect(readBack).toBe(true);
+    expect(ms).toBeLessThan(5_000);
+  });
+
+  it('a registered rule that floods is capped like any code', async () => {
+    // Un millón de hallazgos de una regla del paso 4: el reporte lista 100 y no arma los demás.
+    const rule: Rule = {
+      id: 'JDX-NUM-001',
+      evaluate: () => Array.from({ length: 1_000_000 }, (_, i): Finding => ({ ruleId: 'JDX-NUM-001', instanceLocation: `/works/0/shares/${i}/percent`, context: { work: 'w1' }, params: { text: '12.50001' } })),
+    };
+    const { report, chars, ms } = await run(exampleText(), { rules: ruleMap([rule]) });
+    expect(reportErrors(report)).toEqual([]);
+    expect(report.results.map((r) => r.instanceLocation)).toEqual(Array.from({ length: MAX_RESULTS_PER_RULE }, (_, i) => `/works/0/shares/${i}/percent`));
+    expect(report.omitted).toEqual([{ ruleId: 'JDX-NUM-001', count: 1_000_000 - MAX_RESULTS_PER_RULE }]);
+    expect(report).toMatchObject({ exitCode: 1, summary: { error: 1_000_000, warning: 0, info: 0 }, checks: { core: 'failed' } });
+    expect(chars).toBeLessThan(100_000);
+    expect(ms).toBeLessThan(5_000);
+  });
+
+  it('a schema or parser flood says that its step stopped at the cap', async () => {
+    // El schema se corta y da 100: no sabe cuántos más hay.
+    const schema = await validateExample({ document: docBuilder().set('/parties', Array<number>(5000).fill(0)) });
+    expect(reportErrors(schema)).toEqual([]);
+    expect([schema.results.length, schema.omitted, schema.summary.error]).toEqual([MAX_RESULTS_PER_RULE, [{ ruleId: 'JDX-SCH-001', count: null }], MAX_RESULTS_PER_RULE]);
+    // El parser deja de leer con la falla 100.
+    const keys = `{${Array.from({ length: 150 }, () => '"a":1').join(',')}}`;
+    const parser = await validateExample({ document: keys });
+    expect(reportErrors(parser)).toEqual([]);
+    expect([parser.results.length, parser.omitted]).toEqual([MAX_RESULTS_PER_RULE, [{ ruleId: 'JDX-JSN-001', count: null }]]);
+    // Sin llegar al tope, no falta nada.
+    expect((await validateExample({ document: '{"a":1,"a":2,"a":3}' })).omitted).toEqual([]);
+    expect((await validateExample({ document: docBuilder().remove('/works/0/titles') })).omitted).toEqual([]);
   });
 });

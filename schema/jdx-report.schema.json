@@ -94,6 +94,7 @@
       "additionalProperties": false
     },
     "summary": {
+      "$comment": "Cuántos resultados hay de cada nivel, también los que results no lista (omitted).",
       "type": "object",
       "properties": {
         "error": { "type": "integer", "minimum": 0 },
@@ -103,7 +104,24 @@
       "required": ["error", "warning", "info"],
       "additionalProperties": false
     },
-    "results": { "type": "array", "items": { "$ref": "#/$defs/Result" } },
+    "results": {
+      "$comment": "De cada código, a lo sumo 100 resultados, los primeros en el orden del reporte, y menos si sus instanceLocation y los textos de sus params llegan a 1 000 000 de caracteres: con el que llega a ese total, la lista de ese código se corta.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/Result" }
+    },
+    "omitted": {
+      "$comment": "Los códigos con resultados que results no lista, en el orden del reporte. count es cuántos quedaron afuera, o null si el paso que los da dejó de buscar en el tope (el JSON y el schema) y no sabe cuántos más hay. Opcional en el schema; el validador lo emite siempre, vacío si lista todo.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ruleId": { "type": "string", "pattern": "^JDX-[A-Z]{3}-\\d{3}$" },
+          "count": { "type": ["integer", "null"], "minimum": 1 }
+        },
+        "required": ["ruleId", "count"],
+        "additionalProperties": false
+      }
+    },
     "ack": {
       "type": "object",
       "properties": {

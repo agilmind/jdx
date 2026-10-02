@@ -160,6 +160,17 @@ describe('jsonStage', () => {
     expect(run.ms).toBeLessThan(5_000);
   });
 
+  it('the parser stopping at its cap marks the outcome as capped', () => {
+    // La falla 100 o la que lleva los punteros a 1 000 000 de caracteres: puede haber más.
+    const keys = (n: number) => encode(`{${Array.from({ length: n }, () => '"a":1').join(',')}}`);
+    expect(jsonStage(keys(150))).toMatchObject({ ok: false, capped: true });
+    expect(jsonStage(keys(101))).toMatchObject({ ok: false, capped: true });
+    const few = jsonStage(keys(100));
+    expect(few.ok === false && [few.findings.length, few.capped]).toEqual([99, undefined]);
+    expect(jsonStage(encode(`{"${'/'.repeat(600_000)}":{"a":1,"a":2}}`))).toMatchObject({ ok: false, capped: true });
+    expect(jsonStage(new Uint8Array(MAX_DOCUMENT_BYTES + 1))).toEqual({ ok: false, findings: [{ ruleId: 'JDX-JSN-001', instanceLocation: '', params: { reason: 'size', offset: MAX_DOCUMENT_BYTES } }] });
+  });
+
   it('keys of 17 000 characters that differ only at the end, up to the cap, parse within seconds', () => {
     // V8 compara las claves largas del mismo largo de punta a punta: el costo crece con el cuadrado de su cantidad.
     const count = Math.floor((MAX_DOCUMENT_BYTES - 2) / 17_005);
@@ -349,6 +360,19 @@ describe('schemaStage', () => {
     expect(run.results).toBe(MAX_SCHEMA_ERRORS);
     expect(run.reasons).toEqual(['JDX-SCH-001 type']);
     expect(run.ms).toBeLessThan(5_000);
+  });
+
+  it('a schema validation that stops at its cap marks the outcome as capped', () => {
+    const flood = stage(example((d) => {
+      d.parties = Array<number>(5000).fill(0);
+    }));
+    expect(flood).toMatchObject({ kind: 'failed', capped: true });
+    expect(flood.findings).toHaveLength(MAX_SCHEMA_ERRORS);
+    // Con menos errores que el tope, la lista está entera.
+    const few = stage(example((d) => {
+      d.parties = Array<number>(30).fill(0);
+    }));
+    expect([few.kind, few.findings.length, 'capped' in few]).toEqual(['failed', 60, false]);
   });
 
   it('long instance locations stop the SCH-001 list at its character budget', () => {

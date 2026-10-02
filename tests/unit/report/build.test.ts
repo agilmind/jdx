@@ -5,13 +5,14 @@
  * disposición. Sin estado no hay `ignore`. Todo reporte armado cumple
  * jdx-report.schema.json.
  */
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { loadCatalog } from '../../../src/catalog/load.js';
 import { files } from '../../../src/generated/data.js';
 import { VERSION } from '../../../src/generated/version.js';
 import { bundledProfiles, resolveProfile } from '../../../src/profile/resolve.js';
 import { buildReport, exitCode, reportFileName } from '../../../src/report/build.js';
-import { toResult } from '../../../src/report/results.js';
+import { capFindings, toResult } from '../../../src/report/results.js';
 import { defaultValidators } from '../../../src/schema/validators.js';
 import type { CheckName, Finding, JsonValue, Report, ReportDocument, ReportParts, ReportSignature } from '../../../src/types.js';
 
@@ -191,7 +192,7 @@ describe('reporte', () => {
     expect(reportFileName('X.JDX.JSON')).toBe('X.JDX.JSON.report.json');
   });
 
-  it('builder always emits signature.reason, document.media and document.issuer', () => {
+  it('builder always emits signature.reason, document.media, document.issuer and omitted', () => {
     // Sin reason en la firma ni issuer y media en el documento, el reporte los trae en null.
     const { issuer: _issuer, media: _media, ...bare } = DOCUMENT;
     const { reason: _reason, ...signature } = VERIFIED;
@@ -205,11 +206,74 @@ describe('reporte', () => {
     const full = build(p);
     expect(Object.keys(full)).toEqual([
       'jdxReport', 'valid', 'disposition', 'exitCode', 'validator', 'options', 'document', 'appliedProfiles', 'checks',
-      'signature', 'trustList', 'summary', 'results',
+      'signature', 'trustList', 'summary', 'results', 'omitted',
     ]);
+    expect(full.omitted).toEqual([]);
     expect(full).toMatchObject({ jdxReport: '1.0', appliedProfiles: ['https://jdx.jupiter.ar/profiles/sadaic/0.1@0.1.0'], trustList: { seq: 1, expiresAt: '2026-12-29T00:00:00-03:00' } });
     (p.document.media as { size: number }[])[0]!.size = 1;
     (p.results[0]!.params as { percent: number }).percent = 99;
     expect([full.document.media?.[0]?.size, full.results[0]?.params]).toEqual([5234011, { percent: 30, cap: 25 }]);
+  });
+});
+
+describe('resultados que el reporte no lista', () => {
+  it('omitted results count in summary and checks, and the report lists them by code', () => {
+    const report = build(parts([REF002, AGR003], {
+      omitted: [
+        { ruleId: 'JDX-AGR-003', level: 'warning', count: 4 },
+        { ruleId: 'JDX-REF-002', level: 'error', count: 250 },
+        { ruleId: 'JDX-MED-007', level: 'error', count: 3 },
+      ],
+    }));
+    expect(report.summary).toEqual({ error: 254, warning: 5, info: 0 });
+    // Un bucket sin resultados listados también lo dicen los que no se listan.
+    expect(report.checks).toMatchObject({ core: 'failed', media: 'failed', profile: 'warning' });
+    // Por código, en el orden del reporte: el paso y el código.
+    expect(report.omitted).toEqual([
+      { ruleId: 'JDX-REF-002', count: 250 }, { ruleId: 'JDX-MED-007', count: 3 }, { ruleId: 'JDX-AGR-003', count: 4 },
+    ]);
+    expect(head(report)).toEqual({ valid: false, disposition: 'reject', exitCode: 1 });
+    // Los de un código, de varios niveles, se suman; un paso que dejó de buscar no sabe cuántos más hay.
+    const sch: Finding = { ruleId: 'JDX-SCH-001', instanceLocation: '/works/0', keywordLocation: '/$defs/Work/required', params: { keyword: 'required', missingProperty: 'titles' } };
+    const stopped = build(parts([JSN001, sch], {
+      evaluated: new Set(['environment', 'json', 'schema']),
+      omitted: [{ ruleId: 'JDX-SIG-001', level: 'warning', count: 1 }, { ruleId: 'JDX-SIG-001', level: 'error', count: 2 }, { ruleId: 'JDX-SCH-001', level: 'error', count: 1 }],
+      stopped: ['JDX-SCH-001', 'JDX-JSN-001'],
+    }));
+    expect(stopped.omitted).toEqual([{ ruleId: 'JDX-JSN-001', count: null }, { ruleId: 'JDX-SCH-001', count: null }, { ruleId: 'JDX-SIG-001', count: 3 }]);
+    expect(stopped.summary).toEqual({ error: 5, warning: 1, info: 0 });
+    // Un DEC-005 que no se lista también da ignore.
+    expect(head(build(parts([], { omitted: [{ ruleId: 'JDX-DEC-005', level: 'info', count: 1 }] })))).toEqual({ valid: true, disposition: 'ignore', exitCode: 0 });
+  });
+
+  it('the cap never changes summary, valid, exitCode, disposition or checks', () => {
+    // El reporte con todos los resultados y el reporte con el tope son iguales salvo results y omitted.
+    const codes: Finding[] = [REF002, AGR003, DEC005, SIG004, MED007, { ruleId: 'JDX-SIG-001', instanceLocation: '' }, { ruleId: 'JDX-CMP-001', instanceLocation: '/works/0', context: { work: 'w1' } }];
+    const finding = fc.record({ base: fc.constantFrom(...codes), at: fc.nat(400), level: fc.constantFrom(undefined, 'warning', 'error', 'info') })
+      .map(({ base, at, level }): Finding => ({
+        ...base, instanceLocation: `${base.instanceLocation}/${at}`,
+        ...(base.ruleId === 'JDX-SIG-001' && level !== undefined ? { level: level as 'warning' | 'error' | 'info' } : {}),
+      }));
+    fc.assert(
+      fc.property(fc.array(finding, { maxLength: 900 }), fc.boolean(), fc.constantFrom('error', 'warning'), (findings, hasState, failOn) => {
+        const options = { ...parts([]).options, failOn: failOn as 'error' | 'warning' };
+        const ctx = { catalog, profile, lang: 'es' as const };
+        const full = buildReport(parts(findings, { hasState, options }));
+        const capped = capFindings(findings, ctx);
+        const cut = buildReport(parts([], { hasState, options, results: capped.listed.map((f) => toResult(f, ctx)), omitted: capped.omitted }));
+        const { results: fullResults, omitted: fullOmitted, ...fullRest } = full;
+        const { results: cutResults, omitted: cutOmitted, ...cutRest } = cut;
+        expect(cutRest).toEqual(fullRest);
+        expect(exitCode(cut, 'warning')).toBe(exitCode(full, 'warning'));
+        expect(fullOmitted).toEqual([]);
+        // Lo listado es parte de todo; lo que falta, lo cuenta omitted.
+        expect(cutResults.length + (cutOmitted ?? []).reduce((n, o) => n + (o.count ?? 0), 0)).toBe(fullResults.length);
+        const left = new Map<string, number>();
+        for (const r of fullResults) left.set(JSON.stringify(r), (left.get(JSON.stringify(r)) ?? 0) + 1);
+        for (const r of cutResults) left.set(JSON.stringify(r), (left.get(JSON.stringify(r)) ?? 0) - 1);
+        expect([...left.values()].every((n) => n >= 0)).toBe(true);
+      }),
+      { numRuns: 100 },
+    );
   });
 });

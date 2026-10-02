@@ -2,6 +2,10 @@
  * El reporte de una validación, armado desde sus partes: los resultados, lo
  * que corrió y cómo terminó.
  *
+ * - `results` son los resultados que se listan; `omitted`, por código, cuántos
+ *   no se listan (el tope de cada código), o null si el paso dejó de buscar en
+ *   el tope y no sabe cuántos más hay. `summary`, la salida, la disposición y
+ *   `checks` cuentan también los que no se listan: son los mismos que sin tope.
  * - `summary` cuenta los resultados por nivel; `valid` es que no haya errores.
  * - La salida: 3 ante una falla interna (pisa a todas), 2 si falló el entorno,
  *   1 si hay errores o, con failOn warning, avisos; si no, 0. Con salida 2 o 3,
@@ -18,21 +22,26 @@
  * exitCode recalcula solo la salida de un reporte, con otro failOn, para
  * mostrarla; el reporte no cambia.
  */
-import type { CheckName, CheckStatus, Disposition, ExitCode, FailOn, Report, ReportParts, Result } from '../types.js';
-import { catalogRule, sortResults } from './results.js';
+import type { CheckName, CheckStatus, Disposition, ExitCode, FailOn, Level, OmittedResult, Report, ReportParts, RuleId } from '../types.js';
+import { catalogRule, compareCodes, sortResults } from './results.js';
 
 const CHECKS: readonly CheckName[] = Object.freeze(['environment', 'json', 'schema', 'core', 'profile', 'policy', 'media', 'signature']);
 const JDX_SUFFIX = '.jdx.json';
 
 export function buildReport(parts: ReportParts): Report {
   const results = sortResults(parts.results, parts.catalog).map((r) => structuredClone(r));
+  // Lo que hay, listado o no: un código y su nivel, con cuántos.
+  const tally: { ruleId: RuleId; level: Level; count: number }[] = [
+    ...results.map((r) => ({ ruleId: r.ruleId, level: r.level, count: 1 })),
+    ...(parts.omitted ?? []).filter((o) => o.count > 0),
+  ];
   const summary = { error: 0, warning: 0, info: 0 };
-  for (const r of results) summary[r.level]++;
+  for (const t of tally) summary[t.level] += t.count;
   const completed = parts.outcome === 'completed';
   const code: ExitCode = parts.outcome === 'internal' ? 3 : parts.outcome === 'environment' ? 2 : fileExit(summary, parts.options.failOn);
   let disposition: Disposition | null = null;
   if (completed) {
-    disposition = code === 1 ? 'reject' : parts.hasState && results.some((r) => r.ruleId === 'JDX-DEC-005') ? 'ignore' : 'ingest';
+    disposition = code === 1 ? 'reject' : parts.hasState && tally.some((t) => t.ruleId === 'JDX-DEC-005') ? 'ignore' : 'ingest';
   }
   const document = structuredClone(parts.document);
   return {
@@ -44,12 +53,21 @@ export function buildReport(parts: ReportParts): Report {
     options: structuredClone(parts.options),
     document: { ...document, issuer: document.issuer ?? null, media: document.media ?? null },
     appliedProfiles: [...parts.appliedProfiles],
-    checks: checks(parts, results),
+    checks: checks(parts, tally),
     signature: { ...structuredClone(parts.signature), reason: parts.signature.reason ?? null },
     trustList: parts.trustList === null ? null : { ...parts.trustList },
     summary,
     results,
+    omitted: omittedOf(parts),
   };
+}
+
+/** Los códigos con resultados que no se listan, en el orden del reporte: cuántos, o null si su paso dejó de buscar. */
+function omittedOf(parts: ReportParts): OmittedResult[] {
+  const counts = new Map<RuleId, number | null>();
+  for (const o of parts.omitted ?? []) if (o.count > 0) counts.set(o.ruleId, (counts.get(o.ruleId) ?? 0) + o.count);
+  for (const ruleId of parts.stopped ?? []) counts.set(ruleId, null);
+  return [...counts.keys()].sort((a, b) => compareCodes(a, b, parts.catalog)).map((ruleId) => ({ ruleId, count: counts.get(ruleId) ?? null }));
 }
 
 /** La salida del reporte con `failOn` (por defecto, el que se usó); 2 y 3 no cambian. */
@@ -68,10 +86,10 @@ function fileExit(summary: Report['summary'], failOn: FailOn): ExitCode {
   return summary.error > 0 || (failOn === 'warning' && summary.warning > 0) ? 1 : 0;
 }
 
-function checks(parts: ReportParts, results: readonly Result[]): Record<CheckName, CheckStatus> {
+function checks(parts: ReportParts, tally: readonly { ruleId: RuleId; level: Level }[]): Record<CheckName, CheckStatus> {
   const out = {} as Record<CheckName, CheckStatus>;
   for (const name of CHECKS) {
-    const levels = new Set(results.filter((r) => catalogRule(parts.catalog, r.ruleId).check === name).map((r) => r.level));
+    const levels = new Set(tally.filter((t) => catalogRule(parts.catalog, t.ruleId).check === name).map((t) => t.level));
     if (!parts.evaluated.has(name)) out[name] = 'notEvaluated';
     else if (levels.has('error')) out[name] = 'failed';
     else if (levels.has('warning')) out[name] = 'warning';

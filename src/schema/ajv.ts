@@ -134,10 +134,28 @@ export function createAjv(opts: { allErrors?: boolean } = {}): Ajv2020 {
  *   o el del else;
  * - de oneOf y anyOf queda el error del combinador; los de sus ramas se descartan.
  * keywordLocation es el schemaPath de Ajv sin `#`, como JSON Pointer. La lista
- * se corta en MAX_SCHEMA_ERRORS y en MAX_SCHEMA_ERROR_CHARS, en el orden de Ajv.
+ * se corta en MAX_SCHEMA_ERRORS y en MAX_SCHEMA_ERROR_CHARS, en el orden de Ajv,
+ * y queda marcada (schemaErrorsCapped) si se cortó con errores por mirar.
  */
 export function toSchemaErrors(errors: readonly ErrorObject[] | null | undefined): SchemaError[] {
   return convert(errors, undefined);
+}
+
+const capped = new WeakSet<readonly SchemaError[]>();
+
+/**
+ * Si una lista de errores se cortó en el tope (MAX_SCHEMA_ERRORS,
+ * MAX_SCHEMA_ERROR_CHARS o el corte de Ajv): la validación dejó de buscar y no
+ * sabe cuántos más hay. Es la misma lista que dio la validación, no una copia.
+ */
+export function schemaErrorsCapped(errors: readonly SchemaError[]): boolean {
+  return capped.has(errors);
+}
+
+/** Marca una lista que se cortó en el tope. */
+export function markSchemaErrorsCapped<T extends readonly SchemaError[]>(errors: T): T {
+  capped.add(errors);
+  return errors;
 }
 
 /**
@@ -154,7 +172,7 @@ function convert(errors: readonly ErrorObject[] | null | undefined, locations: L
   const out: SchemaError[] = [];
   let chars = 0;
   for (const e of errors) {
-    if (out.length >= MAX_SCHEMA_ERRORS || chars >= MAX_SCHEMA_ERROR_CHARS) break;
+    if (out.length >= MAX_SCHEMA_ERRORS || chars >= MAX_SCHEMA_ERROR_CHARS) return markSchemaErrorsCapped(out);
     if (e.keyword === 'if') continue;
     if (combinators.size > 0 && isBranchError(e, combinators)) continue;
     let instanceLocation = e.instancePath;

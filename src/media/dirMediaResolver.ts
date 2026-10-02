@@ -69,6 +69,8 @@ const FOLDERS_AT_ONCE = 32;
 const SMALL_FOLDER_BYTES = 64n * 1024n;
 
 const SLASH = Buffer.from('/');
+/** El largo de una ruta absoluta que el sistema ya no admite, en bytes (PATH_MAX cuenta el NUL final). */
+const PATH_MAX = process.platform === 'darwin' ? 1024 : 4096;
 const FILE_FLAGS = constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0);
 const FOLDER_FLAGS = constants.O_RDONLY | (constants.O_DIRECTORY ?? 0) | (constants.O_NOFOLLOW ?? 0);
 
@@ -106,6 +108,8 @@ interface Entry {
   readonly parent: Entry | null;
   readonly bytes: Buffer;
   readonly name: string;
+  /** Los bytes de su ruta desde la raíz, con una barra antes de cada nombre (0 la raíz). */
+  readonly length: number;
   /** El del listado; una carpeta de otro dispositivo que la suya (un punto de montaje) pasa a other al mirarla. */
   kind: Kind;
   /** La ruta desde la raíz ('' es la raíz) y la del sistema, armadas una vez. */
@@ -114,6 +118,8 @@ interface Entry {
   stats?: Promise<Seen>;
   listing?: Promise<Listing>;
   hash?: Promise<string>;
+  /** De una carpeta, lo que dio su lstat, apenas se sabe (para ver si es una de las que la contienen). */
+  seen?: Seen;
   /** En Linux, la carpeta abierta mientras alguien la usa. */
   opened?: { users: number; readonly handle: Promise<FileHandle> } | undefined;
 }
@@ -140,9 +146,12 @@ export function dirMediaResolver(dir: string, opts: { ignore?: readonly string[]
 export function folderResolver(dir: string, opts: { ignore?: readonly string[] }, ops: FolderOps, maxEntries = MAX_FOLDER_ENTRIES): MediaResolver {
   const ignore = [...(opts.ignore ?? [])];
   let entriesRead = 0;
-  /** Las carpetas cuyas entradas ya se cuentan, por su dev e ino: cada una cuenta una vez, aunque se lea de nuevo. */
-  const counted = new Set<string>();
-  const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir', path: '' };
+  /**
+   * Las carpetas ya identificadas, por su dev e ino, y si sus entradas ya se cuentan: cada una cuenta una vez, aunque
+   * se lea de nuevo, y una que tiene el dev y el ino de una de las que la contienen no se entra.
+   */
+  const folders = new Map<string, boolean>();
+  const root: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', length: 0, kind: 'dir', path: '' };
   let anchor: Anchor = 'path';
   /** El receptor dijo que la carpeta es una copia privada (check): sin anclaje, se busca por la ruta. */
   let privateCopy = false;
@@ -163,6 +172,8 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       throw folderFailure(error, '', false);
     }
     const seen = seenOf(stats);
+    root.seen = seen;
+    folders.set(keyOf(seen), false);
     const system = await anchorOf(seen);
     if (system === null && !privateCopy) throw new MediaFolderError('unanchored', '');
     anchor = system ?? 'path';
@@ -222,6 +233,9 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
     }
   }
 
+  /** Los bytes de la ruta real de la raíz, sin la barra si es / (sus entradas son /nombre). */
+  const rootLength = (): number => ((root.real as Buffer).length === 1 ? 0 : (root.real as Buffer).length);
+
   /** Las entradas de una carpeta, leídas una vez. */
   const listingOf = (folder: Entry): Promise<Listing> => (folder.listing ??= readListing(folder));
 
@@ -235,6 +249,9 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
   async function lstatOf(entry: Entry, at?: Buffer): Promise<Seen> {
     const parent = entry.parent as Entry;
     const folder = await statsOf(parent);
+    // Una ruta que el sistema no admite no se mira: más allá, ni /.vol ni la ruta dan lo que hay (en macOS, /.vol da
+    // la carpeta que la contiene o una que no está).
+    if (rootLength() + entry.length >= PATH_MAX) throw new MediaFolderError('tooLong', pathOf(entry));
     let stats: BigIntStats;
     try {
       if (at !== undefined) stats = await ops.lstat(Buffer.concat([at, SLASH, entry.bytes]));
@@ -251,7 +268,17 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       entry.kind = 'other';
       return { ...seenOf(stats), kind: 'other' };
     }
-    return seenOf(stats);
+    const seen = seenOf(stats);
+    if (entry.kind === 'dir') {
+      const key = keyOf(seen);
+      if (folders.has(key)) {
+        for (let up: Entry | null = parent; up !== null; up = up.parent) if (up.seen !== undefined && same(up.seen, seen)) throw new MediaFolderError('tooLong', pathOf(entry));
+      } else {
+        folders.set(key, false);
+      }
+      entry.seen = seen;
+    }
+    return seen;
   }
 
   /** El lstat de una carpeta ahora: la raíz por su ruta real, las demás desde la suya. */
@@ -331,9 +358,9 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
    */
   async function* readEntries(folder: Entry): AsyncGenerator<Entry> {
     const seen = await statsOf(folder);
-    const key = `${seen.dev}:${seen.ino}`;
-    const counts = !counted.has(key);
-    if (counts) counted.add(key);
+    const key = keyOf(seen);
+    const counts = folders.get(key) !== true;
+    folders.set(key, true);
     const lease = anchor === 'proc' ? await leaseFolder(folder) : null;
     try {
       // Una carpeta chica se lee de una vez; una grande, de a partes, así se deja de leer en el tope.
@@ -349,7 +376,7 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       try {
         for await (const d of dir) {
           if (counts && ++entriesRead > maxEntries) throw new MediaFolderError('tooManyEntries', pathOf(folder));
-          const entry: Entry = { parent: folder, bytes: d.name, name: shownName(d.name), kind: d.isDirectory() ? 'dir' : typeOf(d) };
+          const entry: Entry = { parent: folder, bytes: d.name, name: shownName(d.name), length: folder.length + 1 + d.name.length, kind: d.isDirectory() ? 'dir' : typeOf(d) };
           // Un nombre que el listado da dos veces: la carpeta cambió mientras se leía.
           if (names.has(entry.name)) throw new MediaFolderError('modified', pathOf(folder));
           names.add(entry.name);
@@ -484,8 +511,8 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
  * coincide sin distinguir mayúsculas de A a Z, o ninguno.
  */
 export function caseVariant(names: readonly string[], segment: string): string | null {
-  const parent: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', kind: 'dir' };
-  return pick(listingFrom(names.map((name) => ({ parent, bytes: Buffer.from(name), name, kind: 'file' }))), segment)?.name ?? null;
+  const parent: Entry = { parent: null, bytes: Buffer.alloc(0), name: '', length: 0, kind: 'dir' };
+  return pick(listingFrom(names.map((name) => ({ parent, bytes: Buffer.from(name), name, length: 0, kind: 'file' }))), segment)?.name ?? null;
 }
 
 function pick(listing: Listing, segment: string): Entry | null {
@@ -540,6 +567,11 @@ function volPath(stats: { dev: bigint; ino: bigint }): Buffer {
 /** Lo que tiene abierto el proceso en ese descriptor (Linux). */
 function procPath(fd: number): string {
   return `/proc/self/fd/${fd}`;
+}
+
+/** Quién es una entrada: su dev y su ino. */
+function keyOf(stats: { dev: bigint; ino: bigint }): string {
+  return `${stats.dev}:${stats.ino}`;
 }
 
 function same(a: { dev: bigint; ino: bigint }, b: { dev: bigint; ino: bigint }): boolean {

@@ -21,11 +21,14 @@ import { shownName } from '../../../src/media/path.js';
 import type { MediaResolver } from '../../../src/types.js';
 
 const made: string[] = [];
+/** Las carpetas con rutas más largas que las del sistema: se borran con rm, que las recorre de a una. */
+const deep: string[] = [];
 afterEach(() => {
   for (const dir of made.splice(0)) {
     chmodTree(dir);
     rmSync(dir, { recursive: true, force: true });
   }
+  for (const dir of deep.splice(0)) execFileSync('rm', ['-rf', dir]);
 });
 
 /** Una carpeta temporal nueva con esos archivos (el texto de cada uno), que el test borra al terminar. */
@@ -97,6 +100,36 @@ function readsEverything(dir: string): boolean {
   return readable;
 }
 const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
+/** El largo máximo de una ruta absoluta, en bytes y sin el NUL final, más uno. */
+const PATH_MAX = process.platform === 'darwin' ? 1024 : 4096;
+/**
+ * Una cadena de carpetas `pad/segment/segment/…` en una carpeta nueva, que pasa PATH_MAX, con x.pdf al fondo. `pad`
+ * se elige para que una de las carpetas tenga una ruta absoluta de exactamente PATH_MAX bytes: la primera que no entra.
+ * Se arma de a tramos relativos (mkdir -p desde la carpeta del tramo anterior). Da esa ruta relativa.
+ */
+function chainPastPathMax(segment: string): { dir: string; first: string } {
+  const dir = mkdtempSync(join(tmpdir(), 'jdx-media-'));
+  deep.push(dir);
+  const base = Buffer.byteLength(realpathSync(dir));
+  const step = segment.length + 1;
+  const pad = 'p'.repeat(((PATH_MAX - base - 1 - 1) % step) + 1);
+  const depth = 1 + (PATH_MAX - base - 1 - pad.length) / step;
+  const segments = [pad, ...Array<string>(depth + 10).fill(segment)];
+  let cwd = realpathSync(dir);
+  for (let at = 0; ; ) {
+    const rest = segments.slice(at).join('/');
+    if (rest.length < PATH_MAX - 200) {
+      execFileSync('mkdir', ['-p', rest], { cwd });
+      execFileSync('touch', [`${rest}/x.pdf`], { cwd });
+      break;
+    }
+    let rel = segments[at++] as string;
+    while (cwd.length + rel.length + step + 1 < PATH_MAX - 200 && rel.length < 600) rel += `/${segments[at++] as string}`;
+    execFileSync('mkdir', ['-p', rel], { cwd });
+    cwd = `${cwd}/${rel}`;
+  }
+  return { dir, first: segments.slice(0, depth).join('/') };
+}
 /** Las de node:fs sin las rutas ancladas del sistema (ni /.vol ni /proc): todo por la ruta de cada entrada. */
 const BY_PATH: FolderOps = {
   ...FOLDER_OPS,
@@ -602,6 +635,48 @@ describe('dirMediaResolver', () => {
       expect(await listed(resolver)).toEqual([['a.pdf', 'file'], ['m', 'other']]);
       expect(await resolver.stat('m')).toMatchObject({ type: 'other', path: 'm' });
       expect(await resolver.stat('m/x.pdf')).toBeNull();
+    }
+  });
+
+  it('a path at the system limit is tooLong where it stops fitting, before anything is done with it, for several segment lengths', async () => {
+    for (const segment of ['a', 'bb', 'ccc', 'd'.repeat(7), 'e'.repeat(50)]) {
+      const { dir, first } = chainPastPathMax(segment);
+      expect(Buffer.byteLength(`${realpathSync(dir)}/${first}`), segment).toBe(PATH_MAX);
+      const reads: string[] = [];
+      const counting: FolderOps = {
+        ...FOLDER_OPS,
+        readdir: (path) => (reads.push(path.toString()), FOLDER_OPS.readdir(path)),
+        opendir: (path) => (reads.push(path.toString()), FOLDER_OPS.opendir(path)),
+      };
+      // La primera carpeta que no entra es tooLong, en su lugar; ni un cambio ni un tope de entradas, y cada carpeta se lee una vez.
+      expect(await folderFailure(listed(folderResolver(dir, {}, counting))), segment).toEqual(['tooLong', first]);
+      expect(new Set(reads).size, segment).toBe(reads.length);
+      expect(reads.length, segment).toBeLessThanOrEqual(first.split('/').length + 1);
+      const below = `${first}/${segment}/x.pdf`.split('/').filter((s) => s !== '').join('/');
+      expect(await folderFailure(dirMediaResolver(dir).stat(below)), segment).toEqual(['tooLong', first]);
+      expect(await dirMediaResolver(dir).stat(first.split('/').slice(0, -1).join('/')), segment).toMatchObject({ type: 'other' });
+    }
+  }, 60_000);
+
+  it('a folder with the dev and ino of one that holds it is tooLong, and is never entered', async () => {
+    const dir = delivery({ 'a/b/x.pdf': 'x' });
+    const a = lstatSync(join(dir, 'a'), { bigint: true });
+    for (const base of [FOLDER_OPS, BY_PATH]) {
+      let reads = 0;
+      // b se ve como a, la carpeta que la tiene: entrar sería volver a leer a sin fin.
+      const looping: FolderOps = {
+        ...base,
+        lstat: async (path) => {
+          const stats = await base.lstat(path);
+          return named(path, 'b') ? Object.assign(Object.create(Object.getPrototypeOf(stats) as object) as BigIntStats, a) : stats;
+        },
+        readdir: (path) => (reads++, base.readdir(path)),
+        opendir: (path) => (reads++, base.opendir(path)),
+      };
+      const resolver = folderResolver(dir, {}, looping, 1000);
+      if (base === BY_PATH) await resolver.check?.({ privateCopy: true });
+      expect(await folderFailure(listed(resolver))).toEqual(['tooLong', 'a/b']);
+      expect(reads).toBeLessThanOrEqual(2);
     }
   });
 

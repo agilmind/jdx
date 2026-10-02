@@ -5,6 +5,7 @@
  * las distingue no deja crear), y de punta a punta en el bucket media.
  */
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -30,7 +31,7 @@ const made: string[] = [];
 afterEach(() => {
   for (const dir of made.splice(0)) {
     if (existsSync(dir)) chmodSync(dir, 0o755);
-    for (const sub of ['cerrada']) if (existsSync(join(dir, sub))) chmodSync(join(dir, sub), 0o755);
+    for (const sub of ['cerrada', 'x.report.json']) if (existsSync(join(dir, sub))) chmodSync(join(dir, sub), 0o755);
     rmSync(dir, { recursive: true, force: true });
   }
 });
@@ -51,6 +52,7 @@ const caseSensitive = (dir: string): boolean => {
   return sensitive;
 };
 const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+const mkfifo = (path: string) => execFileSync('mkfifo', [path]);
 /** Los cinco archivos del ejemplo con estos textos, más los que se pidan. */
 const withExample = (more: Record<string, string> = {}): Record<string, string> => ({ ...Object.fromEntries(PATHS.map((p, i) => [p, `archivo ${i}`])), ...more });
 
@@ -93,7 +95,7 @@ function memoryFolder(entries: Record<string, Entry>, ignore: readonly string[] 
       const name = find(path);
       if (name === null) return null;
       const entry = entries[name] as Entry;
-      return { type: typeOf(entry), size: typeof entry === 'object' ? Buffer.byteLength(entry.text) : 0 };
+      return { type: typeOf(entry), size: typeof entry === 'object' ? Buffer.byteLength(entry.text) : 0, path: name };
     },
     async sha256(path) {
       const name = find(path);
@@ -124,16 +126,43 @@ describe('MED-003', () => {
     expect(await undeclared(dirMediaResolver(folder(withExample({ 'notas.txt': 'n', 'sub/dni.pdf': 'd' }))))).toEqual(['notas.txt', 'sub/dni.pdf']);
   });
 
-  it('each JDX artifact excluded (*.jdx.json, *.jdx.json.jws, *.report.json, jdx-trust.json)', async () => {
+  it('each JDX artifact at the root is excluded: the declaration, its signature and its report by their names, and jdx-trust.json', async () => {
     const artifacts = {
-      '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json.jws': 'jws',
-      '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.report.json': '{}', 'jdx-trust.json': '{}', 'otra.r9.jdx.json': '{}',
+      '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json.jws': 'jws', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r12.report.json': '{}', 'jdx-trust.json': '{}',
+      '00000000-0000-4000-8000-000000000000.r3.jdx.json': '{}',
     };
     expect(await undeclared(dirMediaResolver(folder(withExample(artifacts))))).toEqual([]);
+    // Un nombre que no es el de una declaración no es un artefacto: otro id, una revisión con cero adelante o algo antes.
+    const others = {
+      'otra.r9.jdx.json': '{}', 'x.report.json': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r01.jdx.json': '{}', '3F2C9A1E-5B7D-4C21-9E0A-7D4B2F8C6A13.r1.jdx.json': '{}',
+      'x3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json.bak': '{}', '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r0.report.json': '{}',
+    };
+    expect(await undeclared(dirMediaResolver(folder(withExample(others))))).toEqual(Object.keys(others).sort());
   });
 
-  it('sub/x.report.json and sub/jdx-trust.json excluded', async () => {
-    expect(await undeclared(dirMediaResolver(folder(withExample({ 'sub/x.report.json': '{}', 'sub/jdx-trust.json': '{}', 'sub/x.jdx.json.jws': 'j' }))))).toEqual([]);
+  it('nothing below the root is an artifact, nor a link, a fifo or a folder with the name of one', async () => {
+    const dir = folder(withExample({
+      'sub/cancion.mp3.report.json': 'ID3 audio', 'dni/scan.jdx.json': 'datos personales', 'sub/jdx-trust.json': '{}',
+      'sub/3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json.jws': 'j',
+    }));
+    symlinkSync('/etc/hosts', join(dir, 'jdx-trust.json'));
+    mkfifo(join(dir, '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.report.json'));
+    expect(await undeclared(dirMediaResolver(dir))).toEqual([
+      '3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.report.json', 'dni/scan.jdx.json', 'jdx-trust.json', 'sub/3f2c9a1e-5b7d-4c21-9e0a-7d4b2f8c6a13.r1.jdx.json.jws', 'sub/cancion.mp3.report.json', 'sub/jdx-trust.json',
+    ]);
+    // Una carpeta con el nombre de un artefacto no esconde lo de adentro, y si no se puede leer, la carpeta falla.
+    const named = folder(withExample({ 'x.report.json/dni.pdf': 'd' }));
+    expect(await undeclared(dirMediaResolver(named))).toEqual(['x.report.json/dni.pdf']);
+    chmodSync(join(named, 'x.report.json'), 0o000);
+    let readable = true;
+    try {
+      readdirSync(join(named, 'x.report.json'));
+    } catch {
+      readable = false;
+    }
+    const ctx = await makeRuleContext({ options: { media: dirMediaResolver(named) } });
+    if (!readable) await expect(MED_003.evaluate(ctx, sadaicParams('JDX-MED-003'))).rejects.toMatchObject({ name: 'MediaFolderError', reason: 'permission', path: 'x.report.json' });
+    chmodSync(join(named, 'x.report.json'), 0o755);
   });
 
   it('X.JDX.JSON not excluded', async () => {
@@ -161,15 +190,17 @@ describe('MED-003', () => {
     expect(await undeclared(dirMediaResolver(dir))).toEqual([]);
   });
 
-  it('two case variants with one declared → the other is MED-003', async () => {
+  it('two case variants with one declared → the other is MED-003 unless it has the same size and sha256', async () => {
     const dir = folder(withExample());
     if (caseSensitive(dir)) {
       writeFileSync(join(dir, PATHS[1]?.toUpperCase() as string), 'otro');
       expect(await undeclared(dirMediaResolver(dir))).toEqual([PATHS[1]?.toUpperCase()]);
     }
-    // En memoria, en cualquier sistema: el exacto es el declarado, aunque el otro tenga los mismos bytes.
-    const both = memoryFolder({ 'a.pdf': { text: 'x' }, 'A.pdf': { text: 'x' } });
-    expect(await undeclared(both, docBuilder().set('/media/1/path', 'a.pdf'))).toEqual(['A.pdf']);
+    // En memoria, en cualquier sistema: el exacto es el declarado; la otra variante, si trae otros bytes, no.
+    const document = docBuilder().set('/media/1/path', 'a.pdf');
+    expect(await undeclared(memoryFolder({ 'a.pdf': { text: 'x' }, 'A.pdf': { text: 'y' } }), document)).toEqual(['A.pdf']);
+    // Con el mismo tamaño y otros bytes tampoco; con los mismos bytes es el mismo archivo y no trae nada distinto.
+    expect(await undeclared(memoryFolder({ 'a.pdf': { text: 'x' }, 'A.pdf': { text: 'x' } }), document)).toEqual([]);
   });
 
   it('a case variant that the receiver ignores does not hide another with other bytes', async () => {
@@ -193,8 +224,10 @@ describe('MED-003', () => {
     symlinkSync(join(outside, 'x.pdf'), join(dir, 'enlace.pdf'));
     symlinkSync(outside, join(dir, 'carpeta-enlazada'));
     expect(await undeclared(dirMediaResolver(dir))).toEqual(['carpeta-enlazada', 'enlace.pdf']);
-    // Uno declarado con otras mayúsculas no declara un enlace: solo un archivo regular igual al que resuelve.
-    expect(await undeclared(memoryFolder({ 'Enlace.pdf': 'symlink', ...exampleEntries(1) }), docBuilder().set('/media/1/path', 'enlace.pdf'))).toEqual(['Enlace.pdf']);
+    // Un path declarado con otras mayúsculas que termina en un enlace lo declara: su MED-008 ya lo dice. Otro enlace con
+    // las mismas letras, al que no llega el path, no.
+    expect(await undeclared(memoryFolder({ 'Enlace.pdf': 'symlink', ...exampleEntries(1) }), docBuilder().set('/media/1/path', 'enlace.pdf'))).toEqual([]);
+    expect(await undeclared(memoryFolder({ 'Enlace.pdf': 'symlink', 'ENLACE.pdf': 'symlink', ...exampleEntries(1) }), docBuilder().set('/media/1/path', 'Enlace.pdf'))).toEqual(['ENLACE.pdf']);
   });
 
   it('the link where a declared path stops counts as declared', async () => {
@@ -205,6 +238,31 @@ describe('MED-003', () => {
     // Da su MED-008; MED-003 no repite el enlace donde se detiene.
     const found = await undeclared(dirMediaResolver(dir), document);
     expect(found.filter((path) => !PATHS.includes(path))).toEqual([]);
+  });
+
+  it('a fifo or a regular file where a declared path goes on is undeclared: the path does not stop there', async () => {
+    // stat del path declarado da null (MED-007 o MED-006): no hay un MED-008 que ya lo diga.
+    const dir = folder(withExample({ 'archivo-como-carpeta': 'x' }));
+    mkfifo(join(dir, 'viejo'));
+    const document = docBuilder().set('/declaration/revision', 2).set('/media/1/path', 'viejo/a.pdf').set('/media/1/delivery', 1)
+      .set('/media/2/path', 'archivo-como-carpeta/b.pdf');
+    expect(await undeclared(dirMediaResolver(dir), document)).toEqual(['archivo-como-carpeta', 'viejo', PATHS[1], PATHS[2]].sort());
+  });
+
+  it('a link with other case where a declared path stops is declared once: its MED-008, without a MED-003', async () => {
+    const outside = folder({ 'a.pdf': 'a' });
+    const dir = folder(withExample());
+    symlinkSync(outside, join(dir, 'sub'));
+    const document = matching().set('/media/1/path', 'Sub/a.pdf');
+    const report = await validateExample({ document, options: { media: dirMediaResolver(dir) } });
+    expect(resultsOf(report, 'JDX-MED-003', 'JDX-MED-008').map((r) => [r.ruleId, r.instanceLocation, r.params])).toEqual([
+      ['JDX-MED-003', '', { path: PATHS[1] }], ['JDX-MED-008', '/media/1/path', { path: 'Sub/a.pdf' }],
+    ]);
+    // Con dos enlaces que solo difieren en mayúsculas (donde pueden convivir), el path se detiene en el exacto y el otro no está declarado.
+    if (caseSensitive(dir)) {
+      symlinkSync(outside, join(dir, 'SUB'));
+      expect(await undeclared(dirMediaResolver(dir), docBuilder().set('/media/1/path', 'SUB/a.pdf'))).toEqual([PATHS[1], 'sub'].sort());
+    }
   });
 
   it('an unreadable folder is a folder failure, not something declared or undeclared', async () => {

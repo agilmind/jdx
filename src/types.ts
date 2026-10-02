@@ -291,7 +291,8 @@ export interface StateStore {
 
 export interface MediaResolver {
   list(): AsyncIterable<{ path: string; type: 'file' | 'symlink' | 'other' }>;
-  stat(path: string): Promise<{ type: 'file' | 'symlink' | 'other'; size: number } | null>;
+  /** Dónde termina un path: el tipo, el tamaño y, si lo sabe, la entrada donde terminó (la ruta como la da list). */
+  stat(path: string): Promise<{ type: 'file' | 'symlink' | 'other'; size: number; path?: string } | null>;
   sha256(path: string): Promise<string>;
   /** La raíz de la carpeta, en el paso de entorno: lanza un MediaFolderError si no se puede usar. */
   check?(): Promise<void>;

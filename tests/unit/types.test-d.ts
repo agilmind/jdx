@@ -92,7 +92,7 @@ describe('src/types.ts', () => {
   it('MediaResolver has the documented shape', () => {
     interface SpecMediaResolver {
       list(): AsyncIterable<{ path: string; type: 'file' | 'symlink' | 'other' }>;
-      stat(path: string): Promise<{ type: 'file' | 'symlink' | 'other'; size: number } | null>;
+      stat(path: string): Promise<{ type: 'file' | 'symlink' | 'other'; size: number; path?: string } | null>;
       sha256(path: string): Promise<string>;
       check?(): Promise<void>;
     }

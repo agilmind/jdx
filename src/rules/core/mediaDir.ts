@@ -17,14 +17,15 @@
  * estado es no estar.
  *
  * Cada archivo se busca una vez por validación, aunque lo miren varias
- * reglas, y su sha256 se calcula solo si hace falta.
+ * reglas (locate, que usa también JDX-MED-003), y su sha256 se calcula solo
+ * si hace falta.
  */
 import type { Media } from '../../generated/jdx-types.js';
 import { foldCase, pathProblem } from '../../media/path.js';
 import type { Finding, MediaRecord, MediaResolver, Rule, RuleContext } from '../../types.js';
 
 /** Un archivo declarado que se busca en la carpeta, con lo que dio stat. */
-interface Located {
+export interface Located {
   index: number;
   media: Media & { path: string };
   found: Awaited<ReturnType<MediaResolver['stat']>>;
@@ -35,8 +36,8 @@ const AT_ONCE = 16;
 
 const located = new WeakMap<RuleContext, Promise<readonly Located[]>>();
 
-/** Los archivos de la carpeta que se buscan, cada uno una vez por validación. */
-function locate(ctx: RuleContext): Promise<readonly Located[]> {
+/** Los archivos de la carpeta que se buscan, cada uno una vez por validación (también para MED-003). */
+export function locate(ctx: RuleContext): Promise<readonly Located[]> {
   let found = located.get(ctx);
   if (found === undefined) {
     found = locateAll(ctx.media, lookedUp(ctx));

@@ -15,7 +15,8 @@
  *   cualquier sistema de archivos, distinga o no mayúsculas o formas de
  *   Unicode. Un enlace en cualquier segmento da `symlink` y no se sigue. Un
  *   path con un segmento vacío, `.` o `..`, o con `\`, `:` o NUL no se busca:
- *   stat da null. `ignore` no los cambia.
+ *   stat da null. stat dice también dónde terminó: la ruta de esa entrada,
+ *   con los nombres de la carpeta. `ignore` no los cambia.
  * - sha256 lee el archivo de a partes, abierto sin seguir enlaces y sin
  *   esperar (O_NOFOLLOW, O_NONBLOCK): nunca abre un fifo, un socket ni un
  *   dispositivo, ni lee un enlace que apareció después.
@@ -335,7 +336,7 @@ export function folderResolver(dir: string, opts: { ignore?: readonly string[] }
       const entry = await resolve(path);
       if (entry === null) return null;
       const stats = await statsOf(entry);
-      return { type: entry.kind === 'dir' ? 'other' : entry.kind, size: Number(stats.size) };
+      return { type: entry.kind === 'dir' ? 'other' : entry.kind, size: Number(stats.size), path: pathOf(entry) };
     },
 
     async sha256(path) {

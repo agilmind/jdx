@@ -113,7 +113,7 @@ describe('dirMediaResolver', () => {
   it('regular file', async () => {
     const dir = delivery({ 'sub/b.pdf': 'bb' });
     const resolver = dirMediaResolver(dir);
-    expect(await resolver.stat('sub/b.pdf')).toEqual({ type: 'file', size: 2 });
+    expect(await resolver.stat('sub/b.pdf')).toMatchObject({ type: 'file', size: 2 });
     expect(await resolver.sha256('sub/b.pdf')).toBe(sha('bb'));
     // Una carpeta no es un archivo regular.
     expect(await resolver.stat('sub')).toMatchObject({ type: 'other' });
@@ -173,7 +173,7 @@ describe('dirMediaResolver', () => {
     const dir = delivery({ 'Audios/Tema.MP3': 'mp3' });
     const resolver = dirMediaResolver(dir);
     for (const path of ['audios/tema.mp3', 'AUDIOS/TEMA.mp3', 'Audios/Tema.MP3']) {
-      expect(await resolver.stat(path), path).toEqual({ type: 'file', size: 3 });
+      expect(await resolver.stat(path), path).toMatchObject({ type: 'file', size: 3 });
       expect(await resolver.sha256(path), path).toBe(sha('mp3'));
     }
     // Solo de A a Z, y por los nombres de la carpeta: una letra con tilde no es otra en mayúscula, ni una
@@ -182,6 +182,17 @@ describe('dirMediaResolver', () => {
     writeFileSync(join(dir, 'Cancio\u0301n.pdf'), 'x');
     const other = dirMediaResolver(dir);
     expect([await other.stat('ñandú.pdf'), await other.stat('Canción.pdf'), (await other.stat('Ñandú.pdf'))?.type]).toEqual([null, null, 'file']);
+  });
+
+  it('stat says where the path ended, with the names of the folder', async () => {
+    const outside = delivery({ 'x/secreto.txt': 'no' });
+    const dir = delivery({ 'Audios/Tema.MP3': 'mp3' });
+    symlinkSync(join(outside, 'x'), join(dir, 'Enlace'));
+    const resolver = dirMediaResolver(dir);
+    expect(await resolver.stat('audios/tema.mp3')).toEqual({ type: 'file', size: 3, path: 'Audios/Tema.MP3' });
+    // Un enlace en el camino: el path se detiene en él.
+    expect(await resolver.stat('enlace/secreto.txt')).toMatchObject({ type: 'symlink', path: 'Enlace' });
+    expect(await resolver.stat('AUDIOS')).toMatchObject({ type: 'other', path: 'Audios' });
   });
 
   it('exact match wins over case variants', async () => {
@@ -236,7 +247,7 @@ describe('dirMediaResolver', () => {
     } finally {
       clearInterval(timer);
     }
-    expect(await resolver.stat('grande.bin')).toEqual({ type: 'file', size: 50 << 20 });
+    expect(await resolver.stat('grande.bin')).toMatchObject({ type: 'file', size: 50 << 20 });
     expect(peak - start).toBeLessThan(16 << 20);
   });
 
@@ -262,7 +273,7 @@ describe('dirMediaResolver', () => {
     const outside = delivery({ 'secreto.txt': 'no' });
     const dir = delivery({ 'a.pdf': 'a' });
     const resolver = dirMediaResolver(dir);
-    expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 1 });
+    expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 1 });
     rmSync(join(dir, 'a.pdf'));
     symlinkSync(join(outside, 'secreto.txt'), join(dir, 'a.pdf'));
     // El resolver ya vio un archivo regular: abre sin seguir el enlace, y la falla es que la carpeta cambió.
@@ -272,7 +283,7 @@ describe('dirMediaResolver', () => {
   it('a file put in the place of one already looked up is a change of the folder, and a file is read once', async () => {
     const dir = delivery({ 'a.pdf': 'uno', 'b.pdf': 'dos', 'c.pdf': 'tres' });
     const resolver = dirMediaResolver(dir);
-    expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 3 });
+    expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 3 });
     renameSync(join(dir, 'b.pdf'), join(dir, 'a.pdf'));
     expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     // Uno que ya se leyó no se vuelve a leer: el resolver es una foto de la carpeta.
@@ -371,7 +382,7 @@ describe('dirMediaResolver', () => {
     const dir = delivery({ 'a.pdf': 'a', 'x.tmp': 't', 'sub/x.tmp': 't', 'tmp/a': 'a', 'sub/tmp/a': 'a' });
     const resolver = dirMediaResolver(dir, { ignore: ['*.tmp', 'tmp/**'] });
     expect(await listed(resolver)).toEqual([['a.pdf', 'file'], ['sub/tmp/a', 'file']]);
-    expect(await resolver.stat('x.tmp')).toEqual({ type: 'file', size: 1 });
+    expect(await resolver.stat('x.tmp')).toMatchObject({ type: 'file', size: 1 });
     expect(await resolver.sha256('sub/x.tmp')).toBe(sha('t'));
     // Sin ignore, todo.
     expect((await listed(dirMediaResolver(dir))).map(([path]) => path)).toEqual(['a.pdf', 'sub/tmp/a', 'sub/x.tmp', 'tmp/a', 'x.tmp']);
@@ -419,7 +430,7 @@ describe('a folder that changes while it is read', () => {
           else mkfifo(join(dir, 'a.pdf'));
         });
         const resolver = folderResolver(dir, {}, ops);
-        expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 1 });
+        expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 1 });
         expect(await folderFailure(resolver.sha256('a.pdf')), swap).toEqual(['modified', 'a.pdf']);
       }
     }, 10_000);
@@ -432,14 +443,14 @@ describe('a folder that changes while it is read', () => {
         symlinkSync('b.pdf', join(dir, 'a.pdf'));
       });
       const resolver = folderResolver(dir, {}, ops);
-      expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 1 });
+      expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 1 });
       expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     });
 
     it(`a file rewritten in place with another size after its lstat is a change of the folder (${mode})`, async () => {
       const dir = delivery({ 'a.pdf': 'uno' });
       const resolver = folderResolver(dir, {}, base);
-      expect(await resolver.stat('a.pdf')).toEqual({ type: 'file', size: 3 });
+      expect(await resolver.stat('a.pdf')).toMatchObject({ type: 'file', size: 3 });
       writeFileSync(join(dir, 'a.pdf'), 'otro largo');
       expect(await folderFailure(resolver.sha256('a.pdf'))).toEqual(['modified', 'a.pdf']);
     });

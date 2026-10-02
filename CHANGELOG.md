@@ -13,3 +13,4 @@
 - Las reglas del núcleo (porcentajes y fechas, el nombre del archivo, el estado del receptor, los archivos con y sin su carpeta, las listas abiertas) y `JDX-MED-003` dan cada resultado en un lugar fijo del documento.
 - Una carpeta de la entrega que no se puede usar (no existe, no es una carpeta, algo de adentro no se puede leer o cambió mientras se validaba) es una falla del entorno, `JDX-ENV-011` con `params.cause` y `params.path`, salida 2: no rechaza ni acepta.
 - Un nombre de la carpeta de la entrega que no es UTF-8 válido se lee igual y se muestra con `\xHH` por cada byte que no lo es, y por la barra invertida: dos nombres distintos nunca se confunden.
+- `JDX-MED-003` no cuenta solo los artefactos de JDX de la raíz de la entrega: los archivos regulares que se llaman como una declaración, su firma o su reporte (`<uuid>.r<n>.jdx.json`, `.jdx.json.jws`, `.report.json`) y `jdx-trust.json`; nada de una carpeta, ni un enlace o un fifo con esos nombres.

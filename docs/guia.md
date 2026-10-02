@@ -77,6 +77,14 @@ jdx validate entrega/3f2c9a1e-….r1.jdx.json --env production --profile sadaic/
   --received-at 2026-09-30T09:12:00-03:00 --report 3f2c9a1e-….r1.report.json
 ```
 
+Con `--dir`, cada `path` se busca en la carpeta local de la entrega por su
+nombre exacto o, si no está, por el único que coincide sin distinguir
+mayúsculas de A a Z; un enlace nunca se sigue. Un archivo de la carpeta que no
+está declarado da `JDX-MED-003`, salvo los de JDX (`*.jdx.json`,
+`*.jdx.json.jws`, `*.report.json`, `jdx-trust.json`) y los que la sociedad
+ignora con `--ignore` (repetible): sin `/` el patrón mira el nombre, con `/` la
+ruta desde la raíz; `*` no cruza carpetas y `**` cubre cero o más.
+
 | Capa | Qué controla | Qué da |
 |---|---|---|
 | Entorno | Opciones, perfil, lista de confianza, estado | Salida 2; el archivo no se evalúa |
